@@ -25,6 +25,7 @@ import { GameController } from "./game";
 
   // 4. Create the game manager container
   const game = new GameController(app);
+  window.__game = game;
   app.stage.addChild(game);
 
   // 5. Connect the update loop to the Application ticker

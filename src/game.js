@@ -1,18 +1,156 @@
 import {
   Container,
   Graphics,
+  GraphicsContext,
   Text,
   TextStyle,
   FillGradient,
   Sprite,
   Assets,
+  BlurFilter,
 } from "pixi.js";
 import { Card } from "./card";
 import { ParticleSystem } from "./particles";
 import { audio } from "./audio";
-import { AVATAR_FILES } from "./symbols";
+import { AVATAR_FILES, getAvatarPath } from "./symbols";
 import { LacBirdFlock } from "./chimlac";
 import gsap from "gsap";
+
+function gameAlert(message) {
+  return new Promise((resolve) => {
+    if (!document.getElementById("game-alert-styles")) {
+      const style = document.createElement("style");
+      style.id = "game-alert-styles";
+      style.textContent = `
+        .game-alert-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100dvw;
+          height: 100dvh;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 100000;
+          opacity: 0;
+          transition: opacity 0.25s ease;
+        }
+        .game-alert-card {
+          background: linear-gradient(135deg, #2c080d 0%, #150005 100%);
+          border: 2px solid #d4af37;
+          box-shadow: 0 0 25px rgba(212, 175, 55, 0.3), inset 0 0 15px rgba(0, 0, 0, 0.6);
+          border-radius: 16px;
+          padding: 24px;
+          width: 85%;
+          max-width: 340px;
+          text-align: center;
+          transform: scale(0.85);
+          transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .game-alert-text {
+          color: #fdf5e6;
+          font-size: 16px;
+          line-height: 1.6;
+          margin: 0 0 24px 0;
+          font-weight: 500;
+          text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        }
+        .game-alert-button {
+          background: linear-gradient(90deg, #d4af37 0%, #b89326 100%);
+          color: #1b0103;
+          border: 1px solid #ffea88;
+          border-radius: 24px;
+          padding: 10px 32px;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+          transition: transform 0.15s, box-shadow 0.15s;
+          outline: none;
+        }
+        .game-alert-button:hover {
+          transform: translateY(-2px) scale(1.05);
+          box-shadow: 0 6px 15px rgba(212, 175, 55, 0.5);
+        }
+        .game-alert-button:active {
+          transform: translateY(1px);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const existing = document.getElementById("game-alert-overlay-id");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "game-alert-overlay-id";
+    overlay.className = "game-alert-overlay";
+
+    const card = document.createElement("div");
+    card.className = "game-alert-card";
+
+    const text = document.createElement("p");
+    text.className = "game-alert-text";
+    text.innerText = message;
+
+    const button = document.createElement("button");
+    button.className = "game-alert-button";
+    button.innerText = "ĐỒNG Ý";
+
+    card.appendChild(text);
+    card.appendChild(button);
+    overlay.appendChild(card);
+
+    const container = document.getElementById("app") || document.body;
+    container.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.transform = "scale(1)";
+    });
+
+    const closeAlert = () => {
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => {
+        overlay.remove();
+        resolve();
+      }, 250);
+    };
+
+    button.addEventListener("click", closeAlert);
+  });
+}
+
+export const AdManager = {
+  showRewardedVideo: async () => {
+    console.log("[AdManager] Requesting Rewarded Video Ad...");
+    await gameAlert(
+      "📺 Đang tải quảng cáo... Vui lòng xem hết để nhận phần thưởng!",
+    );
+    return new Promise((resolve) => {
+      setTimeout(async () => {
+        await gameAlert(
+          "🎉 Cảm ơn bạn đã xem quảng cáo! Phần thưởng đã được mở khóa.",
+        );
+        resolve(true);
+      }, 2000);
+    });
+  },
+  showInterstitial: async () => {
+    console.log("[AdManager] Showing Interstitial Ad...");
+    await gameAlert("📺 Đang hiển thị quảng cáo giữa màn hình...");
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(true);
+      }, 1000);
+    });
+  },
+};
 
 const LEVELS = [
   { name: "🟢 4x4", cols: 4, rows: 4, maxTime: 60, pairs: 8 },
@@ -74,7 +212,7 @@ function createMenuButton(text, onClick) {
       text: displayText,
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 12,
+        fontSize: 14,
         fill: "#ffffff",
         fontWeight: "bold",
         letterSpacing: 0.5,
@@ -91,8 +229,8 @@ function createMenuButton(text, onClick) {
       .then((texture) => {
         icon.texture = texture;
         icon.anchor.set(0.5);
-        icon.width = 16;
-        icon.height = 16;
+        icon.width = 24;
+        icon.height = 24;
 
         // Position icon and label horizontally centered
         const gap = 8;
@@ -104,19 +242,56 @@ function createMenuButton(text, onClick) {
         console.error("Failed to load google_logo.png:", err);
       });
   } else {
-    const label = new Text({
-      text: text,
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 13,
-        fill: "#ffffff",
-        fontWeight: "bold",
-        letterSpacing: 0.5,
-      }),
-    });
-    label.anchor.set(0.5);
-    btn.addChild(label);
-    btn.label = label;
+    const spaceIdx = text.indexOf(" ");
+    if (spaceIdx !== -1 && text.charCodeAt(0) > 127) {
+      const emoji = text.substring(0, spaceIdx);
+      const textStr = text.substring(spaceIdx + 1);
+
+      const emojiText = new Text({
+        text: emoji,
+        style: new TextStyle({
+          fontFamily: "Outfit, sans-serif",
+          fontSize: 26,
+          fill: "#ffffff",
+        }),
+      });
+      emojiText.anchor.set(0.5);
+      btn.addChild(emojiText);
+
+      const label = new Text({
+        text: textStr,
+        style: new TextStyle({
+          fontFamily: "Outfit, sans-serif",
+          fontSize: 14,
+          fill: "#ffffff",
+          fontWeight: "bold",
+          letterSpacing: 0.5,
+        }),
+      });
+      label.anchor.set(0.5);
+      btn.addChild(label);
+      btn.label = label;
+
+      // Align emoji and text horizontally
+      const gap = 8;
+      const totalW = emojiText.width + gap + label.width;
+      emojiText.x = -totalW / 2 + emojiText.width / 2;
+      label.x = totalW / 2 - label.width / 2;
+    } else {
+      const label = new Text({
+        text: text,
+        style: new TextStyle({
+          fontFamily: "Outfit, sans-serif",
+          fontSize: 14,
+          fill: "#ffffff",
+          fontWeight: "bold",
+          letterSpacing: 0.5,
+        }),
+      });
+      label.anchor.set(0.5);
+      btn.addChild(label);
+      btn.label = label;
+    }
   }
 
   btn.bg = bg;
@@ -129,7 +304,7 @@ function createMenuButton(text, onClick) {
     btn.h = h;
     btn.isRed = isRed;
     bg.clear()
-      .roundRect(-w / 2, -h / 2, w, h, 8)
+      .roundRect(-w / 2, -h / 2, w, h, 14)
       .fill({ color: isRed ? 0x5c0612 : 0x1b0103, alpha: 0.9 })
       .stroke({ width: 1.5, color: 0xd4af37 });
   };
@@ -142,7 +317,7 @@ function createMenuButton(text, onClick) {
   btn.on("pointerover", () => {
     btn.scale.set(1.05);
     bg.clear()
-      .roundRect(-btn.w / 2, -btn.h / 2, btn.w, btn.h, 8)
+      .roundRect(-btn.w / 2, -btn.h / 2, btn.w, btn.h, 14)
       .fill({ color: btn.isRed ? 0x5c0612 : 0x1b0103, alpha: 0.95 })
       .stroke({ width: 2.5, color: 0xffea00 });
     if (btn.label) btn.label.style.fill = "#ffea00";
@@ -151,7 +326,7 @@ function createMenuButton(text, onClick) {
   btn.on("pointerout", () => {
     btn.scale.set(1.0);
     bg.clear()
-      .roundRect(-btn.w / 2, -btn.h / 2, btn.w, btn.h, 8)
+      .roundRect(-btn.w / 2, -btn.h / 2, btn.w, btn.h, 14)
       .fill({ color: btn.isRed ? 0x5c0612 : 0x1b0103, alpha: 0.9 })
       .stroke({ width: 1.5, color: 0xd4af37 });
     if (btn.label) btn.label.style.fill = "#ffffff";
@@ -176,6 +351,8 @@ export class GameController extends Container {
 
     this.selectedCards = [];
     this.cards = [];
+    this.victoryTweens = [];
+    this.victoryIntervals = [];
 
     // Background overlay for lacquer theme
     this.bgOverlay = new Graphics();
@@ -657,7 +834,7 @@ export class GameController extends Container {
       text: "🏠",
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 14,
+        fontSize: 24,
         fill: "#ffffff",
       }),
     });
@@ -678,7 +855,7 @@ export class GameController extends Container {
       text: audio.isMuted ? "🔇" : "🔊",
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 14,
+        fontSize: 24,
         fill: "#ffffff",
       }),
     });
@@ -705,7 +882,7 @@ export class GameController extends Container {
       text: "🔄",
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 14,
+        fontSize: 24,
         fill: "#ffffff",
       }),
     });
@@ -716,6 +893,39 @@ export class GameController extends Container {
       this.initGame(this.currentLevelIndex),
     );
     this.gamePlayContainer.addChild(this.restartButton);
+
+    // Hint button (Rewarded Ad)
+    this.hintButton = new Container();
+    this.hintButton.eventMode = "static";
+    this.hintButton.cursor = "pointer";
+    const hintBg = new Graphics();
+    this.hintText = new Text({
+      text: "💡",
+      style: new TextStyle({
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 24,
+        fill: "#ffffff",
+      }),
+    });
+    this.hintText.anchor.set(0.5);
+    this.hintButton.addChild(hintBg, this.hintText);
+    this.hintButton.bg = hintBg;
+    this.hintButton.on("pointertap", async () => {
+      if (this.isHintActive) return;
+      const success = await AdManager.showRewardedVideo();
+      if (success) {
+        this.isHintActive = true;
+        const cardsToFlip = this.cards.filter(
+          (c) => !c.isMatched && !c.isFlipped,
+        );
+        await Promise.all(cardsToFlip.map((c) => c.flip(true)));
+        setTimeout(async () => {
+          await Promise.all(cardsToFlip.map((c) => c.flip(false)));
+          this.isHintActive = false;
+        }, 2000);
+      }
+    });
+    this.gamePlayContainer.addChild(this.hintButton);
 
     // Add hover scaling effects to make buttons feel premium
     const addHoverScaling = (btn) => {
@@ -729,6 +939,7 @@ export class GameController extends Container {
     addHoverScaling(this.homeButton);
     addHoverScaling(this.muteButton);
     addHoverScaling(this.restartButton);
+    addHoverScaling(this.hintButton);
   }
 
   switchState(newState) {
@@ -755,6 +966,22 @@ export class GameController extends Container {
 
     if (newState !== "PLAYING") {
       this.overlayContainer.removeChildren();
+      if (this.victoryIntervalId) {
+        clearInterval(this.victoryIntervalId);
+        this.victoryIntervalId = null;
+      }
+      if (this.victoryIntervals) {
+        this.victoryIntervals.forEach((id) => clearInterval(id));
+        this.victoryIntervals = [];
+      }
+      if (this.raysTickerFn) {
+        this.app.ticker.remove(this.raysTickerFn);
+        this.raysTickerFn = null;
+      }
+      if (this.victoryTweens) {
+        this.victoryTweens.forEach((t) => t.kill());
+        this.victoryTweens = [];
+      }
     }
 
     if (newState === "ACHIEVEMENTS") {
@@ -847,6 +1074,16 @@ export class GameController extends Container {
     this.combo = 0;
     this.timeRemaining = config.maxTime;
     this.isGameOver = false;
+    this.isHintActive = false;
+
+    if (this.victoryIntervalId) {
+      clearInterval(this.victoryIntervalId);
+      this.victoryIntervalId = null;
+    }
+    if (this.raysTickerFn) {
+      this.app.ticker.remove(this.raysTickerFn);
+      this.raysTickerFn = null;
+    }
 
     this.selectedCards = [];
     this.particles.clearAll();
@@ -894,7 +1131,8 @@ export class GameController extends Container {
   }
 
   handleCardTap(card) {
-    if (this.isGameOver || this.selectedCards.length >= 2) return;
+    if (this.isGameOver || this.selectedCards.length >= 2 || this.isHintActive)
+      return;
 
     this.selectedCards.push(card);
     card.flip(true);
@@ -1002,24 +1240,542 @@ export class GameController extends Container {
 
     const overlay = new Graphics();
     overlay
-      .roundRect(0, 0, 360, 240, 16)
-      .fill({ color: 0x2b050a, alpha: 0.95 })
-      .stroke({ width: 2.5, color: 0xd4af37 });
+      .roundRect(0, 0, 380, 540, 20)
+      .fill(
+        new FillGradient({
+          start: { x: 0, y: 0 },
+          end: { x: 380, y: 540 },
+          colorStops: [
+            { offset: 0, color: 0x4a0a14 },
+            { offset: 0.5, color: 0x240206 },
+            { offset: 1, color: 0x0f0003 },
+          ],
+        }),
+      )
+      .stroke({ width: 3, color: 0xd4af37 });
 
+    // Inner border
+    overlay
+      .roundRect(6, 6, 380 - 12, 540 - 12, 14)
+      .stroke({ width: 1, color: 0xffd700, alpha: 0.4 });
+
+    const overlayScale = Math.min(
+      1.0,
+      this.app.screen.width / 450,
+      this.app.screen.height / 700,
+    );
+
+    // 1. Fullscreen Dark Overlay & Background Thematic Lanterns
+    const darkBg = new Graphics()
+      .rect(0, 0, this.app.screen.width, this.app.screen.height)
+      .fill({ color: 0x000000, alpha: 0.5 });
+    this.overlayContainer.addChild(darkBg);
+
+    const leftLantern = new Text({
+      text: "🏮",
+      style: new TextStyle({ fontSize: 48 }),
+    });
+    leftLantern.anchor.set(0.5);
+    leftLantern.position.set(
+      this.app.screen.width / 2 - 210,
+      this.app.screen.height / 2 - 250,
+    );
+    this.overlayContainer.addChild(leftLantern);
+
+    const rightLantern = new Text({
+      text: "🏮",
+      style: new TextStyle({ fontSize: 48 }),
+    });
+    rightLantern.anchor.set(0.5);
+    rightLantern.position.set(
+      this.app.screen.width / 2 + 210,
+      this.app.screen.height / 2 - 250,
+    );
+    this.overlayContainer.addChild(rightLantern);
+
+    // 2. Gold Rotating Sunburst Rays
+    const raysContainer = new Container();
+    raysContainer.position.set(
+      this.app.screen.width / 2,
+      this.app.screen.height / 2,
+    );
+    raysContainer.scale.set(0);
+    this.overlayContainer.addChild(raysContainer);
+
+    const numRays = 16;
+    const rayAngle = (Math.PI * 2) / numRays;
+    const rayRadius = 400;
+    const raysGraphics = new Graphics();
+    for (let i = 0; i < numRays; i++) {
+      const angleStart = i * rayAngle;
+      const angleEnd = angleStart + rayAngle * 0.45;
+      raysGraphics
+        .moveTo(0, 0)
+        .arc(0, 0, rayRadius, angleStart, angleEnd)
+        .lineTo(0, 0)
+        .fill({ color: 0xffea00, alpha: 0.12 });
+    }
+    raysContainer.addChild(raysGraphics);
+
+    const rotateRays = (ticker) => {
+      raysGraphics.rotation += 0.005 * ticker.deltaTime;
+    };
+    this.app.ticker.add(rotateRays);
+    this.raysTickerFn = rotateRays;
+
+    gsap.to(raysContainer.scale, {
+      x: overlayScale,
+      y: overlayScale,
+      duration: 1.2,
+      ease: "power2.out",
+    });
+
+    // 3. Matched Avatars list configuration
+    const uniqueAvatars = [...new Set(this.cards.map((c) => c.avatarFile))];
+
+    // 4. Overlay Card Setup
+    overlay.pivot.set(190, 270);
+    overlay.scale.set(0);
+    overlay.x = this.app.screen.width / 2;
+    overlay.y = this.app.screen.height / 2;
+    this.overlayContainer.addChild(overlay);
+
+    gsap.to(overlay.scale, {
+      x: overlayScale,
+      y: overlayScale,
+      duration: 0.8,
+      ease: "elastic.out(1.0, 0.65)",
+    });
+
+    // Three Gold Stars
+    const starsContainer = new Container();
+    starsContainer.position.set(190, -105);
+    overlay.addChild(starsContainer);
+
+    const drawStar = (size) => {
+      return new Graphics()
+        .star(0, 0, 5, size, size * 0.45)
+        .fill({ color: 0xffea00 })
+        .stroke({ width: 1.5, color: 0xb89326 });
+    };
+
+    const leftStar = drawStar(15);
+    leftStar.position.set(-65, 12);
+    leftStar.rotation = -0.2;
+
+    const middleStar = drawStar(22);
+    middleStar.position.set(0, 0);
+
+    const rightStar = drawStar(15);
+    rightStar.position.set(65, 12);
+    rightStar.rotation = 0.2;
+
+    starsContainer.addChild(leftStar, middleStar, rightStar);
+
+    const victoryTitleGrad = new FillGradient({
+      end: { x: 0, y: 34 },
+      colorStops: [
+        { offset: 0, color: 0xffe500 },
+        { offset: 1, color: 0xff7b00 },
+      ],
+    });
+
+    // Create a title container for the glow + text combination to float together
+    const titleContainer = new Container();
+    titleContainer.position.set(190, -50);
+    overlay.addChild(titleContainer);
+
+    // Glow Text Layer (behind)
+    const glowText = new Text({
+      text: "CHIẾN THẮNG",
+      style: new TextStyle({
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 34,
+        fill: 0xffea00,
+        fontWeight: "900",
+        letterSpacing: 2,
+        stroke: { width: 8, color: 0xffea00 },
+      }),
+    });
+    glowText.anchor.set(0.5);
+    titleContainer.addChild(glowText);
+
+    // Apply BlurFilter to create the shining neon glow effect
+    const glowFilter = new BlurFilter();
+    glowFilter.blur = 6;
+    glowText.filters = [glowFilter];
+
+    // Main Victory Text Layer (on top)
     const victoryText = new Text({
       text: "CHIẾN THẮNG",
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 24,
-        fill: 0xffea00,
-        fontWeight: "bold",
+        fontSize: 34,
+        fill: victoryTitleGrad,
+        fontWeight: "900",
         letterSpacing: 2,
+        stroke: { width: 5, color: 0x360207 },
+        dropShadow: {
+          color: 0x000000,
+          blur: 4,
+          distance: 4,
+        },
       }),
     });
     victoryText.anchor.set(0.5);
-    victoryText.position.set(180, 36);
-    overlay.addChild(victoryText);
+    titleContainer.addChild(victoryText);
 
+    // Animate glow text alpha to create a breathing light pulse effect
+    const glowBreathe = gsap.to(glowText, {
+      alpha: 0.35,
+      duration: 1.2,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut",
+    });
+    this.victoryTweens.push(glowBreathe);
+
+    // Pop-in entry animation for the entire title container
+    titleContainer.scale.set(0);
+    const textScaleTween = gsap.to(titleContainer.scale, {
+      x: 1,
+      y: 1,
+      duration: 1.0,
+      delay: 0.4,
+      ease: "elastic.out(1.2, 0.5)",
+    });
+    this.victoryTweens.push(textScaleTween);
+
+    // Floating/swaying animation for the entire title container
+    const textFloatTween = gsap.to(titleContainer, {
+      y: "-=5",
+      duration: 1.5,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut",
+      delay: 0.8,
+    });
+    const textRotateTween = gsap.to(titleContainer, {
+      rotation: 0.04,
+      duration: 2.0,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut",
+      delay: 0.8,
+    });
+    this.victoryTweens.push(textFloatTween, textRotateTween);
+
+    // Continuous Sparkles around victory title
+    const globalTextX = this.app.screen.width / 2;
+    const globalTextY = this.app.screen.height / 2 - 50 * overlayScale;
+
+    // Spawn initial big burst
+    setTimeout(() => {
+      if (this.isGameOver) {
+        this.particles.spawnBurst(globalTextX, globalTextY, 15);
+      }
+    }, 450);
+
+    const textSparkleInterval = setInterval(() => {
+      if (!this.isGameOver) {
+        clearInterval(textSparkleInterval);
+        return;
+      }
+      const rx = globalTextX + (Math.random() - 0.5) * 220 * overlayScale;
+      const ry = globalTextY + (Math.random() - 0.5) * 35 * overlayScale;
+      this.particles.spawnBurst(rx, ry, 2);
+    }, 250);
+    this.victoryIntervals.push(textSparkleInterval);
+
+    // 6. Dong Son Bronze Drum & Lac Bird Badge in Center (Geometric Dong Son Style!)
+    const badgeContainer = new Container();
+    badgeContainer.position.set(190, 95); // Shifted up to the top
+    overlay.addChild(badgeContainer);
+
+    // Define the Lac Bird Context (facing right, elegant crane-like flying silhouette with authentic Dong Son drum patterns!)
+    const lacBirdCtx = new GraphicsContext()
+      // --- Base Silhouette ---
+      // Beak (very long, slender, slightly curved)
+      .moveTo(35, -4)
+      .lineTo(10, -2)
+      // Head
+      .quadraticCurveTo(12, -7, 8, -8)
+      // Plume Crest (sweeping back-left, long and curved at the tip)
+      .quadraticCurveTo(-2, -16, -20, -14)
+      .quadraticCurveTo(-22, -13, -20, -12) // tip
+      .quadraticCurveTo(-4, -10, 4, -5) // back of crest
+      // Neck
+      .quadraticCurveTo(-4, 2, -12, 8)
+      // Body
+      .quadraticCurveTo(-25, 14, -40, 10)
+      // Tail (divided into 2 long flowing feathers)
+      .quadraticCurveTo(-55, 15, -68, 22) // upper tail tip
+      .quadraticCurveTo(-54, 11, -44, 5) // split indent
+      .quadraticCurveTo(-58, 12, -70, 14) // lower tail tip
+      .quadraticCurveTo(-48, 5, -38, 2)
+      // Back of body
+      .lineTo(-32, -3)
+      // Back of neck
+      .quadraticCurveTo(-18, -4, -4, -3)
+      // Connecting beak bottom
+      .lineTo(10, -4.5)
+      .lineTo(35, -4)
+      .closePath()
+      .fill({ color: 0xd4af37, alpha: 0.25 }) // Semi-transparent body fill
+      .stroke({ width: 1.5, color: 0xd4af37 }) // Clear golden outline
+
+      // --- Wings with Traditional Comb Feathers ---
+      // Upper Wing Base
+      .moveTo(-22, 0)
+      .bezierCurveTo(-15, -20, -5, -36, 10, -45) // wing tip
+      .bezierCurveTo(-2, -30, -8, -18, -12, -10)
+      .quadraticCurveTo(-16, -18, -20, 0)
+      .closePath()
+      .fill({ color: 0xd4af37, alpha: 0.3 })
+      .stroke({ width: 1.5, color: 0xd4af37 })
+
+      // Comb-like vertical lines on Upper Wing (traditional style!)
+      .moveTo(0, -20)
+      .lineTo(4, -32)
+      .moveTo(-4, -16)
+      .lineTo(-1, -26)
+      .moveTo(-8, -12)
+      .lineTo(-5, -20)
+      .moveTo(-12, -8)
+      .lineTo(-9, -14)
+      .stroke({ width: 1.2, color: 0xd4af37 })
+
+      // Lower Wing Base
+      .moveTo(-24, 5)
+      .bezierCurveTo(-30, 16, -36, 26, -42, 30) // wing tip
+      .quadraticCurveTo(-32, 18, -27, 10)
+      .quadraticCurveTo(-29, 12, -24, 5)
+      .closePath()
+      .fill({ color: 0xd4af37, alpha: 0.3 })
+      .stroke({ width: 1.2, color: 0xd4af37 })
+
+      // Comb-like lines on Lower Wing
+      .moveTo(-28, 12)
+      .lineTo(-34, 21)
+      .moveTo(-26, 9)
+      .lineTo(-31, 16)
+      .stroke({ width: 1.0, color: 0xd4af37 })
+
+      // --- Internal Dong Son Carving Details ---
+      // Beak center decorative line
+      .moveTo(11, -3.2)
+      .lineTo(32, -4)
+      .stroke({ width: 1.0, color: 0xd4af37, alpha: 0.7 })
+
+      // Big round Eye on the head (Very characteristic of Dong Son bird carvings!)
+      .circle(7, -5, 2.2)
+      .fill({ color: 0xffea00 })
+      .stroke({ width: 0.8, color: 0x3e2723 }) // Dark outline for eye
+
+      // Small pupil inside eye
+      .circle(7, -5, 0.8)
+      .fill({ color: 0x000000 })
+
+      // Concentric circles / dots on the body (Traditional patterns)
+      .circle(-18, 5, 2.8)
+      .stroke({ width: 1.0, color: 0xd4af37 })
+      .circle(-18, 5, 1.2)
+      .fill({ color: 0xffea00 })
+
+      .circle(-28, 4, 2.2)
+      .stroke({ width: 1.0, color: 0xd4af37 })
+      .circle(-28, 4, 0.8)
+      .fill({ color: 0xffea00 })
+
+      // Legs (slender, trailing back)
+      .moveTo(-35, 6)
+      .quadraticCurveTo(-48, 15, -58, 18)
+      .stroke({ width: 1.2, color: 0xd4af37 })
+      .moveTo(-32, 7)
+      .quadraticCurveTo(-45, 17, -55, 20)
+      .stroke({ width: 1.2, color: 0xd4af37 });
+
+    // Left Lac Bird (Mirrored horizontally since the base bird faces right, scaled up and positioned out!)
+    const leftBird = new Graphics(lacBirdCtx);
+    leftBird.position.set(-100, -5);
+    leftBird.scale.set(-1.6, 1.6); // Mirror horizontally
+    badgeContainer.addChild(leftBird);
+
+    // Right Lac Bird (Normal scale since the base bird faces right, scaled up and positioned out!)
+    const rightBird = new Graphics(lacBirdCtx);
+    rightBird.position.set(100, -5);
+    rightBird.scale.set(1.6); // Normal orientation
+    badgeContainer.addChild(rightBird);
+
+    // Central rotating Trống Đồng (Enlarged to radius 55!)
+    const drum = new Graphics()
+      .circle(0, 0, 55)
+      .fill(
+        new FillGradient({
+          start: { x: -55, y: -55 },
+          end: { x: 55, y: 55 },
+          colorStops: [
+            { offset: 0, color: 0xaa7c11 },
+            { offset: 0.5, color: 0x8a6d20 },
+            { offset: 1, color: 0x4a3b10 },
+          ],
+        }),
+      )
+      .stroke({ width: 2.8, color: 0xffea00 })
+      .circle(0, 0, 46)
+      .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.6 })
+      .circle(0, 0, 37)
+      .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.5 })
+      .circle(0, 0, 28)
+      .stroke({ width: 1.0, color: 0xd4af37, alpha: 0.4 })
+      .circle(0, 0, 18)
+      .stroke({ width: 0.8, color: 0xd4af37, alpha: 0.3 })
+      // Central sun star (12 points, enlarged!)
+      .star(0, 0, 12, 15, 6)
+      .fill({ color: 0xffea00 })
+      .stroke({ width: 1, color: 0xb89326 });
+    badgeContainer.addChild(drum);
+
+    // Add rotation to the drum
+    const drumRotateTween = gsap.to(drum, {
+      rotation: Math.PI * 2,
+      duration: 16,
+      repeat: -1,
+      ease: "none",
+    });
+    this.victoryTweens.push(drumRotateTween);
+
+    // Ribbon (Moved down below the larger drum)
+    if (isNewScore || isNewMoves || isNewTime) {
+      const ribbon = new Graphics()
+        .roundRect(-65, 38, 130, 20, 4)
+        .fill({ color: 0xd32f2f })
+        .stroke({ width: 1, color: 0xffea00 });
+      const ribbonText = new Text({
+        text: "KỶ LỤC MỚI!",
+        style: new TextStyle({
+          fontFamily: "Outfit, sans-serif",
+          fontSize: 9,
+          fill: 0xffffff,
+          fontWeight: "bold",
+        }),
+      });
+      ribbonText.anchor.set(0.5);
+      ribbonText.position.set(0, 48);
+      badgeContainer.addChild(ribbon, ribbonText);
+    }
+
+    const formatTime = (secs) => {
+      const m = Math.floor(secs / 60)
+        .toString()
+        .padStart(2, "0");
+      const s = (secs % 60).toString().padStart(2, "0");
+      return `${m}:${s}`;
+    };
+
+    // 7. Horizontal Stats Panel (Enlarged 4-column horizontal stats box replacing vertical list)
+    const statsPanel = new Graphics()
+      .roundRect(20, 215, 340, 95, 12)
+      .fill({ color: 0x1b0103, alpha: 0.8 })
+      .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.75 });
+    overlay.addChild(statsPanel);
+
+    const colLabelStyle = new TextStyle({
+      fontFamily: "Outfit, sans-serif",
+      fontSize: 9,
+      fill: 0xb89326,
+      fontWeight: "bold",
+    });
+
+    const colValueStyle = new TextStyle({
+      fontFamily: "Outfit, sans-serif",
+      fontSize: 18,
+      fill: 0xffea00,
+      fontWeight: "900",
+    });
+
+    const colIconStyle = new TextStyle({
+      fontFamily: "Outfit, sans-serif",
+      fontSize: 24,
+    });
+
+    const colWidth = 340 / 4;
+    const colY = 215;
+
+    // Column 0: Score
+    const iconScore = new Text({ text: "🏆", style: colIconStyle });
+    iconScore.anchor.set(0.5);
+    iconScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 22);
+
+    const lblScore = new Text({ text: "ĐIỂM", style: colLabelStyle });
+    lblScore.anchor.set(0.5);
+    lblScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 46);
+
+    const valScore = new Text({ text: "0", style: colValueStyle });
+    valScore.anchor.set(0.5);
+    valScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 70);
+
+    // Column 1: Moves
+    const iconMoves = new Text({ text: "👣", style: colIconStyle });
+    iconMoves.anchor.set(0.5);
+    iconMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 22);
+
+    const lblMoves = new Text({ text: "LƯỢT ĐI", style: colLabelStyle });
+    lblMoves.anchor.set(0.5);
+    lblMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 46);
+
+    const valMoves = new Text({ text: "0", style: colValueStyle });
+    valMoves.anchor.set(0.5);
+    valMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 70);
+
+    // Column 2: Time
+    const iconTime = new Text({ text: "🕒", style: colIconStyle });
+    iconTime.anchor.set(0.5);
+    iconTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 22);
+
+    const lblTime = new Text({ text: "THỜI GIAN", style: colLabelStyle });
+    lblTime.anchor.set(0.5);
+    lblTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 46);
+
+    const valTime = new Text({ text: "00:00", style: colValueStyle });
+    valTime.anchor.set(0.5);
+    valTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 70);
+
+    // Column 3: Accuracy
+    const iconAccuracy = new Text({ text: "🎯", style: colIconStyle });
+    iconAccuracy.anchor.set(0.5);
+    iconAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 22);
+
+    const lblAccuracy = new Text({
+      text: "ĐỘ CHÍNH XÁC",
+      style: colLabelStyle,
+    });
+    lblAccuracy.anchor.set(0.5);
+    lblAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 46);
+
+    const valAccuracy = new Text({
+      text: `${accuracy}%`,
+      style: colValueStyle,
+    });
+    valAccuracy.anchor.set(0.5);
+    valAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 70);
+
+    overlay.addChild(
+      iconScore,
+      lblScore,
+      valScore,
+      iconMoves,
+      lblMoves,
+      valMoves,
+      iconTime,
+      lblTime,
+      valTime,
+      iconAccuracy,
+      lblAccuracy,
+      valAccuracy,
+    );
+
+    // Sub congrats text below the horizontal box
     let congratsText = "Chúc mừng bạn đã chiến thắng!";
     if (isNewScore || isNewMoves || isNewTime) {
       congratsText = "⭐ KỶ LỤC MỚI ĐÃ THIẾT LẬP! ⭐";
@@ -1034,111 +1790,294 @@ export class GameController extends Container {
       }),
     });
     congratsLabel.anchor.set(0.5);
-    congratsLabel.position.set(180, 68);
+    congratsLabel.position.set(190, 332);
     overlay.addChild(congratsLabel);
 
-    const scoreLabelText = new Text({
-      text: `ĐIỂM SỐ: ${this.score}\nĐỘ CHÍNH XÁC: ${accuracy}%\nSỐ LƯỢT ĐI: ${this.moves}\nTHỜI GIAN: ${Math.floor(elapsedTime)}s`,
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 14,
-        fill: 0xffffff,
-        align: "center",
-        lineHeight: 24,
-      }),
+    // Stats GSAP Animations
+    const statsObj = { score: 0, moves: 0, time: 0 };
+    gsap.to(statsObj, {
+      score: this.score,
+      moves: this.moves,
+      time: Math.floor(elapsedTime),
+      duration: 1.2,
+      delay: 0.25,
+      ease: "power2.out",
+      onUpdate: () => {
+        const curScoreStr = Math.round(statsObj.score).toString();
+        const curMovesStr = Math.round(statsObj.moves).toString();
+        const curTimeStr = formatTime(Math.round(statsObj.time));
+
+        valScore.text = curScoreStr;
+        valMoves.text = curMovesStr;
+        valTime.text = curTimeStr;
+      },
     });
-    scoreLabelText.anchor.set(0.5);
-    scoreLabelText.position.set(180, 122);
-    overlay.addChild(scoreLabelText);
 
-    // Play next level / retry button (Right)
-    const btnNext = new Container();
-    btnNext.eventMode = "static";
-    btnNext.cursor = "pointer";
-    btnNext.position.set(250, 185);
-
-    const btnNextBg = new Graphics();
-    btnNextBg
-      .circle(0, 0, 18)
-      .fill(0xd32f2f)
-      .stroke({ width: 1.5, color: 0xffea00 });
-
-    const btnNextLabel = new Text({
-      text: this.currentLevelIndex < LEVELS.length - 1 ? "▶️" : "🔄",
+    // 8. Matched Avatars (Thành viên Bộ Lạc)
+    const tribeText = new Text({
+      text: "— THÀNH VIÊN BỘ LẠC —",
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 15,
-        fill: 0xffffff,
+        fontSize: 11,
+        fill: 0xd4af37,
         fontWeight: "bold",
+        letterSpacing: 1,
       }),
     });
-    btnNextLabel.anchor.set(0.5);
-    btnNext.addChild(btnNextBg, btnNextLabel);
-    btnNext.on("pointertap", () => {
+    tribeText.anchor.set(0.5);
+    tribeText.position.set(190, 368);
+    overlay.addChild(tribeText);
+
+    // 8. Matched Avatars (Thành viên Bộ Lạc) - Single horizontal row with dynamic scaling and jumping animation
+    const avatarCount = uniqueAvatars.length;
+    const maxRowWidth = 320;
+    const avatarSpacing = avatarCount > 10 ? 3 : 6;
+
+    // Dynamically calculate size to fit in one row
+    let avatarSize =
+      (maxRowWidth - (avatarCount - 1) * avatarSpacing) / avatarCount;
+    // Keep between 16px and 42px
+    avatarSize = Math.max(16, Math.min(42, Math.floor(avatarSize)));
+
+    const avatarListContainer = new Container();
+    overlay.addChild(avatarListContainer);
+
+    const circlesToBounce = [];
+    const rowWidth = avatarCount * (avatarSize + avatarSpacing) - avatarSpacing;
+
+    uniqueAvatars.forEach((avatarFile, idx) => {
+      const avatarCircle = new Container();
+      avatarCircle.position.set(
+        idx * (avatarSize + avatarSpacing) + avatarSize / 2,
+        0,
+      );
+
+      const ring = new Graphics()
+        .circle(0, 0, avatarSize / 2)
+        .stroke({ width: 1.5, color: 0xd4af37 });
+
+      const spriteMask = new Graphics()
+        .circle(0, 0, avatarSize / 2)
+        .fill(0xffffff);
+
+      let texture;
+      try {
+        texture = Assets.get(getAvatarPath(avatarFile));
+      } catch (e) {
+        console.warn("Avatar texture not preloaded:", e);
+      }
+
+      if (texture) {
+        const sprite = new Sprite(texture);
+        sprite.anchor.set(0.5);
+        sprite.width = avatarSize;
+        sprite.height = avatarSize;
+        avatarCircle.addChild(sprite, spriteMask);
+        sprite.mask = spriteMask;
+      }
+      avatarCircle.addChild(ring);
+      avatarListContainer.addChild(avatarCircle);
+      circlesToBounce.push(avatarCircle);
+    });
+
+    // Position container centered at x=190, and vertically aligned at y=418
+    avatarListContainer.pivot.set(rowWidth / 2, 0);
+    avatarListContainer.position.set(190, 400);
+
+    // Add staggered bounce/dancing animation to unique avatars
+    const bounceTween = gsap.to(circlesToBounce, {
+      y: "-=8",
+      duration: 0.5,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut",
+      stagger: {
+        each: 0.08,
+        from: "start",
+      },
+    });
+    this.victoryTweens.push(bounceTween);
+
+    // 9. Capsule Action Buttons
+    const drawCapsuleButton = (x, y, label, type, onClick) => {
+      const btn = new Container();
+      btn.eventMode = "static";
+      btn.cursor = "pointer";
+      btn.position.set(x, y);
+
+      let colors;
+      let labelColor = 0xffffff;
+      if (type === "red") {
+        colors = [0xd32f2f, 0x8a1c1c];
+      } else if (type === "green") {
+        colors = [0x4caf50, 0x2e7d32];
+      } else {
+        colors = [0xffea00, 0xb89326];
+        labelColor = 0x1b0103;
+      }
+
+      const btnW = 114;
+      const btnH = 42;
+
+      const grad = new FillGradient({
+        start: { x: -btnW / 2, y: -btnH / 2 },
+        end: { x: btnW / 2, y: btnH / 2 },
+        colorStops: [
+          { offset: 0, color: colors[0] },
+          { offset: 1, color: colors[1] },
+        ],
+      });
+
+      const bg = new Graphics()
+        .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 10)
+        .fill(grad)
+        .stroke({ width: 1.5, color: type === "gold" ? 0x1b0103 : 0xffea00 });
+
+      const spaceIdx = label.indexOf(" ");
+      if (spaceIdx !== -1 && label.charCodeAt(0) > 127) {
+        const emoji = label.substring(0, spaceIdx);
+        const textStr = label.substring(spaceIdx + 1);
+
+        const emojiText = new Text({
+          text: emoji,
+          style: new TextStyle({
+            fontFamily: "Outfit, sans-serif",
+            fontSize: 22,
+            fill: labelColor,
+          }),
+        });
+        emojiText.anchor.set(0.5);
+        btn.addChild(emojiText);
+
+        const txt = new Text({
+          text: textStr,
+          style: new TextStyle({
+            fontFamily: "Outfit, sans-serif",
+            fontSize: 10.5,
+            fill: labelColor,
+            fontWeight: "bold",
+          }),
+        });
+        txt.anchor.set(0.5);
+        btn.addChild(txt);
+
+        // Align emoji and text horizontally
+        const gap = 5;
+        const totalW = emojiText.width + gap + txt.width;
+        emojiText.x = -totalW / 2 + emojiText.width / 2;
+        txt.x = totalW / 2 - txt.width / 2;
+      } else {
+        const txt = new Text({
+          text: label,
+          style: new TextStyle({
+            fontFamily: "Outfit, sans-serif",
+            fontSize: 11,
+            fill: labelColor,
+            fontWeight: "bold",
+          }),
+        });
+        txt.anchor.set(0.5);
+        btn.addChild(txt);
+      }
+
+      btn.addChild(bg);
+      // Ensure text layers are drawn on top of the bg
+      if (btn.children.length > 1) {
+        // bg is added last, so put it at index 0
+        btn.setChildIndex(bg, 0);
+      }
+
+      btn.on("pointertap", onClick);
+      btn.on("pointerover", () => {
+        gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+      });
+      btn.on("pointerout", () => {
+        gsap.to(btn.scale, { x: 1, y: 1, duration: 0.15 });
+      });
+
+      return btn;
+    };
+
+    // Home button
+    const btnHome = drawCapsuleButton(72, 485, "🏠 TRANG CHỦ", "red", () =>
+      this.switchState("MAIN_MENU"),
+    );
+
+    // Double score button
+    const btnDouble = drawCapsuleButton(
+      190,
+      485,
+      "📺 x2 ĐIỂM",
+      "gold",
+      async () => {
+        const success = await AdManager.showRewardedVideo();
+        if (success) {
+          this.score = this.score * 2;
+          gsap.killTweensOf(statsObj);
+          valScore.text = this.score.toString();
+          btnDouble.visible = false;
+        }
+      },
+    );
+
+    // Play next level
+    const nextBtnLabel =
+      this.currentLevelIndex < LEVELS.length - 1
+        ? "▶️ CHƠI TIẾP"
+        : "🔄 CHƠI LẠI";
+    const btnNext = drawCapsuleButton(308, 485, nextBtnLabel, "green", () => {
       const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
       this.initGame(nextIdx);
     });
 
-    btnNext.on("pointerover", () => {
-      gsap.to(btnNext.scale, { x: 1.12, y: 1.12, duration: 0.15 });
+    overlay.addChild(btnHome, btnDouble, btnNext);
+
+    // Staggered Entrance Animations
+    btnHome.scale.set(0);
+    btnDouble.scale.set(0);
+    btnNext.scale.set(0);
+    gsap.to(btnHome.scale, {
+      x: 1,
+      y: 1,
+      duration: 0.4,
+      delay: 0.6,
+      ease: "back.out(1.7)",
     });
-    btnNext.on("pointerout", () => {
-      gsap.to(btnNext.scale, { x: 1, y: 1, duration: 0.15 });
+    gsap.to(btnDouble.scale, {
+      x: 1,
+      y: 1,
+      duration: 0.4,
+      delay: 0.75,
+      ease: "back.out(1.7)",
     });
-
-    overlay.addChild(btnNext);
-
-    // Home button (Left)
-    const btnHome = new Container();
-    btnHome.eventMode = "static";
-    btnHome.cursor = "pointer";
-    btnHome.position.set(110, 185);
-
-    const btnHomeBg = new Graphics();
-    btnHomeBg
-      .circle(0, 0, 18)
-      .fill(0x1b0103)
-      .stroke({ width: 1.5, color: 0xd4af37 });
-
-    const btnHomeLabel = new Text({
-      text: "🏠",
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 15,
-        fill: 0xffffff,
-        fontWeight: "bold",
-      }),
-    });
-    btnHomeLabel.anchor.set(0.5);
-    btnHome.addChild(btnHomeBg, btnHomeLabel);
-    btnHome.on("pointertap", () => this.switchState("MAIN_MENU"));
-
-    btnHome.on("pointerover", () => {
-      gsap.to(btnHome.scale, { x: 1.12, y: 1.12, duration: 0.15 });
-    });
-    btnHome.on("pointerout", () => {
-      gsap.to(btnHome.scale, { x: 1, y: 1, duration: 0.15 });
+    gsap.to(btnNext.scale, {
+      x: 1,
+      y: 1,
+      duration: 0.4,
+      delay: 0.9,
+      ease: "back.out(1.7)",
     });
 
-    overlay.addChild(btnHome);
+    // 10. Spawn Continuous Confetti Fireworks
+    this.victoryIntervalId = setInterval(() => {
+      if (!this.isGameOver) {
+        clearInterval(this.victoryIntervalId);
+        return;
+      }
+      this.particles.spawnBurst(
+        Math.random() * this.app.screen.width,
+        Math.random() * this.app.screen.height * 0.6,
+        18,
+      );
+    }, 800);
 
-    overlay.pivot.set(180, 120);
-    const overlayScale = Math.min(
-      1.0,
-      this.app.screen.width / 450,
-      this.app.screen.height / 650,
-    );
-    overlay.scale.set(overlayScale);
-    overlay.x = this.app.screen.width / 2;
-    overlay.y = this.app.screen.height / 2;
-
-    this.overlayContainer.addChild(overlay);
-
+    // Initial fireworks bursts
     for (let i = 0; i < 4; i++) {
       setTimeout(() => {
+        if (!this.isGameOver) return;
         this.particles.spawnBurst(
-          this.app.screen.width / 2 + (Math.random() - 0.5) * 200,
-          this.app.screen.height / 2 + (Math.random() - 0.5) * 200,
+          this.app.screen.width / 2 + (Math.random() - 0.5) * 240,
+          this.app.screen.height / 2 + (Math.random() - 0.5) * 240,
           35,
         );
       }, i * 300);
@@ -1148,6 +2087,23 @@ export class GameController extends Container {
   triggerDefeat() {
     this.isGameOver = true;
     audio.playFail();
+
+    // 1. Board shake on defeat to make it feel dramatic
+    const originalGridX = this.gridContainer.x;
+    gsap.fromTo(
+      this.gridContainer,
+      { x: originalGridX - 10 },
+      {
+        x: originalGridX + 10,
+        duration: 0.05,
+        repeat: 10,
+        yoyo: true,
+        ease: "sine.inOut",
+        onComplete: () => {
+          this.gridContainer.x = originalGridX;
+        },
+      },
+    );
 
     const overlay = new Graphics();
     overlay
@@ -1206,7 +2162,14 @@ export class GameController extends Container {
     });
     btnRetryLabel.anchor.set(0.5);
     btnRetry.addChild(btnRetryBg, btnRetryLabel);
-    btnRetry.on("pointertap", () => this.initGame(this.currentLevelIndex));
+    btnRetry.on("pointertap", async () => {
+      this.defeatCount = (this.defeatCount || 0) + 1;
+      if (this.defeatCount >= 3) {
+        this.defeatCount = 0;
+        await AdManager.showInterstitial();
+      }
+      this.initGame(this.currentLevelIndex);
+    });
 
     btnRetry.on("pointerover", () => {
       gsap.to(btnRetry.scale, { x: 1.12, y: 1.12, duration: 0.15 });
@@ -1216,6 +2179,49 @@ export class GameController extends Container {
     });
 
     overlay.addChild(btnRetry);
+
+    // Continue button (Rewarded Ad) - positioned in the middle
+    const btnContinue = new Container();
+    btnContinue.eventMode = "static";
+    btnContinue.cursor = "pointer";
+    btnContinue.position.set(180, 170);
+
+    const btnContinueBg = new Graphics();
+    btnContinueBg
+      .circle(0, 0, 18)
+      .fill(0xffea00)
+      .stroke({ width: 1.5, color: 0x1b0103 });
+
+    const btnContinueLabel = new Text({
+      text: "⏱️",
+      style: new TextStyle({
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 15,
+        fill: 0x1b0103,
+        fontWeight: "bold",
+      }),
+    });
+    btnContinueLabel.anchor.set(0.5);
+    btnContinue.addChild(btnContinueBg, btnContinueLabel);
+
+    btnContinue.on("pointertap", async () => {
+      const success = await AdManager.showRewardedVideo();
+      if (success) {
+        this.timeRemaining += 30;
+        this.isGameOver = false;
+        this.overlayContainer.removeChild(overlay);
+        this.switchState("PLAYING");
+      }
+    });
+
+    btnContinue.on("pointerover", () => {
+      gsap.to(btnContinue.scale, { x: 1.12, y: 1.12, duration: 0.15 });
+    });
+    btnContinue.on("pointerout", () => {
+      gsap.to(btnContinue.scale, { x: 1, y: 1, duration: 0.15 });
+    });
+
+    overlay.addChild(btnContinue);
 
     // Home button (Left)
     const btnHome = new Container();
@@ -1251,17 +2257,51 @@ export class GameController extends Container {
 
     overlay.addChild(btnHome);
 
+    // 2. Elastic Entrance for Defeat Modal
     overlay.pivot.set(180, 110);
     const overlayScale = Math.min(
       1.0,
       this.app.screen.width / 450,
       this.app.screen.height / 650,
     );
-    overlay.scale.set(overlayScale);
+    overlay.scale.set(0);
     overlay.x = this.app.screen.width / 2;
     overlay.y = this.app.screen.height / 2;
 
     this.overlayContainer.addChild(overlay);
+
+    gsap.to(overlay.scale, {
+      x: overlayScale,
+      y: overlayScale,
+      duration: 0.75,
+      ease: "back.out(1.5)",
+    });
+
+    // 3. Staggered Button Entrance Animations
+    btnHome.scale.set(0);
+    btnContinue.scale.set(0);
+    btnRetry.scale.set(0);
+    gsap.to(btnHome.scale, {
+      x: 1,
+      y: 1,
+      duration: 0.35,
+      delay: 0.45,
+      ease: "back.out(1.7)",
+    });
+    gsap.to(btnContinue.scale, {
+      x: 1,
+      y: 1,
+      duration: 0.35,
+      delay: 0.58,
+      ease: "back.out(1.7)",
+    });
+    gsap.to(btnRetry.scale, {
+      x: 1,
+      y: 1,
+      duration: 0.35,
+      delay: 0.7,
+      ease: "back.out(1.7)",
+    });
   }
 
   updateStatsUI() {
@@ -1581,10 +2621,10 @@ export class GameController extends Container {
         logoY + logoHeight / 2 + 70 * scale,
       );
 
-      const btnW = Math.max(150, Math.min(200, 200 * scale));
-      const btnH = Math.max(30, Math.min(40, 40 * scale));
+      const btnW = Math.max(180, Math.min(240, 240 * scale));
+      const btnH = Math.max(42, Math.min(56, 56 * scale));
       const startY = logoY + logoHeight / 2 + 105 * scale;
-      const spacing = 14 * scale;
+      const spacing = 18 * scale;
 
       this.playBtn.position.set(sw / 2, startY);
       this.playBtn.updateStyle(btnW, btnH);
@@ -1610,8 +2650,8 @@ export class GameController extends Container {
       );
       this.levelSelectTitle.position.set(sw / 2, sh * 0.22);
 
-      const btnW = Math.max(160, Math.min(220, 220 * scale));
-      const btnH = Math.max(30, Math.min(38, 38 * scale));
+      const btnW = Math.max(180, Math.min(240, 240 * scale));
+      const btnH = Math.max(42, Math.min(56, 56 * scale));
       const startY = sh * 0.35;
       const spacing = 12 * scale;
 
@@ -1788,23 +2828,23 @@ export class GameController extends Container {
         }
 
         // Close button
-        const closeBtnW = Math.max(110, Math.min(140, 140 * scale));
-        const closeBtnH = Math.max(28, Math.min(34, 34 * scale));
+        const closeBtnW = Math.max(150, Math.min(200, 200 * scale));
+        const closeBtnH = Math.max(42, Math.min(56, 56 * scale));
         this.lbCloseBtn.position.set(sw / 2, cardY + cardH - 30 * scale);
         this.lbCloseBtn.updateStyle(closeBtnW, closeBtnH);
       }
 
-      const btnW = Math.max(120, Math.min(160, 160 * scale));
-      const btnH = Math.max(28, Math.min(36, 36 * scale));
+      const btnW = Math.max(150, Math.min(200, 200 * scale));
+      const btnH = Math.max(42, Math.min(56, 56 * scale));
       this.resetStatsBtn.position.set(
-        sw / 2 - 90 * scale,
-        panelY + panelH + 25 * scale,
+        sw / 2 - 115 * scale,
+        panelY + panelH + 50 * scale,
       );
       this.resetStatsBtn.updateStyle(btnW, btnH, false);
 
       this.achievementsBackBtn.position.set(
-        sw / 2 + 90 * scale,
-        panelY + panelH + 25 * scale,
+        sw / 2 + 115 * scale,
+        panelY + panelH + 50 * scale,
       );
       this.achievementsBackBtn.updateStyle(btnW, btnH, true);
     }
@@ -1877,25 +2917,32 @@ export class GameController extends Container {
       this.gridContainer.y =
         startGridY + Math.max(0, (remainingHeight - gridH * gridScale) / 2);
 
-      const ctrlY = sh - 35;
-      const btnRadius = 18;
+      const ctrlY = sh - 42;
+      const btnRadius = 26;
 
-      this.homeButton.position.set(sw / 2 - 65, ctrlY);
+      this.homeButton.position.set(sw / 2 - 105, ctrlY);
       this.homeButton.bg
         .clear()
         .circle(0, 0, btnRadius)
         .fill({ color: 0x360207, alpha: 0.85 })
         .stroke({ width: 1.5, color: 0xd4af37 });
 
-      this.muteButton.position.set(sw / 2, ctrlY);
+      this.muteButton.position.set(sw / 2 - 35, ctrlY);
       this.muteButton.bg
         .clear()
         .circle(0, 0, btnRadius)
         .fill({ color: 0x360207, alpha: 0.85 })
         .stroke({ width: 1.5, color: audio.isMuted ? 0xd32f2f : 0xffea00 });
 
-      this.restartButton.position.set(sw / 2 + 65, ctrlY);
+      this.restartButton.position.set(sw / 2 + 35, ctrlY);
       this.restartButton.bg
+        .clear()
+        .circle(0, 0, btnRadius)
+        .fill({ color: 0x360207, alpha: 0.85 })
+        .stroke({ width: 1.5, color: 0xffea00 });
+
+      this.hintButton.position.set(sw / 2 + 105, ctrlY);
+      this.hintButton.bg
         .clear()
         .circle(0, 0, btnRadius)
         .fill({ color: 0x360207, alpha: 0.85 })
