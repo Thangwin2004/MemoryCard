@@ -14,9 +14,9 @@ import { AVATAR_FILES } from "./symbols";
 import { LacBirdFlock } from "./chimlac";
 
 const LEVELS = [
-  { name: "TẬP SỰ (4x4)", cols: 4, rows: 4, maxTime: 60, pairs: 8 },
-  { name: "CHUYÊN GIA (4x5)", cols: 5, rows: 4, maxTime: 90, pairs: 10 },
-  { name: "VÔ SONG (6x6)", cols: 6, rows: 6, maxTime: 150, pairs: 18 },
+  { name: "🟢 4x4", cols: 4, rows: 4, maxTime: 60, pairs: 8 },
+  { name: "🟡 4x5", cols: 5, rows: 4, maxTime: 90, pairs: 10 },
+  { name: "🔴 6x6", cols: 6, rows: 6, maxTime: 150, pairs: 18 },
 ];
 
 const LOCAL_STORAGE_KEY = "bolacdauphong_memory_stats";
@@ -66,21 +66,38 @@ function createMenuButton(text, onClick) {
   const bg = new Graphics();
   btn.addChild(bg);
 
-  const label = new Text({
-    text: text,
-    style: new TextStyle({
-      fontFamily: "Outfit, sans-serif",
-      fontSize: 15,
-      fill: "#ffffff",
-      fontWeight: "bold",
-      letterSpacing: 1,
-    }),
-  });
-  label.anchor.set(0.5);
-  btn.addChild(label);
+  if (text === "GOOGLE_ICON") {
+    // Load and display the official Google brand logo PNG
+    const icon = new Sprite();
+    btn.addChild(icon);
+    btn.icon = icon;
+    Assets.load("/google_logo.png")
+      .then((texture) => {
+        icon.texture = texture;
+        icon.anchor.set(0.5);
+        icon.width = 18;
+        icon.height = 18;
+      })
+      .catch((err) => {
+        console.error("Failed to load google_logo.png:", err);
+      });
+  } else {
+    const label = new Text({
+      text: text,
+      style: new TextStyle({
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 20,
+        fill: "#ffffff",
+        fontWeight: "bold",
+        letterSpacing: 1,
+      }),
+    });
+    label.anchor.set(0.5);
+    btn.addChild(label);
+    btn.label = label;
+  }
 
   btn.bg = bg;
-  btn.label = label;
   btn.w = 120;
   btn.h = 32;
   btn.isRed = true;
@@ -106,7 +123,8 @@ function createMenuButton(text, onClick) {
       .roundRect(-btn.w / 2, -btn.h / 2, btn.w, btn.h, 8)
       .fill({ color: btn.isRed ? 0x5c0612 : 0x1b0103, alpha: 0.95 })
       .stroke({ width: 2.5, color: 0xffea00 });
-    label.style.fill = "#ffea00";
+    if (btn.label) btn.label.style.fill = "#ffea00";
+    if (btn.icon && text !== "GOOGLE_ICON") btn.icon.tint = 0xffea00;
   });
 
   btn.on("pointerout", () => {
@@ -115,7 +133,8 @@ function createMenuButton(text, onClick) {
       .roundRect(-btn.w / 2, -btn.h / 2, btn.w, btn.h, 8)
       .fill({ color: btn.isRed ? 0x5c0612 : 0x1b0103, alpha: 0.9 })
       .stroke({ width: 1.5, color: 0xd4af37 });
-    label.style.fill = "#ffffff";
+    if (btn.label) btn.label.style.fill = "#ffffff";
+    if (btn.icon && text !== "GOOGLE_ICON") btn.icon.tint = 0xffffff;
   });
 
   return btn;
@@ -275,23 +294,23 @@ export class GameController extends Container {
     this.menuSubtitleText.anchor.set(0.5);
     this.mainMenuContainer.addChild(this.menuSubtitleText);
 
-    this.playBtn = createMenuButton("CHƠI NGAY", () => {
+    this.playBtn = createMenuButton("🎮", () => {
       this.initGame(this.currentLevelIndex);
       this.switchState("PLAYING");
     });
     this.mainMenuContainer.addChild(this.playBtn);
 
-    this.levelSelectBtn = createMenuButton("CHỌN CẤP ĐỘ", () => {
+    this.levelSelectBtn = createMenuButton("🧩", () => {
       this.switchState("LEVEL_SELECT");
     });
     this.mainMenuContainer.addChild(this.levelSelectBtn);
 
-    this.achievementsBtn = createMenuButton("THÀNH TÍCH", () => {
+    this.achievementsBtn = createMenuButton("🏆", () => {
       this.switchState("ACHIEVEMENTS");
     });
     this.mainMenuContainer.addChild(this.achievementsBtn);
 
-    this.googleLoginBtn = createMenuButton("ĐĂNG NHẬP GOOGLE", () => {
+    this.googleLoginBtn = createMenuButton("GOOGLE_ICON", () => {
       this.showGoogleLoginModal();
     });
     this.mainMenuContainer.addChild(this.googleLoginBtn);
@@ -328,7 +347,7 @@ export class GameController extends Container {
       this.levelButtons.push(btn);
     });
 
-    this.levelBackBtn = createMenuButton("QUAY LẠI", () => {
+    this.levelBackBtn = createMenuButton("↩️", () => {
       this.switchState("MAIN_MENU");
     });
     this.levelSelectContainer.addChild(this.levelBackBtn);
@@ -446,7 +465,7 @@ export class GameController extends Container {
       this.achievementRows.push(row);
     });
 
-    this.resetStatsBtn = createMenuButton("XÓA THÀNH TÍCH", () => {
+    this.resetStatsBtn = createMenuButton("🗑️", () => {
       saveStats({
         totalWins: 0,
         records: {
@@ -459,7 +478,7 @@ export class GameController extends Container {
     });
     this.achievementsContainer.addChild(this.resetStatsBtn);
 
-    this.achievementsBackBtn = createMenuButton("QUAY LẠI", () => {
+    this.achievementsBackBtn = createMenuButton("↩️", () => {
       this.switchState("MAIN_MENU");
     });
     this.achievementsContainer.addChild(this.achievementsBackBtn);
@@ -546,7 +565,7 @@ export class GameController extends Container {
       this.lbColDate,
     );
 
-    this.lbCloseBtn = createMenuButton("ĐÓNG", () => {
+    this.lbCloseBtn = createMenuButton("❌", () => {
       this.leaderboardModal.visible = false;
     });
     this.leaderboardModal.addChild(this.lbCloseBtn);
@@ -611,16 +630,16 @@ export class GameController extends Container {
     this.homeButton.eventMode = "static";
     this.homeButton.cursor = "pointer";
     const homeBg = new Graphics();
-    const homeLabel = new Text({
-      text: "TRỜ VỀ",
+    this.homeText = new Text({
+      text: "🏠",
       style: new TextStyle({
-        fontFamily: "Outfit",
-        fontSize: 12,
-        fill: 0xffffff,
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 14,
+        fill: "#ffffff",
       }),
     });
-    homeLabel.anchor.set(0.5);
-    this.homeButton.addChild(homeBg, homeLabel);
+    this.homeText.anchor.set(0.5);
+    this.homeButton.addChild(homeBg, this.homeText);
     this.homeButton.bg = homeBg;
     this.homeButton.on("pointertap", () => {
       this.isGameOver = true; // halt gameplay loop
@@ -633,20 +652,25 @@ export class GameController extends Container {
     this.muteButton.cursor = "pointer";
     const muteBg = new Graphics();
     this.muteText = new Text({
-      text: "ÂM THANH: BẬT",
+      text: audio.isMuted ? "🔇" : "🔊",
       style: new TextStyle({
-        fontFamily: "Outfit",
-        fontSize: 12,
-        fill: 0xffffff,
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 14,
+        fill: "#ffffff",
       }),
     });
     this.muteText.anchor.set(0.5);
     this.muteButton.addChild(muteBg, this.muteText);
     this.muteButton.bg = muteBg;
+
+    this.drawMuteIcon = (isMuted) => {
+      this.muteText.text = isMuted ? "🔇" : "🔊";
+    };
+
     this.muteButton.on("pointertap", () => {
       const isMuted = audio.toggleMute();
-      this.muteText.text = isMuted ? "ÂM THANH: TẮT" : "ÂM THANH: BẬT";
-      this.muteButton.bg.tint = isMuted ? 0xd32f2f : 0xffea00;
+      this.drawMuteIcon(isMuted);
+      this.resize();
     });
     this.gamePlayContainer.addChild(this.muteButton);
 
@@ -654,16 +678,16 @@ export class GameController extends Container {
     this.restartButton.eventMode = "static";
     this.restartButton.cursor = "pointer";
     const restartBg = new Graphics();
-    const restartLabel = new Text({
-      text: "LÀM MỚI",
+    this.restartText = new Text({
+      text: "🔄",
       style: new TextStyle({
-        fontFamily: "Outfit",
-        fontSize: 12,
-        fill: 0xffffff,
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 14,
+        fill: "#ffffff",
       }),
     });
-    restartLabel.anchor.set(0.5);
-    this.restartButton.addChild(restartBg, restartLabel);
+    this.restartText.anchor.set(0.5);
+    this.restartButton.addChild(restartBg, this.restartText);
     this.restartButton.bg = restartBg;
     this.restartButton.on("pointertap", () =>
       this.initGame(this.currentLevelIndex),
@@ -991,11 +1015,10 @@ export class GameController extends Container {
       .stroke({ width: 1.5, color: 0xffea00 });
 
     const btnNextLabel = new Text({
-      text:
-        this.currentLevelIndex < LEVELS.length - 1 ? "TIẾP THEO" : "CHƠI LẠI",
+      text: this.currentLevelIndex < LEVELS.length - 1 ? "▶️" : "🔄",
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 11,
+        fontSize: 15,
         fill: 0xffffff,
         fontWeight: "bold",
       }),
@@ -1021,10 +1044,10 @@ export class GameController extends Container {
       .stroke({ width: 1.5, color: 0xd4af37 });
 
     const btnHomeLabel = new Text({
-      text: "TRỞ VỀ MENU",
+      text: "🏠",
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 11,
+        fontSize: 15,
         fill: 0xffffff,
         fontWeight: "bold",
       }),
@@ -1108,10 +1131,10 @@ export class GameController extends Container {
       .stroke({ width: 1.5, color: 0xffea00 });
 
     const btnRetryLabel = new Text({
-      text: "THỬ LẠI",
+      text: "🔄",
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 11,
+        fontSize: 15,
         fill: 0xffffff,
         fontWeight: "bold",
       }),
@@ -1134,10 +1157,10 @@ export class GameController extends Container {
       .stroke({ width: 1.5, color: 0xd4af37 });
 
     const btnHomeLabel = new Text({
-      text: "TRỞ VỀ MENU",
+      text: "🏠",
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 11,
+        fontSize: 15,
         fill: 0xffffff,
         fontWeight: "bold",
       }),

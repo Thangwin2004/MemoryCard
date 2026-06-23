@@ -48,6 +48,22 @@ export class Card extends Container {
     this.frontContainer.addChild(frontMask);
     this.frontContainer.mask = frontMask;
 
+    // Front border graphics to draw outline on top of the avatar
+    this.frontBorder = new Graphics();
+    drawPeanutPath(this.frontBorder, width / 2, height / 2, width, height);
+    this.frontBorder.stroke({
+      width: 2,
+      color: 0xd4af37,
+      alignment: 0.5,
+    });
+    drawPeanutPath(this.frontBorder, width / 2, height / 2, width, height, 6);
+    this.frontBorder.stroke({
+      width: 1,
+      color: 0xd4af37,
+      alpha: 0.25,
+    });
+    this.frontContainer.addChild(this.frontBorder);
+
     // Load and add avatar sprite
     this.avatarSprite = null;
     this.loadAvatar();
@@ -98,12 +114,16 @@ export class Card extends Container {
       this.avatarSprite.x = this.w / 2;
       this.avatarSprite.y = this.h / 2;
 
-      // Fit inside card with padding
-      const maxDim = Math.min(this.w, this.h) * 0.75;
-      const scale = maxDim / Math.max(texture.width, texture.height);
+      // Fit to cover the card completely, leaving no white margins inside the mask
+      const scaleX = this.w / texture.width;
+      const scaleY = this.h / texture.height;
+      const scale = Math.max(scaleX, scaleY);
       this.avatarSprite.scale.set(scale);
 
       this.frontContainer.addChild(this.avatarSprite);
+      if (this.frontBorder) {
+        this.frontContainer.addChild(this.frontBorder);
+      }
     } catch (e) {
       console.error("Error loading avatar texture:", e);
     }
