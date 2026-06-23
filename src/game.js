@@ -1867,69 +1867,76 @@ export class GameController extends Container {
       window.parent.postMessage({ type: "get_user_profile" }, "*");
     }
 
-    // 6. Real Google Identity Services (GSI) Integration
-    try {
-      if (window.google && window.google.accounts) {
-        window.google.accounts.id.initialize({
-          client_id: "55776077309-8pco7q4b260ghldp.apps.googleusercontent.com",
-          callback: (response) => {
-            try {
-              const jwt = response.credential;
-              const base64Url = jwt.split(".")[1];
-              const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-              const jsonPayload = decodeURIComponent(
-                window
-                  .atob(base64)
-                  .split("")
-                  .map(
-                    (c) =>
-                      "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2),
-                  )
-                  .join(""),
-              );
-              const payload = JSON.parse(jsonPayload);
-              currentUser = {
-                id: payload.sub,
-                name: payload.name,
-                avatar: payload.picture,
-                email: payload.email,
-              };
-              window.localStorage.setItem(
-                "google_user",
-                JSON.stringify(currentUser),
-              );
-
-              if (modal) modal.classList.remove("active");
-
-              // Notify parent of successful login
-              if (window.parent !== window) {
-                window.parent.postMessage(
-                  { type: "google_login_success", user: currentUser },
-                  "*",
+    // 6. Real Google Identity Services (GSI) Integration with polling fallback
+    const initRealGoogleSignIn = () => {
+      try {
+        if (window.google && window.google.accounts) {
+          window.google.accounts.id.initialize({
+            client_id:
+              "55776077309-8pco7q4b260ghldp.apps.googleusercontent.com",
+            callback: (response) => {
+              try {
+                const jwt = response.credential;
+                const base64Url = jwt.split(".")[1];
+                const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+                const jsonPayload = decodeURIComponent(
+                  window
+                    .atob(base64)
+                    .split("")
+                    .map(
+                      (c) =>
+                        "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2),
+                    )
+                    .join(""),
                 );
-              }
-              this.updateUserUI();
-            } catch (err) {
-              console.error("Failed to parse Google JWT credential:", err);
-            }
-          },
-        });
+                const payload = JSON.parse(jsonPayload);
+                currentUser = {
+                  id: payload.sub,
+                  name: payload.name,
+                  avatar: payload.picture,
+                  email: payload.email,
+                };
+                window.localStorage.setItem(
+                  "google_user",
+                  JSON.stringify(currentUser),
+                );
 
-        // Render the official Google Sign-in button
-        const realBtnContainer = document.getElementById(
-          "google-real-signin-btn",
-        );
-        if (realBtnContainer) {
-          window.google.accounts.id.renderButton(realBtnContainer, {
-            theme: "outline",
-            size: "large",
-            width: 260,
+                if (modal) modal.classList.remove("active");
+
+                // Notify parent of successful login
+                if (window.parent !== window) {
+                  window.parent.postMessage(
+                    { type: "google_login_success", user: currentUser },
+                    "*",
+                  );
+                }
+                this.updateUserUI();
+              } catch (err) {
+                console.error("Failed to parse Google JWT credential:", err);
+              }
+            },
           });
+
+          // Render the official Google Sign-in button
+          const realBtnContainer = document.getElementById(
+            "google-real-signin-btn",
+          );
+          if (realBtnContainer) {
+            window.google.accounts.id.renderButton(realBtnContainer, {
+              theme: "outline",
+              size: "large",
+              width: 260,
+            });
+          }
+        } else {
+          // If not loaded yet, retry in 100ms
+          setTimeout(initRealGoogleSignIn, 100);
         }
+      } catch (e) {
+        console.warn("GSI client initialization was blocked or failed:", e);
       }
-    } catch (e) {
-      console.warn("GSI client initialization was blocked or failed:", e);
-    }
+    };
+    initRealGoogleSignIn();
 
     // Load saved user from local storage
     try {
