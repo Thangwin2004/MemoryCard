@@ -12,6 +12,7 @@ import { ParticleSystem } from "./particles";
 import { audio } from "./audio";
 import { AVATAR_FILES } from "./symbols";
 import { LacBirdFlock } from "./chimlac";
+import gsap from "gsap";
 
 const LEVELS = [
   { name: "🟢 4x4", cols: 4, rows: 4, maxTime: 60, pairs: 8 },
@@ -66,8 +67,23 @@ function createMenuButton(text, onClick) {
   const bg = new Graphics();
   btn.addChild(bg);
 
-  if (text === "GOOGLE_ICON") {
-    // Load and display the official Google brand logo PNG
+  if (text.startsWith("GOOGLE_ICON")) {
+    const displayText = text.includes(":") ? text.split(":")[1] : "ĐĂNG NHẬP";
+
+    const label = new Text({
+      text: displayText,
+      style: new TextStyle({
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 12,
+        fill: "#ffffff",
+        fontWeight: "bold",
+        letterSpacing: 0.5,
+      }),
+    });
+    label.anchor.set(0.5);
+    btn.addChild(label);
+    btn.label = label;
+
     const icon = new Sprite();
     btn.addChild(icon);
     btn.icon = icon;
@@ -75,8 +91,14 @@ function createMenuButton(text, onClick) {
       .then((texture) => {
         icon.texture = texture;
         icon.anchor.set(0.5);
-        icon.width = 18;
-        icon.height = 18;
+        icon.width = 16;
+        icon.height = 16;
+
+        // Position icon and label horizontally centered
+        const gap = 8;
+        const totalW = icon.width + gap + label.width;
+        icon.x = -totalW / 2 + icon.width / 2;
+        label.x = totalW / 2 - label.width / 2;
       })
       .catch((err) => {
         console.error("Failed to load google_logo.png:", err);
@@ -86,10 +108,10 @@ function createMenuButton(text, onClick) {
       text: text,
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 20,
+        fontSize: 13,
         fill: "#ffffff",
         fontWeight: "bold",
-        letterSpacing: 1,
+        letterSpacing: 0.5,
       }),
     });
     label.anchor.set(0.5);
@@ -124,7 +146,6 @@ function createMenuButton(text, onClick) {
       .fill({ color: btn.isRed ? 0x5c0612 : 0x1b0103, alpha: 0.95 })
       .stroke({ width: 2.5, color: 0xffea00 });
     if (btn.label) btn.label.style.fill = "#ffea00";
-    if (btn.icon && text !== "GOOGLE_ICON") btn.icon.tint = 0xffea00;
   });
 
   btn.on("pointerout", () => {
@@ -134,7 +155,6 @@ function createMenuButton(text, onClick) {
       .fill({ color: btn.isRed ? 0x5c0612 : 0x1b0103, alpha: 0.9 })
       .stroke({ width: 1.5, color: 0xd4af37 });
     if (btn.label) btn.label.style.fill = "#ffffff";
-    if (btn.icon && text !== "GOOGLE_ICON") btn.icon.tint = 0xffffff;
   });
 
   return btn;
@@ -294,25 +314,28 @@ export class GameController extends Container {
     this.menuSubtitleText.anchor.set(0.5);
     this.mainMenuContainer.addChild(this.menuSubtitleText);
 
-    this.playBtn = createMenuButton("🎮", () => {
+    this.playBtn = createMenuButton("🎮 BẮT ĐẦU", () => {
       this.initGame(this.currentLevelIndex);
       this.switchState("PLAYING");
     });
     this.mainMenuContainer.addChild(this.playBtn);
 
-    this.levelSelectBtn = createMenuButton("🧩", () => {
+    this.levelSelectBtn = createMenuButton("🧩 CHỌN CẤP ĐỘ", () => {
       this.switchState("LEVEL_SELECT");
     });
     this.mainMenuContainer.addChild(this.levelSelectBtn);
 
-    this.achievementsBtn = createMenuButton("🏆", () => {
+    this.achievementsBtn = createMenuButton("🏆 BẢNG VÀNG", () => {
       this.switchState("ACHIEVEMENTS");
     });
     this.mainMenuContainer.addChild(this.achievementsBtn);
 
-    this.googleLoginBtn = createMenuButton("GOOGLE_ICON", () => {
-      this.showGoogleLoginModal();
-    });
+    this.googleLoginBtn = createMenuButton(
+      "GOOGLE_ICON:ĐĂNG NHẬP GOOGLE",
+      () => {
+        this.showGoogleLoginModal();
+      },
+    );
     this.mainMenuContainer.addChild(this.googleLoginBtn);
 
     // --- 2. LEVEL SELECT SCREEN ---
@@ -347,7 +370,7 @@ export class GameController extends Container {
       this.levelButtons.push(btn);
     });
 
-    this.levelBackBtn = createMenuButton("↩️", () => {
+    this.levelBackBtn = createMenuButton("↩️ QUAY LẠI", () => {
       this.switchState("MAIN_MENU");
     });
     this.levelSelectContainer.addChild(this.levelBackBtn);
@@ -465,7 +488,7 @@ export class GameController extends Container {
       this.achievementRows.push(row);
     });
 
-    this.resetStatsBtn = createMenuButton("🗑️", () => {
+    this.resetStatsBtn = createMenuButton("🗑️ XÓA DỮ LIỆU", () => {
       saveStats({
         totalWins: 0,
         records: {
@@ -478,7 +501,7 @@ export class GameController extends Container {
     });
     this.achievementsContainer.addChild(this.resetStatsBtn);
 
-    this.achievementsBackBtn = createMenuButton("↩️", () => {
+    this.achievementsBackBtn = createMenuButton("↩️ QUAY LẠI", () => {
       this.switchState("MAIN_MENU");
     });
     this.achievementsContainer.addChild(this.achievementsBackBtn);
@@ -565,7 +588,7 @@ export class GameController extends Container {
       this.lbColDate,
     );
 
-    this.lbCloseBtn = createMenuButton("❌", () => {
+    this.lbCloseBtn = createMenuButton("❌ ĐÓNG", () => {
       this.leaderboardModal.visible = false;
     });
     this.leaderboardModal.addChild(this.lbCloseBtn);
@@ -693,6 +716,19 @@ export class GameController extends Container {
       this.initGame(this.currentLevelIndex),
     );
     this.gamePlayContainer.addChild(this.restartButton);
+
+    // Add hover scaling effects to make buttons feel premium
+    const addHoverScaling = (btn) => {
+      btn.on("pointerover", () => {
+        gsap.to(btn.scale, { x: 1.12, y: 1.12, duration: 0.15 });
+      });
+      btn.on("pointerout", () => {
+        gsap.to(btn.scale, { x: 1, y: 1, duration: 0.15 });
+      });
+    };
+    addHoverScaling(this.homeButton);
+    addHoverScaling(this.muteButton);
+    addHoverScaling(this.restartButton);
   }
 
   switchState(newState) {
@@ -1023,7 +1059,7 @@ export class GameController extends Container {
 
     const btnNextBg = new Graphics();
     btnNextBg
-      .roundRect(-60, -16, 120, 32, 16)
+      .circle(0, 0, 18)
       .fill(0xd32f2f)
       .stroke({ width: 1.5, color: 0xffea00 });
 
@@ -1042,6 +1078,14 @@ export class GameController extends Container {
       const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
       this.initGame(nextIdx);
     });
+
+    btnNext.on("pointerover", () => {
+      gsap.to(btnNext.scale, { x: 1.12, y: 1.12, duration: 0.15 });
+    });
+    btnNext.on("pointerout", () => {
+      gsap.to(btnNext.scale, { x: 1, y: 1, duration: 0.15 });
+    });
+
     overlay.addChild(btnNext);
 
     // Home button (Left)
@@ -1052,7 +1096,7 @@ export class GameController extends Container {
 
     const btnHomeBg = new Graphics();
     btnHomeBg
-      .roundRect(-60, -16, 120, 32, 16)
+      .circle(0, 0, 18)
       .fill(0x1b0103)
       .stroke({ width: 1.5, color: 0xd4af37 });
 
@@ -1068,6 +1112,14 @@ export class GameController extends Container {
     btnHomeLabel.anchor.set(0.5);
     btnHome.addChild(btnHomeBg, btnHomeLabel);
     btnHome.on("pointertap", () => this.switchState("MAIN_MENU"));
+
+    btnHome.on("pointerover", () => {
+      gsap.to(btnHome.scale, { x: 1.12, y: 1.12, duration: 0.15 });
+    });
+    btnHome.on("pointerout", () => {
+      gsap.to(btnHome.scale, { x: 1, y: 1, duration: 0.15 });
+    });
+
     overlay.addChild(btnHome);
 
     overlay.pivot.set(180, 120);
@@ -1139,7 +1191,7 @@ export class GameController extends Container {
 
     const btnRetryBg = new Graphics();
     btnRetryBg
-      .roundRect(-60, -16, 120, 32, 16)
+      .circle(0, 0, 18)
       .fill(0xd32f2f)
       .stroke({ width: 1.5, color: 0xffea00 });
 
@@ -1155,6 +1207,14 @@ export class GameController extends Container {
     btnRetryLabel.anchor.set(0.5);
     btnRetry.addChild(btnRetryBg, btnRetryLabel);
     btnRetry.on("pointertap", () => this.initGame(this.currentLevelIndex));
+
+    btnRetry.on("pointerover", () => {
+      gsap.to(btnRetry.scale, { x: 1.12, y: 1.12, duration: 0.15 });
+    });
+    btnRetry.on("pointerout", () => {
+      gsap.to(btnRetry.scale, { x: 1, y: 1, duration: 0.15 });
+    });
+
     overlay.addChild(btnRetry);
 
     // Home button (Left)
@@ -1165,7 +1225,7 @@ export class GameController extends Container {
 
     const btnHomeBg = new Graphics();
     btnHomeBg
-      .roundRect(-60, -16, 120, 32, 16)
+      .circle(0, 0, 18)
       .fill(0x1b0103)
       .stroke({ width: 1.5, color: 0xd4af37 });
 
@@ -1181,6 +1241,14 @@ export class GameController extends Container {
     btnHomeLabel.anchor.set(0.5);
     btnHome.addChild(btnHomeBg, btnHomeLabel);
     btnHome.on("pointertap", () => this.switchState("MAIN_MENU"));
+
+    btnHome.on("pointerover", () => {
+      gsap.to(btnHome.scale, { x: 1.12, y: 1.12, duration: 0.15 });
+    });
+    btnHome.on("pointerout", () => {
+      gsap.to(btnHome.scale, { x: 1, y: 1, duration: 0.15 });
+    });
+
     overlay.addChild(btnHome);
 
     overlay.pivot.set(180, 110);
@@ -1810,26 +1878,26 @@ export class GameController extends Container {
         startGridY + Math.max(0, (remainingHeight - gridH * gridScale) / 2);
 
       const ctrlY = sh - 35;
-      const ctrlBtnW = 100;
-      const ctrlBtnH = 26;
+      const btnRadius = 18;
 
-      this.homeButton.position.set(sw / 2 - 120, ctrlY);
+      this.homeButton.position.set(sw / 2 - 65, ctrlY);
       this.homeButton.bg
         .clear()
-        .roundRect(-ctrlBtnW / 2, -ctrlBtnH / 2, ctrlBtnW, ctrlBtnH, 13)
+        .circle(0, 0, btnRadius)
         .fill({ color: 0x360207, alpha: 0.85 })
         .stroke({ width: 1.5, color: 0xd4af37 });
 
       this.muteButton.position.set(sw / 2, ctrlY);
       this.muteButton.bg
         .clear()
-        .roundRect(-ctrlBtnW / 2, -ctrlBtnH / 2, ctrlBtnW, ctrlBtnH, 13)
+        .circle(0, 0, btnRadius)
         .fill({ color: 0x360207, alpha: 0.85 })
         .stroke({ width: 1.5, color: audio.isMuted ? 0xd32f2f : 0xffea00 });
-      this.restartButton.position.set(sw / 2 + 120, ctrlY);
+
+      this.restartButton.position.set(sw / 2 + 65, ctrlY);
       this.restartButton.bg
         .clear()
-        .roundRect(-ctrlBtnW / 2, -ctrlBtnH / 2, ctrlBtnW, ctrlBtnH, 13)
+        .circle(0, 0, btnRadius)
         .fill({ color: 0x360207, alpha: 0.85 })
         .stroke({ width: 1.5, color: 0xffea00 });
     }
