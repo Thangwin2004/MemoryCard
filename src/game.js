@@ -354,6 +354,18 @@ export class GameController extends Container {
     this.achievementsTitle.anchor.set(0.5);
     this.achievementsContainer.addChild(this.achievementsTitle);
 
+    this.achievementsUserText = new Text({
+      text: "",
+      style: new TextStyle({
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 13,
+        fill: 0xffea00,
+        fontWeight: "bold",
+      }),
+    });
+    this.achievementsUserText.anchor.set(0.5);
+    this.achievementsContainer.addChild(this.achievementsUserText);
+
     this.achievementsPanel = new Graphics();
     this.achievementsContainer.addChild(this.achievementsPanel);
 
@@ -680,6 +692,16 @@ export class GameController extends Container {
   }
 
   updateAchievementsDisplay() {
+    if (this.achievementsUserText) {
+      if (currentUser) {
+        this.achievementsUserText.text = `Tài khoản: ${currentUser.name} (Đăng nhập Google)`;
+        this.achievementsUserText.style.fill = 0xffea00;
+      } else {
+        this.achievementsUserText.text = `Tài khoản: Khách (Điểm lưu thiết bị)`;
+        this.achievementsUserText.style.fill = 0xcccccc;
+      }
+    }
+
     const stats = getStats();
     LEVELS.forEach((level, idx) => {
       const record = stats.records[idx];
@@ -1508,7 +1530,15 @@ export class GameController extends Container {
         18,
         Math.min(28, 28 * scale),
       );
-      this.achievementsTitle.position.set(sw / 2, sh * 0.18);
+      this.achievementsTitle.position.set(sw / 2, sh * 0.14);
+
+      if (this.achievementsUserText) {
+        this.achievementsUserText.style.fontSize = Math.max(
+          10,
+          Math.min(13, 13 * scale),
+        );
+        this.achievementsUserText.position.set(sw / 2, sh * 0.19);
+      }
 
       const panelW = Math.min(sw * 0.95, 520);
       const panelH = Math.max(170, Math.min(230, 230 * scale));
