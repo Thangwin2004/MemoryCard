@@ -34,6 +34,7 @@ import { GameController } from "./game";
 
   // 6. Connect window resize to game layout updates
   window.addEventListener("resize", () => {
+    app.renderer.resize(window.innerWidth, window.innerHeight);
     game.resize();
   });
 })();
