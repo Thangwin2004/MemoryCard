@@ -704,6 +704,19 @@ export class GameController extends Container {
     this.gamePlayContainer.visible = newState === "PLAYING";
     this.gridContainer.visible = newState === "PLAYING";
 
+    // Hide or show the user profile widget depending on state to prevent overlapping during gameplay
+    const profileWidget = document.getElementById("user-profile");
+    if (profileWidget) {
+      if (newState === "PLAYING") {
+        profileWidget.style.display = "none";
+      } else {
+        const savedUser = window.localStorage.getItem("google_user");
+        if (savedUser) {
+          profileWidget.style.display = "flex";
+        }
+      }
+    }
+
     if (newState !== "PLAYING") {
       this.overlayContainer.removeChildren();
     }
