@@ -233,7 +233,7 @@ function createMenuButton(text, onClick) {
         icon.height = 24;
 
         // Position icon and label horizontally centered
-        const gap = 8;
+        const gap = 12;
         const totalW = icon.width + gap + label.width;
         icon.x = -totalW / 2 + icon.width / 2;
         label.x = totalW / 2 - label.width / 2;
@@ -273,7 +273,7 @@ function createMenuButton(text, onClick) {
       btn.label = label;
 
       // Align emoji and text horizontally
-      const gap = 8;
+      const gap = 12;
       const totalW = emojiText.width + gap + label.width;
       emojiText.x = -totalW / 2 + emojiText.width / 2;
       label.x = totalW / 2 - label.width / 2;
@@ -978,6 +978,10 @@ export class GameController extends Container {
         this.app.ticker.remove(this.raysTickerFn);
         this.raysTickerFn = null;
       }
+      if (this.victoryParadeTickerFn) {
+        this.app.ticker.remove(this.victoryParadeTickerFn);
+        this.victoryParadeTickerFn = null;
+      }
       if (this.victoryTweens) {
         this.victoryTweens.forEach((t) => t.kill());
         this.victoryTweens = [];
@@ -1675,90 +1679,90 @@ export class GameController extends Container {
 
     // 7. Horizontal Stats Panel (Enlarged 4-column horizontal stats box replacing vertical list)
     const statsPanel = new Graphics()
-      .roundRect(20, 215, 340, 95, 12)
+      .roundRect(20, 210, 340, 115, 12)
       .fill({ color: 0x1b0103, alpha: 0.8 })
       .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.75 });
     overlay.addChild(statsPanel);
 
     const colLabelStyle = new TextStyle({
       fontFamily: "Outfit, sans-serif",
-      fontSize: 9,
+      fontSize: 12,
       fill: 0xb89326,
       fontWeight: "bold",
     });
 
     const colValueStyle = new TextStyle({
       fontFamily: "Outfit, sans-serif",
-      fontSize: 18,
+      fontSize: 20,
       fill: 0xffea00,
       fontWeight: "900",
     });
 
     const colIconStyle = new TextStyle({
       fontFamily: "Outfit, sans-serif",
-      fontSize: 24,
+      fontSize: 32,
     });
 
     const colWidth = 340 / 4;
-    const colY = 215;
+    const colY = 210;
 
     // Column 0: Score
     const iconScore = new Text({ text: "🏆", style: colIconStyle });
     iconScore.anchor.set(0.5);
-    iconScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 22);
+    iconScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 28);
 
     const lblScore = new Text({ text: "ĐIỂM", style: colLabelStyle });
     lblScore.anchor.set(0.5);
-    lblScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 46);
+    lblScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 60);
 
     const valScore = new Text({ text: "0", style: colValueStyle });
     valScore.anchor.set(0.5);
-    valScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 70);
+    valScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 90);
 
     // Column 1: Moves
-    const iconMoves = new Text({ text: "👣", style: colIconStyle });
+    const iconMoves = new Text({ text: "🏃", style: colIconStyle });
     iconMoves.anchor.set(0.5);
-    iconMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 22);
+    iconMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 28);
 
     const lblMoves = new Text({ text: "LƯỢT ĐI", style: colLabelStyle });
     lblMoves.anchor.set(0.5);
-    lblMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 46);
+    lblMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 60);
 
     const valMoves = new Text({ text: "0", style: colValueStyle });
     valMoves.anchor.set(0.5);
-    valMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 70);
+    valMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 90);
 
     // Column 2: Time
-    const iconTime = new Text({ text: "🕒", style: colIconStyle });
+    const iconTime = new Text({ text: "⏱️", style: colIconStyle });
     iconTime.anchor.set(0.5);
-    iconTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 22);
+    iconTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 28);
 
     const lblTime = new Text({ text: "THỜI GIAN", style: colLabelStyle });
     lblTime.anchor.set(0.5);
-    lblTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 46);
+    lblTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 60);
 
     const valTime = new Text({ text: "00:00", style: colValueStyle });
     valTime.anchor.set(0.5);
-    valTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 70);
+    valTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 90);
 
     // Column 3: Accuracy
     const iconAccuracy = new Text({ text: "🎯", style: colIconStyle });
     iconAccuracy.anchor.set(0.5);
-    iconAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 22);
+    iconAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 28);
 
     const lblAccuracy = new Text({
       text: "ĐỘ CHÍNH XÁC",
       style: colLabelStyle,
     });
     lblAccuracy.anchor.set(0.5);
-    lblAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 46);
+    lblAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 60);
 
     const valAccuracy = new Text({
       text: `${accuracy}%`,
       style: colValueStyle,
     });
     valAccuracy.anchor.set(0.5);
-    valAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 70);
+    valAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 90);
 
     overlay.addChild(
       iconScore,
@@ -1790,7 +1794,7 @@ export class GameController extends Container {
       }),
     });
     congratsLabel.anchor.set(0.5);
-    congratsLabel.position.set(190, 332);
+    congratsLabel.position.set(190, 348);
     overlay.addChild(congratsLabel);
 
     // Stats GSAP Animations
@@ -1825,40 +1829,49 @@ export class GameController extends Container {
       }),
     });
     tribeText.anchor.set(0.5);
-    tribeText.position.set(190, 368);
+    tribeText.position.set(190, 380);
     overlay.addChild(tribeText);
 
-    // 8. Matched Avatars (Thành viên Bộ Lạc) - Single horizontal row with dynamic scaling and jumping animation
-    const avatarCount = uniqueAvatars.length;
-    const maxRowWidth = 320;
-    const avatarSpacing = avatarCount > 10 ? 3 : 6;
-
-    // Dynamically calculate size to fit in one row
-    let avatarSize =
-      (maxRowWidth - (avatarCount - 1) * avatarSpacing) / avatarCount;
-    // Keep between 16px and 42px
-    avatarSize = Math.max(16, Math.min(42, Math.floor(avatarSize)));
-
+    // 8. Matched Avatars (Thành viên Bộ Lạc) - Horizontal scrolling strip with mask and wrap-around ticker
     const avatarListContainer = new Container();
+    avatarListContainer.position.set(0, 426);
     overlay.addChild(avatarListContainer);
 
-    const circlesToBounce = [];
-    const rowWidth = avatarCount * (avatarSize + avatarSpacing) - avatarSpacing;
+    // Mask for the scrolling area to fit inside victory panel (width 340, from x=20 to x=360)
+    const paradeMask = new Graphics()
+      .rect(20, 396, 340, 60)
+      .fill(0xffffff);
+    overlay.addChild(paradeMask);
+    avatarListContainer.mask = paradeMask;
 
-    uniqueAvatars.forEach((avatarFile, idx) => {
-      const avatarCircle = new Container();
-      avatarCircle.position.set(
-        idx * (avatarSize + avatarSpacing) + avatarSize / 2,
-        0,
-      );
+    const paradeSprites = [];
+    const itemSpacing = 58;
+    const itemSize = 48;
 
-      const ring = new Graphics()
-        .circle(0, 0, avatarSize / 2)
-        .stroke({ width: 1.5, color: 0xd4af37 });
+    // Generate 16 items sequentially to cover width and enable seamless wrap scrolling
+    const numItems = 16;
+    for (let i = 0; i < numItems; i++) {
+      const avatarIdx = i % uniqueAvatars.length;
+      const avatarFile = uniqueAvatars[avatarIdx];
+
+      const itemContainer = new Container();
+      itemContainer.x = i * itemSpacing;
+      itemContainer.y = 0;
+      avatarListContainer.addChild(itemContainer);
+
+      // Styled circular gold frame to make it stand out
+      const frame = new Graphics()
+        .circle(0, 0, itemSize / 2 + 2)
+        .stroke({ width: 2.0, color: 0xffea00 }) // Bright gold
+        .circle(0, 0, itemSize / 2)
+        .fill({ color: 0x1b0103, alpha: 0.9 })
+        .stroke({ width: 1.0, color: 0xd4af37 });
+      itemContainer.addChild(frame);
 
       const spriteMask = new Graphics()
-        .circle(0, 0, avatarSize / 2)
+        .circle(0, 0, itemSize / 2)
         .fill(0xffffff);
+      itemContainer.addChild(spriteMask);
 
       let texture;
       try {
@@ -1870,33 +1883,32 @@ export class GameController extends Container {
       if (texture) {
         const sprite = new Sprite(texture);
         sprite.anchor.set(0.5);
-        sprite.width = avatarSize;
-        sprite.height = avatarSize;
-        avatarCircle.addChild(sprite, spriteMask);
+        sprite.width = itemSize;
+        sprite.height = itemSize;
         sprite.mask = spriteMask;
+        itemContainer.addChild(sprite);
       }
-      avatarCircle.addChild(ring);
-      avatarListContainer.addChild(avatarCircle);
-      circlesToBounce.push(avatarCircle);
-    });
 
-    // Position container centered at x=190, and vertically aligned at y=418
-    avatarListContainer.pivot.set(rowWidth / 2, 0);
-    avatarListContainer.position.set(190, 400);
+      paradeSprites.push(itemContainer);
+    }
 
-    // Add staggered bounce/dancing animation to unique avatars
-    const bounceTween = gsap.to(circlesToBounce, {
-      y: "-=8",
-      duration: 0.5,
-      yoyo: true,
-      repeat: -1,
-      ease: "sine.inOut",
-      stagger: {
-        each: 0.08,
-        from: "start",
-      },
-    });
-    this.victoryTweens.push(bounceTween);
+    // Horizontal scrolling ticker
+    const scrollParade = (ticker) => {
+      const speed = 0.8 * ticker.deltaTime;
+      paradeSprites.forEach((sprite) => {
+        sprite.x -= speed;
+        // Wrap once fully off the left edge of the mask (x = 20)
+        if (sprite.x < -40) {
+          let maxX = -9999;
+          paradeSprites.forEach((s) => {
+            if (s.x > maxX) maxX = s.x;
+          });
+          sprite.x = maxX + itemSpacing;
+        }
+      });
+    };
+    this.app.ticker.add(scrollParade);
+    this.victoryParadeTickerFn = scrollParade;
 
     // 9. Capsule Action Buttons
     const drawCapsuleButton = (x, y, label, type, onClick) => {
@@ -2623,8 +2635,8 @@ export class GameController extends Container {
 
       const btnW = Math.max(180, Math.min(240, 240 * scale));
       const btnH = Math.max(42, Math.min(56, 56 * scale));
-      const startY = logoY + logoHeight / 2 + 105 * scale;
-      const spacing = 18 * scale;
+      const startY = logoY + logoHeight / 2 + 130 * scale;
+      const spacing = 24 * scale;
 
       this.playBtn.position.set(sw / 2, startY);
       this.playBtn.updateStyle(btnW, btnH);
