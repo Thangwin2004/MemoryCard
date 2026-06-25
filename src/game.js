@@ -507,14 +507,6 @@ export class GameController extends Container {
     });
     this.mainMenuContainer.addChild(this.achievementsBtn);
 
-    this.googleLoginBtn = createMenuButton(
-      "GOOGLE_ICON:ĐĂNG NHẬP GOOGLE",
-      () => {
-        this.showGoogleLoginModal();
-      },
-    );
-    this.mainMenuContainer.addChild(this.googleLoginBtn);
-
     // --- 2. LEVEL SELECT SCREEN ---
     this.levelSelectTitle = new Text({
       text: "CHỌN CẤP ĐỘ",
@@ -998,7 +990,7 @@ export class GameController extends Container {
   updateAchievementsDisplay() {
     if (this.achievementsUserText) {
       if (currentUser) {
-        this.achievementsUserText.text = `Tài khoản: ${currentUser.name} (Đăng nhập Google)`;
+        this.achievementsUserText.text = `Tài khoản: ${currentUser.name} (Đã đăng nhập)`;
         this.achievementsUserText.style.fill = 0xffea00;
       } else {
         this.achievementsUserText.text = `Tài khoản: Khách (Điểm lưu thiết bị)`;
@@ -1838,9 +1830,7 @@ export class GameController extends Container {
     overlay.addChild(avatarListContainer);
 
     // Mask for the scrolling area to fit inside victory panel (width 340, from x=20 to x=360)
-    const paradeMask = new Graphics()
-      .rect(20, 396, 340, 60)
-      .fill(0xffffff);
+    const paradeMask = new Graphics().rect(20, 396, 340, 60).fill(0xffffff);
     overlay.addChild(paradeMask);
     avatarListContainer.mask = paradeMask;
 
@@ -2646,11 +2636,6 @@ export class GameController extends Container {
 
       this.achievementsBtn.position.set(sw / 2, startY + (btnH + spacing) * 2);
       this.achievementsBtn.updateStyle(btnW, btnH);
-
-      if (this.googleLoginBtn) {
-        this.googleLoginBtn.position.set(sw / 2, startY + (btnH + spacing) * 3);
-        this.googleLoginBtn.updateStyle(btnW, btnH, false); // dark gold style
-      }
     }
 
     // --- 2. Position LEVEL SELECT CONTAINER ---
@@ -3139,78 +3124,6 @@ export class GameController extends Container {
       window.parent.postMessage({ type: "get_user_profile" }, "*");
     }
 
-    // 6. Real Google Identity Services (GSI) Integration with polling fallback
-    const initRealGoogleSignIn = () => {
-      try {
-        if (window.google && window.google.accounts) {
-          window.google.accounts.id.initialize({
-            client_id:
-              import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-              "55776077309-8pco7q4b260ghldp.apps.googleusercontent.com",
-            callback: (response) => {
-              try {
-                const jwt = response.credential;
-                const base64Url = jwt.split(".")[1];
-                const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-                const jsonPayload = decodeURIComponent(
-                  window
-                    .atob(base64)
-                    .split("")
-                    .map(
-                      (c) =>
-                        "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2),
-                    )
-                    .join(""),
-                );
-                const payload = JSON.parse(jsonPayload);
-                currentUser = {
-                  id: payload.sub,
-                  name: payload.name,
-                  avatar: payload.picture,
-                  email: payload.email,
-                };
-                window.localStorage.setItem(
-                  "google_user",
-                  JSON.stringify(currentUser),
-                );
-
-                if (modal) modal.classList.remove("active");
-
-                // Notify parent of successful login
-                if (window.parent !== window) {
-                  window.parent.postMessage(
-                    { type: "google_login_success", user: currentUser },
-                    "*",
-                  );
-                }
-                this.updateUserUI();
-              } catch (err) {
-                console.error("Failed to parse Google JWT credential:", err);
-              }
-            },
-          });
-
-          // Render the official Google Sign-in button
-          const realBtnContainer = document.getElementById(
-            "google-real-signin-btn",
-          );
-          if (realBtnContainer) {
-            window.google.accounts.id.renderButton(realBtnContainer, {
-              theme: "outline",
-              size: "large",
-              width: 260,
-            });
-          }
-        } else {
-          // If not loaded yet, retry in 100ms
-          setTimeout(initRealGoogleSignIn, 100);
-        }
-      } catch (e) {
-        console.warn("GSI client initialization was blocked or failed:", e);
-      }
-    };
-    initRealGoogleSignIn();
-
     // Load saved user from local storage
     try {
       const savedUser = window.localStorage.getItem("google_user");
@@ -3234,19 +3147,9 @@ export class GameController extends Container {
       if (profileWidget) profileWidget.style.display = "flex";
       if (avatarImg) avatarImg.src = currentUser.avatar;
       if (nameSpan) nameSpan.textContent = currentUser.name;
-
-      // Hide Google Sign In button in menu if it exists
-      if (this.googleLoginBtn) {
-        this.googleLoginBtn.visible = false;
-      }
     } else {
       // Hide profile widget
       if (profileWidget) profileWidget.style.display = "none";
-
-      // Show Google Sign In button in menu
-      if (this.googleLoginBtn) {
-        this.googleLoginBtn.visible = true;
-      }
     }
 
     // Refresh achievements display in case stats changed
@@ -3257,11 +3160,6 @@ export class GameController extends Container {
   showGoogleLoginModal() {
     if (window.parent !== window) {
       window.parent.postMessage({ type: "trigger_google_login" }, "*");
-    } else {
-      const modal = document.getElementById("google-login-modal");
-      if (modal) {
-        modal.classList.add("active");
-      }
     }
   }
 }
