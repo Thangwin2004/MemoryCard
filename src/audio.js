@@ -8,15 +8,21 @@ class AudioManager {
 
   init() {
     if (this.ctx) return;
-    // Initialize AudioContext lazily on user gesture
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    this.bgm = new Audio("/assest/music/music.mp3");
-    this.bgm.loop = true;
-    this.bgm.volume = 0.05;
-    if (!this.musicMuted) {
-      this.bgm
-        .play()
-        .catch((e) => console.log("BGM play deferred until interaction:", e));
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        this.ctx = new AudioCtx();
+      }
+      this.bgm = new Audio("/assest/music/music.mp3");
+      this.bgm.loop = true;
+      this.bgm.volume = 0.05;
+      if (!this.musicMuted && this.bgm) {
+        this.bgm
+          .play()
+          .catch((e) => console.log("BGM play deferred until interaction:", e));
+      }
+    } catch (e) {
+      console.warn("Audio initialization deferred/failed:", e);
     }
   }
 
