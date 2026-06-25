@@ -2,7 +2,8 @@ class AudioManager {
   constructor() {
     this.ctx = null;
     this.bgm = null;
-    this.isMuted = false;
+    this.musicMuted = false;
+    this.sfxMuted = false;
   }
 
   init() {
@@ -12,28 +13,33 @@ class AudioManager {
     this.bgm = new Audio("/assest/music/music.mp3");
     this.bgm.loop = true;
     this.bgm.volume = 0.05;
-    if (!this.isMuted) {
+    if (!this.musicMuted) {
       this.bgm
         .play()
         .catch((e) => console.log("BGM play deferred until interaction:", e));
     }
   }
 
-  toggleMute() {
-    this.isMuted = !this.isMuted;
+  toggleMusicMute() {
+    this.musicMuted = !this.musicMuted;
     if (this.bgm) {
-      if (this.isMuted) {
+      if (this.musicMuted) {
         this.bgm.pause();
       } else {
         this.bgm.play().catch((e) => console.log("BGM resume error:", e));
       }
     }
-    return this.isMuted;
+    return this.musicMuted;
+  }
+
+  toggleSfxMute() {
+    this.sfxMuted = !this.sfxMuted;
+    return this.sfxMuted;
   }
 
   playFlip() {
     this.init();
-    if (this.isMuted || !this.ctx) return;
+    if (this.sfxMuted || !this.ctx) return;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -54,7 +60,7 @@ class AudioManager {
 
   playMatch() {
     this.init();
-    if (this.isMuted || !this.ctx) return;
+    if (this.sfxMuted || !this.ctx) return;
 
     const playTone = (freq, delay, duration) => {
       const osc = this.ctx.createOscillator();
@@ -87,7 +93,7 @@ class AudioManager {
 
   playFail() {
     this.init();
-    if (this.isMuted || !this.ctx) return;
+    if (this.sfxMuted || !this.ctx) return;
 
     const playTone = (
       freq,
@@ -138,7 +144,7 @@ class AudioManager {
 
   playVictory() {
     this.init();
-    if (this.isMuted || !this.ctx) return;
+    if (this.sfxMuted || !this.ctx) return;
 
     const playTone = (freq, delay, duration, type = "sine", volume = 0.12) => {
       const osc = this.ctx.createOscillator();

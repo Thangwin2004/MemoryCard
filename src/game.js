@@ -190,6 +190,13 @@ function saveStats(stats) {
     const key = currentUser
       ? `${LOCAL_STORAGE_KEY}_${currentUser.id}`
       : LOCAL_STORAGE_KEY;
+    if (currentUser) {
+      stats.userName = currentUser.name;
+      stats.userId = currentUser.id;
+    } else {
+      stats.userName = "Khách";
+      stats.userId = "guest";
+    }
     window.localStorage.setItem(key, JSON.stringify(stats));
   } catch (e) {
     console.error("Error writing localStorage:", e);
@@ -257,6 +264,7 @@ function createMenuButton(text, onClick) {
       });
       emojiText.anchor.set(0.5);
       btn.addChild(emojiText);
+      btn.emojiText = emojiText;
 
       const label = new Text({
         text: textStr,
@@ -307,6 +315,27 @@ function createMenuButton(text, onClick) {
       .roundRect(-w / 2, -h / 2, w, h, 14)
       .fill({ color: isRed ? 0x5c0612 : 0x1b0103, alpha: 0.9 })
       .stroke({ width: 1.5, color: 0xd4af37 });
+
+    if (btn.label) {
+      if (w < 150) {
+        btn.label.style.fontSize = 11;
+        if (btn.emojiText) {
+          btn.emojiText.style.fontSize = 16;
+        }
+      } else {
+        btn.label.style.fontSize = 14;
+        if (btn.emojiText) {
+          btn.emojiText.style.fontSize = 26;
+        }
+      }
+
+      if (btn.emojiText) {
+        const gap = w < 150 ? 6 : 12;
+        const totalW = btn.emojiText.width + gap + btn.label.width;
+        btn.emojiText.x = -totalW / 2 + btn.emojiText.width / 2;
+        btn.label.x = totalW / 2 - btn.label.width / 2;
+      }
+    }
   };
 
   btn.on("pointertap", () => {
@@ -335,12 +364,209 @@ function createMenuButton(text, onClick) {
   return btn;
 }
 
+// New builders for modern styled UI
+function createPlayButton(text, onClick) {
+  const btn = new Container();
+  btn.eventMode = "static";
+  btn.cursor = "pointer";
+
+  const shadow = new Graphics();
+  const bg = new Graphics();
+  const highlight = new Graphics();
+  const icon = new Graphics();
+
+  btn.addChild(shadow);
+  btn.addChild(bg);
+  btn.addChild(highlight);
+  btn.addChild(icon);
+
+  btn.w = 76;
+  btn.h = 76;
+
+  btn.updateStyle = (w, h) => {
+    // Force square shape based on height to match the cartoon play icon
+    const size = Math.round(h * 1.35);
+    btn.w = size;
+    btn.h = size;
+
+    // 1. Soft 3D drop shadow (translucent black)
+    shadow
+      .clear()
+      .roundRect(-size / 2, -size / 2 + 6, size, size, 16)
+      .fill({ color: 0x000000, alpha: 0.45 });
+
+    // 2. 3D Extrusion base (deep luxurious lacquer burgundy)
+    bg.clear()
+      .roundRect(-size / 2, -size / 2 + 4, size, size, 16)
+      .fill({ color: 0x4a000a })
+      .stroke({ width: 1, color: 0x240003 });
+
+    // 3. Main button body - premium smooth gradient (light crimson to deep crimson lacquer)
+    const btnGrad = new FillGradient({
+      start: { x: 0, y: -size / 2 },
+      end: { x: 0, y: size / 2 },
+      colorStops: [
+        { offset: 0, color: 0xff3b4e }, // Vibrant crimson highlight
+        { offset: 0.4, color: 0xd32f2f }, // Standard lacquer red
+        { offset: 1, color: 0x6e0912 }, // Deep rich lacquer burgundy
+      ],
+    });
+
+    const goldGrad = new FillGradient({
+      start: { x: -size / 2, y: -size / 2 },
+      end: { x: size / 2, y: size / 2 },
+      colorStops: [
+        { offset: 0, color: 0xffea00 },
+        { offset: 0.5, color: 0xb89326 },
+        { offset: 1, color: 0xffea00 },
+      ],
+    });
+
+    bg.roundRect(-size / 2, -size / 2, size, size, 16)
+      .fill(btnGrad)
+      .stroke({ width: 2, fill: goldGrad });
+
+    // 4. Glossy highlight sheen on top
+    highlight
+      .clear()
+      .roundRect(-size / 2 + 4, -size / 2 + 3, size - 8, size * 0.35, 12)
+      .fill({ color: 0xffffff, alpha: 0.18 });
+
+    // 5. Play icon (triangle pointing right in gold with a nice 3D drop shadow)
+    const triW = size * 0.35;
+    const triH = size * 0.38;
+    icon
+      .clear()
+      // Shadow of the triangle
+      .poly([
+        -triW * 0.4 + 1,
+        -triH / 2 + 1.5,
+        triW * 0.6 + 1,
+        1.5,
+        -triW * 0.4 + 1,
+        triH / 2 + 1.5,
+      ])
+      .fill({ color: 0x000000, alpha: 0.5 })
+      // Main triangle in gold
+      .poly([-triW * 0.4, -triH / 2, triW * 0.6, 0, -triW * 0.4, triH / 2])
+      .fill(goldGrad)
+      .stroke({ width: 1.2, color: 0x3d0006 });
+  };
+
+  btn.updateStyle(btn.w, btn.h);
+
+  btn.on("pointertap", () => {
+    audio.playFlip();
+    onClick();
+  });
+
+  btn.on("pointerover", () => {
+    gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+  });
+
+  btn.on("pointerout", () => {
+    gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+  });
+
+  return btn;
+}
+
+function createCircularButton(emojiText, onClick) {
+  const btn = new Container();
+  btn.eventMode = "static";
+  btn.cursor = "pointer";
+
+  const shadow = new Graphics();
+  const bg = new Graphics();
+  const highlight = new Graphics();
+
+  btn.addChild(shadow);
+  btn.addChild(bg);
+  btn.addChild(highlight);
+
+  const label = new Text({
+    text: emojiText,
+    style: new TextStyle({
+      fontFamily: "Outfit, sans-serif",
+      fontSize: 22,
+      fill: "#ffffff",
+      dropShadow: { color: 0x000000, blur: 2, distance: 1.5 },
+    }),
+  });
+  label.anchor.set(0.5);
+  btn.addChild(label);
+
+  btn.r = 26;
+
+  btn.updateStyle = (r) => {
+    btn.r = r;
+
+    // 1. Soft 3D drop shadow (translucent black)
+    shadow.clear().circle(0, 4, r).fill({ color: 0x000000, alpha: 0.45 });
+
+    // 2. 3D Extrusion base (deep luxurious lacquer burgundy)
+    bg.clear()
+      .circle(0, 3, r)
+      .fill({ color: 0x4a000a })
+      .stroke({ width: 1, color: 0x240003 });
+
+    // 3. Main button body - premium smooth gradient (light crimson to deep crimson lacquer)
+    const btnGrad = new FillGradient({
+      start: { x: 0, y: -r },
+      end: { x: 0, y: r },
+      colorStops: [
+        { offset: 0, color: 0xff3b4e }, // Vibrant crimson highlight
+        { offset: 0.4, color: 0xd32f2f }, // Standard lacquer red
+        { offset: 1, color: 0x6e0912 }, // Deep rich lacquer burgundy
+      ],
+    });
+
+    const goldGrad = new FillGradient({
+      start: { x: -r, y: -r },
+      end: { x: r, y: r },
+      colorStops: [
+        { offset: 0, color: 0xffea00 },
+        { offset: 0.5, color: 0xb89326 },
+        { offset: 1, color: 0xffea00 },
+      ],
+    });
+
+    bg.circle(0, 0, r).fill(btnGrad).stroke({ width: 2, fill: goldGrad });
+
+    // 4. Glossy highlight sheen on top
+    highlight
+      .clear()
+      .ellipse(0, -r * 0.4, r * 0.7, r * 0.35)
+      .fill({ color: 0xffffff, alpha: 0.18 });
+
+    label.style.fontSize = Math.round(r * 0.95);
+  };
+
+  btn.updateStyle(btn.r);
+
+  btn.on("pointertap", () => {
+    audio.playFlip();
+    onClick();
+  });
+
+  btn.on("pointerover", () => {
+    gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+  });
+
+  btn.on("pointerout", () => {
+    gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+  });
+
+  return btn;
+}
+
 export class GameController extends Container {
   constructor(app) {
     super();
     this.app = app;
 
     this.currentLevelIndex = 0;
+    this.achievementsLevelIndex = 0;
     this.score = 0;
     this.moves = 0;
     this.matches = 0;
@@ -405,7 +631,9 @@ export class GameController extends Container {
     this.addChild(this.particles);
     this.addChild(this.overlayContainer);
 
-    // Logo Sprite
+    // Logo Container & Sprite
+    this.logoContainer = new Container();
+    this.mainMenuContainer.addChild(this.logoContainer);
     this.menuLogoSprite = null;
     this.loadLogo();
 
@@ -448,8 +676,27 @@ export class GameController extends Container {
       if (this.destroyed) return;
       this.menuLogoSprite = new Sprite(texture);
       this.menuLogoSprite.anchor.set(0.5);
-      this.mainMenuContainer.addChild(this.menuLogoSprite);
+      this.logoContainer.addChild(this.menuLogoSprite);
       this.resize();
+
+      // Slow floating bobbing effect
+      gsap.to(this.menuLogoSprite, {
+        y: 6,
+        duration: 2.2,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+
+      // Gentle breathing/pulsing scale effect
+      gsap.to(this.menuLogoSprite.scale, {
+        x: 1.05,
+        y: 1.05,
+        duration: 2.2,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
     } catch (e) {
       console.error("Error loading logo.png:", e);
     }
@@ -491,21 +738,28 @@ export class GameController extends Container {
     this.menuSubtitleText.anchor.set(0.5);
     this.mainMenuContainer.addChild(this.menuSubtitleText);
 
-    this.playBtn = createMenuButton("🎮 BẮT ĐẦU", () => {
-      this.initGame(this.currentLevelIndex);
-      this.switchState("PLAYING");
+    this.playBtn = createPlayButton("Chơi Game", () => {
+      this.switchState("LEVEL_SELECT");
     });
     this.mainMenuContainer.addChild(this.playBtn);
 
-    this.levelSelectBtn = createMenuButton("🧩 CHỌN CẤP ĐỘ", () => {
-      this.switchState("LEVEL_SELECT");
-    });
-    this.mainMenuContainer.addChild(this.levelSelectBtn);
-
-    this.achievementsBtn = createMenuButton("🏆 BẢNG VÀNG", () => {
-      this.switchState("ACHIEVEMENTS");
-    });
+    this.achievementsBtn = createCircularButton(
+      "🏆",
+      () => {
+        this.switchState("ACHIEVEMENTS");
+      },
+      "red",
+    );
     this.mainMenuContainer.addChild(this.achievementsBtn);
+
+    this.settingsBtn = createCircularButton(
+      "⚙️",
+      () => {
+        this.showSettingsModal(false);
+      },
+      "red",
+    );
+    this.mainMenuContainer.addChild(this.settingsBtn);
 
     // --- 2. LEVEL SELECT SCREEN ---
     this.levelSelectTitle = new Text({
@@ -580,127 +834,39 @@ export class GameController extends Container {
     this.achievementsPanel = new Graphics();
     this.achievementsContainer.addChild(this.achievementsPanel);
 
-    // Guide subtitle for viewing leaderboards
-    this.achievementsSub = new Text({
-      text: "(Nhấp vào từng cấp độ để xem Bảng Vàng Top 10)",
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 11,
-        fill: 0xd4af37,
-        fontStyle: "italic",
-        alpha: 0.85,
-      }),
-    });
-    this.achievementsSub.anchor.set(0.5);
-    this.achievementsContainer.addChild(this.achievementsSub);
-
-    this.achievementRows = [];
-    this.recordTitleTexts = [];
-    this.recordValueTexts = [];
-
-    LEVELS.forEach((level, idx) => {
-      const row = new Container();
-      row.eventMode = "static";
-      row.cursor = "pointer";
-
-      const rowBg = new Graphics();
-      row.addChild(rowBg);
-      row.bg = rowBg;
-
-      const titleLabel = new Text({
-        text: "",
-        style: new TextStyle({
-          fontFamily: "Outfit, sans-serif",
-          fontSize: 15,
-          fill: 0xffea00,
-          fontWeight: "bold",
-          letterSpacing: 1.2,
-        }),
-      });
-      titleLabel.anchor.set(0.5);
-      row.addChild(titleLabel);
-      row.titleLabel = titleLabel;
-      this.recordTitleTexts.push(titleLabel);
-
-      const valueLabel = new Text({
-        text: "",
-        style: new TextStyle({
-          fontFamily: "Outfit, sans-serif",
-          fontSize: 12.5,
-          fill: 0xffecb3,
-          fontWeight: "600",
-        }),
-      });
-      valueLabel.anchor.set(0.5);
-      row.addChild(valueLabel);
-      row.valueLabel = valueLabel;
-      this.recordValueTexts.push(valueLabel);
-
-      // Row hover effects
-      row.on("pointerover", () => {
-        rowBg
-          .clear()
-          .roundRect(-row.w / 2, -row.h / 2, row.w, row.h, 6)
-          .fill({ color: 0xd4af37, alpha: 0.12 })
-          .stroke({ width: 0.8, color: 0xd4af37, alpha: 0.3 });
-      });
-
-      row.on("pointerout", () => {
-        rowBg.clear();
-      });
-
-      row.on("pointertap", () => {
-        this.showLeaderboardModal(idx);
-      });
-
-      this.achievementsContainer.addChild(row);
-      this.achievementRows.push(row);
-    });
-
-    this.resetStatsBtn = createMenuButton("🗑️ XÓA DỮ LIỆU", () => {
-      saveStats({
-        totalWins: 0,
-        records: {
-          0: { highScore: 0, bestTime: 9999, fewestMoves: 999, history: [] },
-          1: { highScore: 0, bestTime: 9999, fewestMoves: 999, history: [] },
-          2: { highScore: 0, bestTime: 9999, fewestMoves: 999, history: [] },
-        },
-      });
+    // Left and Right arrows to switch levels
+    this.achievementsLeftArrow = createCircularButton("◀", () => {
+      audio.playFlip();
+      this.achievementsLevelIndex =
+        (this.achievementsLevelIndex - 1 + LEVELS.length) % LEVELS.length;
       this.updateAchievementsDisplay();
     });
-    this.achievementsContainer.addChild(this.resetStatsBtn);
-
-    this.achievementsBackBtn = createMenuButton("↩️ QUAY LẠI", () => {
-      this.switchState("MAIN_MENU");
+    this.achievementsRightArrow = createCircularButton("▶", () => {
+      audio.playFlip();
+      this.achievementsLevelIndex =
+        (this.achievementsLevelIndex + 1) % LEVELS.length;
+      this.updateAchievementsDisplay();
     });
-    this.achievementsContainer.addChild(this.achievementsBackBtn);
+    this.achievementsContainer.addChild(
+      this.achievementsLeftArrow,
+      this.achievementsRightArrow,
+    );
 
-    // --- 3.5. LEADERBOARD TOP 10 MODAL OVERLAY ---
-    this.leaderboardModal = new Container();
-    this.leaderboardModal.visible = false;
-    this.achievementsContainer.addChild(this.leaderboardModal);
-
-    this.lbOverlay = new Graphics();
-    this.lbOverlay.eventMode = "static"; // Intercept clicks underneath
-    this.leaderboardModal.addChild(this.lbOverlay);
-
-    this.lbCard = new Graphics();
-    this.leaderboardModal.addChild(this.lbCard);
-
-    this.lbTitle = new Text({
+    // Level name label
+    this.achievementsLevelLabel = new Text({
       text: "",
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
-        fontSize: 20,
+        fontSize: 22,
         fill: 0xffea00,
         fontWeight: "bold",
-        letterSpacing: 1.5,
-        align: "center",
+        dropShadow: { color: 0x2b050a, blur: 4, distance: 2 },
       }),
     });
-    this.lbTitle.anchor.set(0.5, 0);
-    this.leaderboardModal.addChild(this.lbTitle);
+    this.achievementsLevelLabel.anchor.set(0.5);
+    this.achievementsContainer.addChild(this.achievementsLevelLabel);
 
+    // Leaderboard Column Headers
     const headerStyle = new TextStyle({
       fontFamily: "Outfit, sans-serif",
       fontSize: 12,
@@ -708,59 +874,119 @@ export class GameController extends Container {
       fontWeight: "bold",
       align: "center",
     });
-
-    this.lbHeaderRank = new Text({ text: "HẠNG", style: headerStyle });
-    this.lbHeaderScore = new Text({ text: "ĐIỂM", style: headerStyle });
-    this.lbHeaderMoves = new Text({ text: "LƯỢT", style: headerStyle });
-    this.lbHeaderTime = new Text({ text: "THỜI GIAN", style: headerStyle });
-    this.lbHeaderDate = new Text({ text: "NGÀY", style: headerStyle });
-
-    this.lbHeaderRank.anchor.set(0.5, 0);
-    this.lbHeaderScore.anchor.set(0.5, 0);
-    this.lbHeaderMoves.anchor.set(0.5, 0);
-    this.lbHeaderTime.anchor.set(0.5, 0);
-    this.lbHeaderDate.anchor.set(0.5, 0);
-
-    this.leaderboardModal.addChild(
-      this.lbHeaderRank,
-      this.lbHeaderScore,
-      this.lbHeaderMoves,
-      this.lbHeaderTime,
-      this.lbHeaderDate,
-    );
-
-    const colStyle = new TextStyle({
-      fontFamily: "Outfit, sans-serif",
-      fontSize: 11.5,
-      fill: 0xffffff,
-      align: "center",
-      lineHeight: 22,
+    this.achievementsHeaderRank = new Text({
+      text: "HẠNG",
+      style: headerStyle,
+    });
+    this.achievementsHeaderScore = new Text({
+      text: "ĐIỂM",
+      style: headerStyle,
+    });
+    this.achievementsHeaderMoves = new Text({
+      text: "LƯỢT",
+      style: headerStyle,
+    });
+    this.achievementsHeaderTime = new Text({
+      text: "T.GIAN",
+      style: headerStyle,
+    });
+    this.achievementsHeaderDate = new Text({
+      text: "NGÀY",
+      style: headerStyle,
     });
 
-    this.lbColRank = new Text({ text: "", style: colStyle });
-    this.lbColScore = new Text({ text: "", style: colStyle });
-    this.lbColMoves = new Text({ text: "", style: colStyle });
-    this.lbColTime = new Text({ text: "", style: colStyle });
-    this.lbColDate = new Text({ text: "", style: colStyle });
+    this.achievementsHeaderRank.anchor.set(0.5, 0);
+    this.achievementsHeaderScore.anchor.set(0.5, 0);
+    this.achievementsHeaderMoves.anchor.set(0.5, 0);
+    this.achievementsHeaderTime.anchor.set(0.5, 0);
+    this.achievementsHeaderDate.anchor.set(0.5, 0);
 
-    this.lbColRank.anchor.set(0.5, 0);
-    this.lbColScore.anchor.set(0.5, 0);
-    this.lbColMoves.anchor.set(0.5, 0);
-    this.lbColTime.anchor.set(0.5, 0);
-    this.lbColDate.anchor.set(0.5, 0);
-
-    this.leaderboardModal.addChild(
-      this.lbColRank,
-      this.lbColScore,
-      this.lbColMoves,
-      this.lbColTime,
-      this.lbColDate,
+    this.achievementsContainer.addChild(
+      this.achievementsHeaderRank,
+      this.achievementsHeaderScore,
+      this.achievementsHeaderMoves,
+      this.achievementsHeaderTime,
+      this.achievementsHeaderDate,
     );
 
-    this.lbCloseBtn = createMenuButton("❌ ĐÓNG", () => {
-      this.leaderboardModal.visible = false;
+    // Container for dynamic rows and its mask
+    this.achievementsRowsContainer = new Container();
+    this.achievementsRowsContainer.eventMode = "none";
+    this.achievementsContainer.addChild(this.achievementsRowsContainer);
+
+    this.achievementsPersonalRankRow = null;
+
+    this.achievementsMask = new Graphics();
+    this.achievementsContainer.addChild(this.achievementsMask);
+    this.achievementsRowsContainer.mask = this.achievementsMask;
+
+    // Pointer-based touch dragging / swiping scrolling
+    this.achievementsPanel.eventMode = "static";
+    this.achievementsPanel.cursor = "default";
+
+    let isDragging = false;
+    let startY = 0;
+    let startContainerY = 0;
+
+    this.achievementsPanel.on("pointerdown", (e) => {
+      isDragging = true;
+      startY = e.global.y;
+      startContainerY = this.achievementsRowsContainer.y;
     });
-    this.leaderboardModal.addChild(this.lbCloseBtn);
+
+    this.achievementsPanel.on("globalpointermove", (e) => {
+      if (!isDragging) return;
+      const diffY = e.global.y - startY;
+      let targetY = startContainerY + diffY;
+
+      const minY =
+        typeof this.achievementsMinY === "number"
+          ? this.achievementsMinY
+          : targetY;
+      const maxY =
+        typeof this.achievementsMaxY === "number"
+          ? this.achievementsMaxY
+          : targetY;
+      targetY = Math.max(minY, Math.min(maxY, targetY));
+
+      this.achievementsRowsContainer.y = targetY;
+    });
+
+    const stopDrag = () => {
+      isDragging = false;
+    };
+
+    this.achievementsPanel.on("pointerup", stopDrag);
+    this.achievementsPanel.on("pointerupoutside", stopDrag);
+    this.achievementsPanel.on("pointercancel", stopDrag);
+
+    // Mouse wheel scrolling
+    this._onWheelScroll = (e) => {
+      if (this.gameState !== "ACHIEVEMENTS" || this.destroyed) return;
+      let targetY = this.achievementsRowsContainer.y - e.deltaY * 0.45;
+      const minY =
+        typeof this.achievementsMinY === "number"
+          ? this.achievementsMinY
+          : targetY;
+      const maxY =
+        typeof this.achievementsMaxY === "number"
+          ? this.achievementsMaxY
+          : targetY;
+      targetY = Math.max(minY, Math.min(maxY, targetY));
+
+      gsap.to(this.achievementsRowsContainer, {
+        y: targetY,
+        duration: 0.25,
+        ease: "power2.out",
+        overwrite: "auto",
+      });
+    };
+    window.addEventListener("wheel", this._onWheelScroll, { passive: true });
+
+    this.achievementsBackBtn = createMenuButton("↩️ QUAY LẠI", () => {
+      this.switchState("MAIN_MENU");
+    });
+    this.achievementsContainer.addChild(this.achievementsBackBtn);
 
     // --- 4. GAMEPLAY SCREEN ---
     this.gameTitleText = new Text({
@@ -837,34 +1063,22 @@ export class GameController extends Container {
       this.isGameOver = true; // halt gameplay loop
       this.switchState("MAIN_MENU");
     });
+    this.homeButton.on("pointerover", () => {
+      gsap.to(this.homeButton.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+    });
+    this.homeButton.on("pointerout", () => {
+      gsap.to(this.homeButton.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+    });
     this.gamePlayContainer.addChild(this.homeButton);
 
-    this.muteButton = new Container();
-    this.muteButton.eventMode = "static";
-    this.muteButton.cursor = "pointer";
-    const muteBg = new Graphics();
-    this.muteText = new Text({
-      text: audio.isMuted ? "🔇" : "🔊",
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 24,
-        fill: "#ffffff",
-      }),
-    });
-    this.muteText.anchor.set(0.5);
-    this.muteButton.addChild(muteBg, this.muteText);
-    this.muteButton.bg = muteBg;
-
-    this.drawMuteIcon = (isMuted) => {
-      this.muteText.text = isMuted ? "🔇" : "🔊";
-    };
-
-    this.muteButton.on("pointertap", () => {
-      const isMuted = audio.toggleMute();
-      this.drawMuteIcon(isMuted);
-      this.resize();
-    });
-    this.gamePlayContainer.addChild(this.muteButton);
+    this.settingsBtnIngame = createCircularButton(
+      "⚙️",
+      () => {
+        this.showSettingsModal(true);
+      },
+      "red",
+    );
+    this.gamePlayContainer.addChild(this.settingsBtnIngame);
 
     this.restartButton = new Container();
     this.restartButton.eventMode = "static";
@@ -884,6 +1098,12 @@ export class GameController extends Container {
     this.restartButton.on("pointertap", () =>
       this.initGame(this.currentLevelIndex),
     );
+    this.restartButton.on("pointerover", () => {
+      gsap.to(this.restartButton.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+    });
+    this.restartButton.on("pointerout", () => {
+      gsap.to(this.restartButton.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+    });
     this.gamePlayContainer.addChild(this.restartButton);
 
     // Hint button (Rewarded Ad)
@@ -902,6 +1122,12 @@ export class GameController extends Container {
     this.hintText.anchor.set(0.5);
     this.hintButton.addChild(hintBg, this.hintText);
     this.hintButton.bg = hintBg;
+    this.hintButton.on("pointerover", () => {
+      gsap.to(this.hintButton.scale, { x: 1.08, y: 1.08, duration: 0.15 });
+    });
+    this.hintButton.on("pointerout", () => {
+      gsap.to(this.hintButton.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+    });
     this.hintButton.on("pointertap", async () => {
       if (this.isHintActive) return;
       const success = await AdManager.showRewardedVideo();
@@ -929,7 +1155,6 @@ export class GameController extends Container {
       });
     };
     addHoverScaling(this.homeButton);
-    addHoverScaling(this.muteButton);
     addHoverScaling(this.restartButton);
     addHoverScaling(this.hintButton);
   }
@@ -988,6 +1213,11 @@ export class GameController extends Container {
   }
 
   updateAchievementsDisplay() {
+    if (this.achievementsPersonalRankRow) {
+      this.achievementsPersonalRankRow.destroy({ children: true });
+      this.achievementsPersonalRankRow = null;
+    }
+
     if (this.achievementsUserText) {
       if (currentUser) {
         this.achievementsUserText.text = `Tài khoản: ${currentUser.name} (Đã đăng nhập)`;
@@ -998,66 +1228,664 @@ export class GameController extends Container {
       }
     }
 
-    const stats = getStats();
-    LEVELS.forEach((level, idx) => {
-      const record = stats.records[idx];
-      const hasPlayed = record.highScore > 0;
+    const config = LEVELS[this.achievementsLevelIndex];
+    this.achievementsLevelLabel.text = `BẢNG VÀNG - ${config.name}`;
 
-      const scoreStr = hasPlayed ? `${record.highScore} điểm` : "--";
-      const movesStr = hasPlayed ? `${record.fewestMoves} lượt` : "--";
-      const timeStr =
-        hasPlayed && record.bestTime < 9999
-          ? `${Math.floor(record.bestTime)} giây`
-          : "--";
-
-      this.recordTitleTexts[idx].text = level.name;
-      this.recordValueTexts[idx].text =
-        `Điểm kỷ lục: ${scoreStr}   •   Lượt đi ít nhất: ${movesStr}   •   Thời gian tốt nhất: ${timeStr}`;
+    // Clear dynamic rows
+    this.achievementsRowsContainer.removeChildren().forEach((c) => {
+      c.destroy({ children: true });
     });
-  }
 
-  showLeaderboardModal(levelIndex) {
-    audio.playFlip();
+    const activeKey = currentUser
+      ? `${LOCAL_STORAGE_KEY}_${currentUser.id}`
+      : LOCAL_STORAGE_KEY;
 
-    const level = LEVELS[levelIndex];
-    const stats = getStats();
-    const record = stats.records[levelIndex];
-    const history = record.history || [];
+    // 1. Gather the best run of each profile on this device
+    const globalHistory = [];
+    try {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i);
+        if (key.startsWith(LOCAL_STORAGE_KEY)) {
+          const dataStr = window.localStorage.getItem(key);
+          if (dataStr) {
+            const statsObj = JSON.parse(dataStr);
+            let pName = "Khách";
+            if (statsObj.userName) {
+              pName = statsObj.userName;
+            } else if (key.startsWith(`${LOCAL_STORAGE_KEY}_`)) {
+              pName = "Người chơi";
+            }
 
-    this.leaderboardModal.visible = true;
-    this.leaderboardModal.levelIndex = levelIndex;
-
-    this.lbTitle.text = `BẢNG VÀNG - ${level.name.split("(")[0].trim()}`;
-
-    if (history.length === 0) {
-      this.lbColRank.text = "";
-      this.lbColScore.text = "";
-      this.lbColMoves.text = "";
-      this.lbColTime.text = "";
-      this.lbColDate.text = "Chưa có thành tích kỷ lục.";
-    } else {
-      let ranks = "";
-      let scores = "";
-      let moves = "";
-      let times = "";
-      let dates = "";
-
-      history.forEach((h, idx) => {
-        ranks += `${idx + 1}\n`;
-        scores += `${h.score}\n`;
-        moves += `${h.moves}\n`;
-        times += `${h.time}s\n`;
-        dates += `${h.date}\n`;
-      });
-
-      this.lbColRank.text = ranks;
-      this.lbColScore.text = scores;
-      this.lbColMoves.text = moves;
-      this.lbColTime.text = times;
-      this.lbColDate.text = dates;
+            const record =
+              statsObj.records && statsObj.records[this.achievementsLevelIndex];
+            const history = (record && record.history) || [];
+            if (history.length > 0) {
+              // The first element is their best run
+              const bestRun = history[0];
+              globalHistory.push({
+                ...bestRun,
+                playerName: pName,
+                profileKey: key,
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error gathering global leaderboard history:", e);
     }
 
+    // Sort global leaderboard: score desc, time asc, moves asc
+    globalHistory.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (a.time !== b.time) return a.time - b.time;
+      return a.moves - b.moves;
+    });
+
+    // Find the current active profile's best run on this level (first element since history is sorted)
+    const currentStats = getStats();
+    const currentRecord = currentStats.records[this.achievementsLevelIndex];
+    const currentHistory = (currentRecord && currentRecord.history) || [];
+    const levelBestRun = currentHistory.length > 0 ? currentHistory[0] : null;
+
+    const cellStyle = new TextStyle({
+      fontFamily: "Outfit, sans-serif",
+      fontSize: 12,
+      fill: "#ffffff",
+      fontWeight: "bold",
+    });
+
+    const highlightedStyle = new TextStyle({
+      fontFamily: "Outfit, sans-serif",
+      fontSize: 12,
+      fill: 0xffea00,
+      fontWeight: "900",
+      dropShadow: { color: 0x2b050a, blur: 2, distance: 1 },
+    });
+
+    // Gold, Silver, Bronze styles for top 3
+    const top1Style = new TextStyle({
+      fontFamily: "Outfit, sans-serif",
+      fontSize: 12,
+      fill: 0xffea00, // Gold
+      fontWeight: "900",
+      dropShadow: { color: 0x2b050a, blur: 2.5, distance: 1 },
+    });
+
+    const top2Style = new TextStyle({
+      fontFamily: "Outfit, sans-serif",
+      fontSize: 12,
+      fill: 0xe0e0e0, // Silver
+      fontWeight: "900",
+      dropShadow: { color: 0x2b050a, blur: 2.5, distance: 1 },
+    });
+
+    const top3Style = new TextStyle({
+      fontFamily: "Outfit, sans-serif",
+      fontSize: 12,
+      fill: 0xd4a373, // Bronze
+      fontWeight: "900",
+      dropShadow: { color: 0x2b050a, blur: 2.5, distance: 1 },
+    });
+
+    if (globalHistory.length === 0) {
+      const emptyRow = new Container();
+      emptyRow.emptyText = new Text({
+        text: "Chưa có thành tích kỷ lục.",
+        style: new TextStyle({
+          fontFamily: "Outfit, sans-serif",
+          fontSize: 14,
+          fill: "#ffffff",
+          align: "center",
+        }),
+      });
+      emptyRow.emptyText.anchor.set(0.5);
+      emptyRow.addChild(emptyRow.emptyText);
+      this.achievementsRowsContainer.addChild(emptyRow);
+    } else {
+      // Show top 10 unique players' best runs
+      const limit = Math.min(10, globalHistory.length);
+      for (let i = 0; i < limit; i++) {
+        const run = globalHistory[i];
+
+        // The run belongs to the active profile
+        const isCurrentPlayer = run.profileKey === activeKey;
+        const isHighlighted = isCurrentPlayer;
+
+        const row = new Container();
+        row.isPersonalRankRow = false;
+        row.isHighlightedPlayerRun = isHighlighted;
+
+        let style;
+        let rankText = `${i + 1}`;
+
+        if (i === 0) {
+          style = top1Style;
+          rankText = "🥇";
+        } else if (i === 1) {
+          style = top2Style;
+          rankText = "🥈";
+        } else if (i === 2) {
+          style = top3Style;
+          rankText = "🥉";
+        } else {
+          style = isHighlighted ? highlightedStyle : cellStyle;
+        }
+
+        if (isCurrentPlayer) {
+          rankText = `${rankText} 👤`;
+        }
+
+        const isTop3 = i < 3;
+        if (isHighlighted || isTop3) {
+          row.bgStripe = new Graphics();
+          row.addChild(row.bgStripe);
+        }
+
+        row.cellRank = new Text({ text: rankText, style });
+        row.cellScore = new Text({ text: `${run.score}`, style });
+        row.cellTime = new Text({ text: `${run.time}s`, style });
+
+        row.cellRank.anchor.set(0.5);
+        row.cellScore.anchor.set(0.5);
+        row.cellTime.anchor.set(0.5);
+
+        row.addChild(row.cellRank, row.cellScore, row.cellTime);
+        this.achievementsRowsContainer.addChild(row);
+      }
+
+      // Always show player's best run on this level at the bottom as a pinned footer (without the silhouette emoji)
+      if (levelBestRun) {
+        const userRankIndex = globalHistory.findIndex(
+          (run) => run.profileKey === activeKey,
+        );
+
+        let rankDisplay = 0;
+        if (userRankIndex !== -1) {
+          rankDisplay = userRankIndex + 1;
+        } else {
+          const betterCount = globalHistory.filter((r) => {
+            if (r.score !== levelBestRun.score)
+              return r.score > levelBestRun.score;
+            if (r.time !== levelBestRun.time) return r.time < levelBestRun.time;
+            return r.moves < levelBestRun.moves;
+          }).length;
+          rankDisplay = betterCount + 1;
+        }
+
+        const row = new Container();
+        row.isPersonalRankRow = true;
+        row.isHighlightedPlayerRun = true;
+
+        row.bgStripe = new Graphics();
+        row.addChild(row.bgStripe);
+
+        let rankText = `${rankDisplay}`;
+        if (rankDisplay === 1) rankText = "🥇";
+        else if (rankDisplay === 2) rankText = "🥈";
+        else if (rankDisplay === 3) rankText = "🥉";
+
+        row.cellRank = new Text({
+          text: rankText,
+          style: highlightedStyle,
+        });
+        row.cellScore = new Text({
+          text: `${levelBestRun.score}`,
+          style: highlightedStyle,
+        });
+        row.cellTime = new Text({
+          text: `${levelBestRun.time}s`,
+          style: highlightedStyle,
+        });
+
+        row.cellRank.anchor.set(0.5);
+        row.cellScore.anchor.set(0.5);
+        row.cellTime.anchor.set(0.5);
+
+        row.addChild(row.cellRank, row.cellScore, row.cellTime);
+        this.achievementsPersonalRankRow = row;
+        this.achievementsContainer.addChild(row);
+      }
+    }
+
+    this.achievementsRowsContainer.y = 0;
     this.resize();
+  }
+
+  showSettingsModal(isIngame = false) {
+    audio.playFlip();
+
+    // Prevent duplicate modals
+    this.overlayContainer.removeChildren();
+
+    const overlay = new Container();
+    this.overlayContainer.addChild(overlay);
+
+    const darkBg = new Graphics()
+      .rect(
+        -this.app.screen.width,
+        -this.app.screen.height,
+        this.app.screen.width * 2,
+        this.app.screen.height * 2,
+      )
+      .fill({ color: 0x000000, alpha: 0.65 });
+    darkBg.eventMode = "static"; // Block clicks underneath
+    overlay.addChild(darkBg);
+
+    const cardW = 340;
+    const cardH = isIngame ? 310 : 260;
+
+    // Set pause state for ingame settings
+    if (isIngame) {
+      this.isPaused = true;
+    }
+
+    // Drop shadow
+    const cardShadow = new Graphics()
+      .roundRect(-cardW / 2 + 5, -cardH / 2 + 5, cardW, cardH, 16)
+      .fill({ color: 0x000000, alpha: 0.35 });
+    overlay.addChild(cardShadow);
+
+    // Glassmorphic translucent dark card
+    const cardBg = new Graphics()
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 16)
+      .fill({ color: 0x150103, alpha: 0.92 })
+      .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.85 });
+    overlay.addChild(cardBg);
+
+    // Title
+    const titleText = new Text({
+      text: "CÀI ĐẶT GAME",
+      style: new TextStyle({
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 20,
+        fill: 0xffea00,
+        fontWeight: "bold",
+        letterSpacing: 1.8,
+        align: "center",
+        dropShadow: { color: 0x000000, blur: 4, distance: 2 },
+      }),
+    });
+    titleText.anchor.set(0.5);
+    titleText.position.set(0, -cardH / 2 + 32);
+    overlay.addChild(titleText);
+
+    // Circular '✕' Close Button in Top-Right
+    const closeBtn = new Container();
+    closeBtn.eventMode = "static";
+    closeBtn.cursor = "pointer";
+    closeBtn.position.set(cardW / 2 - 22, -cardH / 2 + 22);
+
+    const closeBg = new Graphics()
+      .circle(0, 0, 13)
+      .fill({ color: 0x1b0103, alpha: 0.8 })
+      .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.8 });
+    closeBtn.addChild(closeBg);
+
+    const closeText = new Text({
+      text: "✕",
+      style: new TextStyle({
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 12,
+        fill: "#ffffff",
+        fontWeight: "bold",
+      }),
+    });
+    closeText.anchor.set(0.5);
+    closeBtn.addChild(closeText);
+
+    closeBtn.on("pointertap", () => {
+      audio.playFlip();
+      this.overlayContainer.removeChildren();
+      this.isPaused = false;
+    });
+
+    closeBtn.on("pointerover", () => {
+      gsap.to(closeBtn.scale, { x: 1.15, y: 1.15, duration: 0.15 });
+      closeBg.stroke({ width: 1.5, color: 0xffea00 });
+    });
+    closeBtn.on("pointerout", () => {
+      gsap.to(closeBtn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+      closeBg.stroke({ width: 1.2, color: 0xd4af37, alpha: 0.8 });
+    });
+    closeBtn.visible = !isIngame;
+    overlay.addChild(closeBtn);
+
+    // Reusable Toggle Row Builder
+    const createToggleRow = (labelText, yPos, initialMuteState, onToggle) => {
+      const row = new Container();
+      row.position.set(0, yPos);
+
+      // Left label
+      const label = new Text({
+        text: labelText,
+        style: new TextStyle({
+          fontFamily: "Outfit, sans-serif",
+          fontSize: 15,
+          fill: "#ffffff",
+          fontWeight: "bold",
+          letterSpacing: 0.8,
+        }),
+      });
+      label.anchor.set(0, 0.5);
+      label.position.set(-95, 0);
+      row.addChild(label);
+
+      // Right slider track
+      const trackW = 52;
+      const trackH = 26;
+      const track = new Container();
+      track.eventMode = "static";
+      track.cursor = "pointer";
+      track.position.set(65, 0);
+      row.addChild(track);
+
+      // Create a background Graphics for the track
+      const trackBg = new Graphics();
+      track.addChild(trackBg);
+
+      // Slider knob
+      const knob = new Graphics()
+        .circle(0, 0, 10)
+        .fill({ color: 0xffffff })
+        .stroke({ width: 1, color: 0xdddddd });
+      knob.position.set(0, 0);
+      track.addChild(knob);
+
+      const drawTrack = (isMuted) => {
+        trackBg
+          .clear()
+          .roundRect(-trackW / 2, -trackH / 2, trackW, trackH, trackH / 2)
+          .fill({ color: isMuted ? 0x4f4f4f : 0x2ecc71 })
+          .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.7 });
+      };
+
+      // Initialize
+      drawTrack(initialMuteState);
+      knob.x = initialMuteState ? -trackW / 2 + 12 : trackW / 2 - 12;
+
+      const handleToggle = () => {
+        audio.playFlip();
+        const isMuted = onToggle();
+        drawTrack(isMuted);
+        const targetKnobX = isMuted ? -trackW / 2 + 12 : trackW / 2 - 12;
+        gsap.to(knob, {
+          x: targetKnobX,
+          duration: 0.2,
+          ease: "power2.out",
+        });
+        this.resize();
+      };
+
+      track.on("pointertap", handleToggle);
+      label.eventMode = "static";
+      label.cursor = "pointer";
+      label.on("pointertap", handleToggle);
+
+      return row;
+    };
+
+    // Add Music and SFX rows
+    const musicRowY = isIngame ? -65 : -25;
+    const sfxRowY = isIngame ? -20 : 15;
+
+    const musicRow = createToggleRow(
+      "🎵 NHẠC NÈN",
+      musicRowY,
+      audio.musicMuted,
+      () => audio.toggleMusicMute(),
+    );
+    const sfxRow = createToggleRow("🔊 HIỆU ỨNG", sfxRowY, audio.sfxMuted, () =>
+      audio.toggleSfxMute(),
+    );
+
+    overlay.addChild(musicRow);
+    overlay.addChild(sfxRow);
+
+    // In-game buttons (Home, Restart, Continue)
+    if (isIngame) {
+      const homeBtn = createMenuButton("🏠 TRANG CHỦ", () => {
+        this.overlayContainer.removeChildren();
+        this.isGameOver = true;
+        this.isPaused = false;
+        this.switchState("MAIN_MENU");
+      });
+      homeBtn.updateStyle(120, 38, false); // dark style
+      homeBtn.position.set(-65, 35);
+      overlay.addChild(homeBtn);
+
+      const replayBtn = createMenuButton("🔄 CHƠI LẠI", () => {
+        this.overlayContainer.removeChildren();
+        this.isPaused = false;
+        this.initGame(this.currentLevelIndex);
+        this.switchState("PLAYING");
+      });
+      replayBtn.updateStyle(120, 38, false); // dark style
+      replayBtn.position.set(65, 35);
+      overlay.addChild(replayBtn);
+
+      const continueBtn = createMenuButton("▶️ TIẾP TỤC", () => {
+        audio.playFlip();
+        this.overlayContainer.removeChildren();
+        this.isPaused = false;
+      });
+      continueBtn.updateStyle(250, 38, true); // crimson / red style
+      continueBtn.position.set(0, 95);
+      overlay.addChild(continueBtn);
+    }
+
+    if (!isIngame) {
+      // Modern Outline Reset Data button
+      const resetBtn = new Container();
+      resetBtn.eventMode = "static";
+      resetBtn.cursor = "pointer";
+      resetBtn.position.set(0, 60);
+
+      const resetW = 230;
+      const resetH = 38;
+
+      const resetBg = new Graphics()
+        .roundRect(-resetW / 2, -resetH / 2, resetW, resetH, resetH / 2)
+        .fill({ color: 0x1b0103, alpha: 0.5 })
+        .stroke({ width: 1.5, color: 0xd32f2f, alpha: 0.8 });
+      resetBtn.addChild(resetBg);
+
+      const resetText = new Text({
+        text: "🗑️ XÓA DỮ LIỆU THÀNH TÍCH",
+        style: new TextStyle({
+          fontFamily: "Outfit, sans-serif",
+          fontSize: 13,
+          fill: "#fdf5e6",
+          fontWeight: "bold",
+          letterSpacing: 0.5,
+        }),
+      });
+      resetText.anchor.set(0.5);
+      resetBtn.addChild(resetText);
+
+      resetBtn.on("pointertap", async () => {
+        audio.playFlip();
+        // Use the HTML custom modal gameAlert to confirm
+        const confirmReset = await new Promise((resolve) => {
+          if (!document.getElementById("game-confirm-styles")) {
+            const style = document.createElement("style");
+            style.id = "game-confirm-styles";
+            style.textContent = `
+              .game-confirm-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100dvw;
+                height: 100dvh;
+                background: rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 110000;
+                opacity: 0;
+                transition: opacity 0.25s ease;
+              }
+              .game-confirm-card {
+                background: linear-gradient(135deg, #2c080d 0%, #150005 100%);
+                border: 2px solid #d4af37;
+                box-shadow: 0 0 25px rgba(212, 175, 55, 0.3), inset 0 0 15px rgba(0, 0, 0, 0.6);
+                border-radius: 16px;
+                padding: 24px;
+                width: 85%;
+                max-width: 340px;
+                text-align: center;
+                transform: scale(0.85);
+                transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              }
+              .game-confirm-text {
+                color: #fdf5e6;
+                font-size: 16px;
+                line-height: 1.6;
+                margin: 0 0 24px 0;
+                font-weight: 500;
+                text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+              }
+              .game-confirm-actions {
+                display: flex;
+                justify-content: space-around;
+                gap: 12px;
+              }
+              .game-confirm-button {
+                border-radius: 24px;
+                padding: 10px 24px;
+                font-size: 14px;
+                font-weight: 700;
+                cursor: pointer;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+                transition: transform 0.15s, box-shadow 0.15s;
+                outline: none;
+              }
+              .game-confirm-btn-yes {
+                background: linear-gradient(90deg, #d4af37 0%, #b89326 100%);
+                color: #1b0103;
+                border: 1px solid #ffea88;
+              }
+              .game-confirm-btn-no {
+                background: #3e0c12;
+                color: #ffffff;
+                border: 1px solid #d32f2f;
+              }
+              .game-confirm-button:hover {
+                transform: translateY(-2px) scale(1.05);
+              }
+              .game-confirm-button:active {
+                transform: translateY(1px);
+              }
+            `;
+            document.head.appendChild(style);
+          }
+
+          const overlay = document.createElement("div");
+          overlay.className = "game-confirm-overlay";
+
+          const card = document.createElement("div");
+          card.className = "game-confirm-card";
+
+          const text = document.createElement("p");
+          text.className = "game-confirm-text";
+          text.innerText =
+            "Bạn có chắc chắn muốn xóa toàn bộ lịch sử thành tích không?";
+
+          const actions = document.createElement("div");
+          actions.className = "game-confirm-actions";
+
+          const btnYes = document.createElement("button");
+          btnYes.className = "game-confirm-button game-confirm-btn-yes";
+          btnYes.innerText = "CÓ, XÓA HẾT";
+
+          const btnNo = document.createElement("button");
+          btnNo.className = "game-confirm-button game-confirm-btn-no";
+          btnNo.innerText = "KHÔNG";
+
+          actions.appendChild(btnYes);
+          actions.appendChild(btnNo);
+          card.appendChild(text);
+          card.appendChild(actions);
+          overlay.appendChild(card);
+
+          const container = document.getElementById("app") || document.body;
+          container.appendChild(overlay);
+
+          requestAnimationFrame(() => {
+            overlay.style.opacity = "1";
+            card.style.transform = "scale(1)";
+          });
+
+          const closeConfirm = (res) => {
+            overlay.style.opacity = "0";
+            card.style.transform = "scale(0.85)";
+            setTimeout(() => {
+              overlay.remove();
+              resolve(res);
+            }, 250);
+          };
+
+          btnYes.onclick = () => closeConfirm(true);
+          btnNo.onclick = () => closeConfirm(false);
+        });
+
+        if (confirmReset) {
+          saveStats({
+            totalWins: 0,
+            records: {
+              0: {
+                highScore: 0,
+                bestTime: 9999,
+                fewestMoves: 999,
+                history: [],
+              },
+              1: {
+                highScore: 0,
+                bestTime: 9999,
+                fewestMoves: 999,
+                history: [],
+              },
+              2: {
+                highScore: 0,
+                bestTime: 9999,
+                fewestMoves: 999,
+                history: [],
+              },
+            },
+          });
+          this.updateAchievementsDisplay();
+          await gameAlert("🧹 Đã xóa sạch dữ liệu thành tích!");
+        }
+      });
+
+      resetBtn.on("pointerover", () => {
+        gsap.to(resetBtn.scale, { x: 1.05, y: 1.05, duration: 0.15 });
+        resetBg.stroke({ width: 1.5, color: 0xd32f2f, alpha: 1.0 });
+        resetText.style.fill = "#ffffff";
+      });
+      resetBtn.on("pointerout", () => {
+        gsap.to(resetBtn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
+        resetBg.stroke({ width: 1.5, color: 0xd32f2f, alpha: 0.8 });
+        resetText.style.fill = "#fdf5e6";
+      });
+
+      overlay.addChild(resetBtn);
+    }
+
+    // Center settings modal on resize
+    this.resize();
+
+    // Fade/Scale in modal
+    overlay.scale.set(0);
+    gsap.to(overlay.scale, {
+      x: 1,
+      y: 1,
+      duration: 0.45,
+      ease: "back.out(1.5)",
+    });
   }
 
   initGame(levelIndex) {
@@ -1071,6 +1899,7 @@ export class GameController extends Container {
     this.timeRemaining = config.maxTime;
     this.isGameOver = false;
     this.isHintActive = false;
+    this.isPaused = false;
 
     if (this.victoryIntervalId) {
       clearInterval(this.victoryIntervalId);
@@ -1207,11 +2036,13 @@ export class GameController extends Container {
       isNewTime = true;
     }
 
-    // Save victory to top 10 history
+    // Save victory to top 100 history
     if (!prevRecord.history) {
       prevRecord.history = [];
     }
+    const runId = Date.now();
     const newRun = {
+      id: runId,
       score: this.score,
       moves: this.moves,
       time: Math.floor(elapsedTime),
@@ -1226,9 +2057,10 @@ export class GameController extends Container {
       return a.moves - b.moves;
     });
 
-    // Keep top 10 records
-    prevRecord.history = prevRecord.history.slice(0, 10);
+    // Keep top 100 records to show ranks outside top 10
+    prevRecord.history = prevRecord.history.slice(0, 100);
 
+    stats.lastRunId = runId;
     stats.totalWins++;
     saveStats(stats);
 
@@ -1398,7 +2230,7 @@ export class GameController extends Container {
 
     // Apply BlurFilter to create the shining neon glow effect
     const glowFilter = new BlurFilter();
-    glowFilter.blur = 6;
+    glowFilter.strength = 6;
     glowText.filters = [glowFilter];
 
     // Main Victory Text Layer (on top)
@@ -2369,7 +3201,7 @@ export class GameController extends Container {
       });
     }
 
-    if (!this.isGameOver && this.gameState === "PLAYING") {
+    if (!this.isGameOver && this.gameState === "PLAYING" && !this.isPaused) {
       this.timeRemaining -= ticker.elapsedMS / 1000;
       if (this.timeRemaining <= 0) {
         this.timeRemaining = 0;
@@ -2541,7 +3373,6 @@ export class GameController extends Container {
 
       // Right small
       this.lanterns[3].position.set(sw - 85, 0);
-      redrawSwayingLantern(this.lanterns[3], 35, 18, 26);
     }
 
     // Draw traditional waves at the bottom of the screen
@@ -2589,19 +3420,19 @@ export class GameController extends Container {
     // --- 1. Position MAIN MENU CONTAINER ---
     if (this.gameState === "MAIN_MENU") {
       const scale = Math.min(1.0, sw / 450, sh / 650);
-      const logoY = sh * 0.16;
+      const logoY = sh * 0.2;
       let logoHeight = 120;
 
       if (this.menuLogoSprite) {
-        this.menuLogoSprite.position.set(sw / 2, logoY);
-        const maxH = sh < 500 ? 70 : 130;
-        const maxW = Math.min(sw * 0.8, 320);
+        this.logoContainer.position.set(sw / 2, logoY);
+        const maxH = sh < 500 ? 90 : 160;
+        const maxW = Math.min(sw * 0.85, 380);
         const logoScale = Math.min(
           maxH / this.menuLogoSprite.texture.height,
           maxW / this.menuLogoSprite.texture.width,
         );
-        this.menuLogoSprite.scale.set(logoScale);
-        logoHeight = this.menuLogoSprite.height;
+        this.logoContainer.scale.set(logoScale);
+        logoHeight = this.menuLogoSprite.texture.height * logoScale;
       }
 
       this.menuTitleText.style.fontSize = Math.max(
@@ -2616,26 +3447,39 @@ export class GameController extends Container {
       // Position title and subtitle below emblem
       this.menuTitleText.position.set(
         sw / 2,
-        logoY + logoHeight / 2 + 35 * scale,
+        logoY + logoHeight / 2 + 45 * scale,
       );
       this.menuSubtitleText.position.set(
         sw / 2,
-        logoY + logoHeight / 2 + 70 * scale,
+        logoY + logoHeight / 2 + 85 * scale,
       );
 
-      const btnW = Math.max(180, Math.min(240, 240 * scale));
-      const btnH = Math.max(42, Math.min(56, 56 * scale));
-      const startY = logoY + logoHeight / 2 + 130 * scale;
-      const spacing = 24 * scale;
+      // Center large Play button exactly in the middle of the Dong Son drum background
+      const playY = sh / 2;
+      const playW = Math.max(200, Math.min(260, 260 * scale));
+      const playH = Math.max(50, Math.min(68, 68 * scale));
+      if (this.playBtn) {
+        this.playBtn.position.set(sw / 2, playY);
+        this.playBtn.updateStyle(playW, playH);
+      }
 
-      this.playBtn.position.set(sw / 2, startY);
-      this.playBtn.updateStyle(btnW, btnH);
+      // Horizontal row of circular buttons below it (Achievements left, Settings right)
+      const circY = playY + 140 * scale;
+      const circR = Math.max(22, Math.min(28, 28 * scale));
+      const circGap = 28 * scale;
 
-      this.levelSelectBtn.position.set(sw / 2, startY + btnH + spacing);
-      this.levelSelectBtn.updateStyle(btnW, btnH);
+      if (this.achievementsBtn) {
+        this.achievementsBtn.position.set(
+          sw / 2 - (circR + circGap / 2),
+          circY,
+        );
+        this.achievementsBtn.updateStyle(circR);
+      }
 
-      this.achievementsBtn.position.set(sw / 2, startY + (btnH + spacing) * 2);
-      this.achievementsBtn.updateStyle(btnW, btnH);
+      if (this.settingsBtn) {
+        this.settingsBtn.position.set(sw / 2 + (circR + circGap / 2), circY);
+        this.settingsBtn.updateStyle(circR);
+      }
     }
 
     // --- 2. Position LEVEL SELECT CONTAINER ---
@@ -2667,23 +3511,54 @@ export class GameController extends Container {
     // --- 3. Position ACHIEVEMENTS CONTAINER ---
     if (this.gameState === "ACHIEVEMENTS") {
       const scale = Math.min(1.0, sw / 450, sh / 650);
-      this.achievementsTitle.style.fontSize = Math.max(
-        18,
-        Math.min(28, 28 * scale),
-      );
-      this.achievementsTitle.position.set(sw / 2, sh * 0.14);
 
-      if (this.achievementsUserText) {
-        this.achievementsUserText.style.fontSize = Math.max(
-          10,
-          Math.min(13, 13 * scale),
+      // Static small category title
+      this.achievementsTitle.style.fontSize = Math.max(
+        24,
+        Math.min(32, 32 * scale),
+      );
+      this.achievementsTitle.position.set(sw / 2, sh * 0.07);
+
+      // Level title and arrows
+      const labelY = sh * 0.13;
+      this.achievementsLevelLabel.position.set(sw / 2, labelY);
+      this.achievementsLevelLabel.style.fontSize = Math.max(
+        20,
+        Math.min(26, 26 * scale),
+      );
+
+      const arrowGap = 35 * scale;
+      const labelW = this.achievementsLevelLabel.width;
+      const arrowR = Math.max(20, Math.min(26, 26 * scale));
+
+      if (this.achievementsLeftArrow) {
+        this.achievementsLeftArrow.position.set(
+          sw / 2 - labelW / 2 - arrowGap,
+          labelY,
         );
-        this.achievementsUserText.position.set(sw / 2, sh * 0.19);
+        this.achievementsLeftArrow.updateStyle(arrowR);
+      }
+      if (this.achievementsRightArrow) {
+        this.achievementsRightArrow.position.set(
+          sw / 2 + labelW / 2 + arrowGap,
+          labelY,
+        );
+        this.achievementsRightArrow.updateStyle(arrowR);
       }
 
-      const panelW = Math.min(sw * 0.95, 520);
-      const panelH = Math.max(170, Math.min(230, 230 * scale));
-      const panelY = sh * 0.25;
+      // User account details positioned right under
+      if (this.achievementsUserText) {
+        this.achievementsUserText.style.fontSize = Math.max(
+          13,
+          Math.min(17, 17 * scale),
+        );
+        this.achievementsUserText.position.set(sw / 2, labelY + 32 * scale);
+      }
+
+      const panelW = Math.min(sw * 0.96, 520);
+      const panelY = sh * 0.22;
+      const availableH = sh - panelY - 110 * scale;
+      const panelH = Math.max(340, Math.min(540, availableH));
 
       this.achievementsPanel
         .clear()
@@ -2691,156 +3566,219 @@ export class GameController extends Container {
         .fill({ color: 0x1b0103, alpha: 0.65 })
         .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.45 });
 
-      // Draw elegant horizontal dividers between levels inside the panel
-      const rowH = panelH / 3;
+      // Column Header positioning
+      const headerY = panelY + 14 * scale;
+      const colRankX = sw / 2 - panelW * 0.33;
+      const colScoreX = sw / 2;
+      const colTimeX = sw / 2 + panelW * 0.33;
+
+      this.achievementsHeaderRank.position.set(colRankX, headerY);
+      this.achievementsHeaderScore.position.set(colScoreX, headerY);
+      this.achievementsHeaderTime.position.set(colTimeX, headerY);
+
+      // Hide unused headers
+      this.achievementsHeaderMoves.visible = false;
+      this.achievementsHeaderDate.visible = false;
+
+      const headerFontSize = Math.max(18, Math.min(24, 24 * scale));
+      this.achievementsHeaderRank.style.fontSize = headerFontSize;
+      this.achievementsHeaderScore.style.fontSize = headerFontSize;
+      this.achievementsHeaderTime.style.fontSize = headerFontSize;
+
+      // Draw horizontal divider lines
+      const hasPersonalRank = !!this.achievementsPersonalRankRow;
       this.achievementsPanel.setStrokeStyle({
         width: 0.8,
         color: 0xd4af37,
         alpha: 0.22,
       });
       this.achievementsPanel
-        .moveTo(sw / 2 - panelW / 2 + 20, panelY + rowH)
-        .lineTo(sw / 2 + panelW / 2 - 20, panelY + rowH)
-        .stroke()
-        .moveTo(sw / 2 - panelW / 2 + 20, panelY + rowH * 2)
-        .lineTo(sw / 2 + panelW / 2 - 20, panelY + rowH * 2)
+        .moveTo(sw / 2 - panelW / 2 + 15, panelY + 54 * scale)
+        .lineTo(sw / 2 + panelW / 2 - 15, panelY + 54 * scale)
         .stroke();
 
-      // Position the subheading helper
-      this.achievementsSub.style.fontSize = Math.max(
-        8.5,
-        Math.min(11, 11 * scale),
-      );
-      this.achievementsSub.position.set(sw / 2, panelY - 14 * scale);
+      if (hasPersonalRank) {
+        this.achievementsPanel
+          .moveTo(sw / 2 - panelW / 2 + 15, panelY + panelH - 72 * scale)
+          .lineTo(sw / 2 + panelW / 2 - 15, panelY + panelH - 72 * scale)
+          .stroke();
+      }
+
+      // Draw mask for scroll container
+      const maskY = panelY + 56 * scale;
+      const maskH = hasPersonalRank
+        ? panelH - 134 * scale
+        : panelH - 74 * scale;
+
+      this.achievementsMask
+        .clear()
+        .rect(sw / 2 - panelW / 2 + 5, maskY, panelW - 10, maskH)
+        .fill(0xffffff);
 
       // Position each row container and its text elements inside
-      for (let idx = 0; idx < 3; idx++) {
-        const row = this.achievementRows[idx];
-        const rowCenter = panelY + rowH * idx + rowH / 2;
+      const rowStartY = panelY + 98 * scale;
+      const rowSpacing = Math.max(58, Math.min(76, 76 * scale));
 
-        row.w = panelW - 6;
-        row.h = rowH - 6;
-        row.position.set(sw / 2, rowCenter);
+      // Calculate scroll bounds
+      const totalRows = this.achievementsRowsContainer.children.length;
+      const contentHeight = totalRows * rowSpacing;
+      const firstRowTopOffset = rowStartY - rowSpacing / 2 - maskY;
+      const totalContentHeight = firstRowTopOffset + contentHeight;
 
-        row.titleLabel.style.fontSize = Math.max(11, Math.min(15, 15 * scale));
-        row.valueLabel.style.fontSize = Math.max(
-          9,
-          Math.min(12.5, 12.5 * scale),
-        );
-
-        row.titleLabel.position.set(0, -14 * scale);
-        row.valueLabel.position.set(0, 14 * scale);
-
-        // Clear hover background to draw correct bounds
-        row.bg.clear();
+      if (totalContentHeight <= maskH) {
+        this.achievementsMinY = 0;
+        this.achievementsMaxY = 0;
+      } else {
+        this.achievementsMinY = maskH - totalContentHeight;
+        this.achievementsMaxY = 0;
       }
 
-      // Position Leaderboard Modal overlay if visible
-      if (this.leaderboardModal && this.leaderboardModal.visible) {
-        this.lbOverlay
-          .clear()
-          .rect(0, 0, sw, sh)
-          .fill({ color: 0x000000, alpha: 0.75 });
+      // Clamp scroll container position
+      this.achievementsRowsContainer.y = Math.max(
+        this.achievementsMinY,
+        Math.min(this.achievementsMaxY, this.achievementsRowsContainer.y),
+      );
 
-        const cardW = Math.min(sw * 0.95, 460);
-        const cardH = Math.min(sh * 0.72, 420);
-        const cardX = sw / 2 - cardW / 2;
-        const cardY = sh / 2 - cardH / 2;
+      this.achievementsRowsContainer.children.forEach((row, idx) => {
+        const rowY = rowStartY + idx * rowSpacing;
+        row.position.set(sw / 2, rowY);
 
-        this.lbCard
-          .clear()
-          .roundRect(cardX, cardY, cardW, cardH, 16)
-          .fill({ color: 0x2b050a, alpha: 0.98 })
-          .stroke({ width: 2.5, color: 0xd4af37 });
-
-        // Draw horizontal divider line under table header
-        const headerLineY = cardY + 75 * scale;
-        this.lbCard.setStrokeStyle({
-          width: 0.8,
-          color: 0xd4af37,
-          alpha: 0.22,
-        });
-        this.lbCard
-          .moveTo(cardX + 15, headerLineY)
-          .lineTo(cardX + cardW - 15, headerLineY)
-          .stroke();
-
-        // Title
-        this.lbTitle.style.fontSize = Math.max(16, Math.min(22, 22 * scale));
-        this.lbTitle.position.set(sw / 2, cardY + 22 * scale);
-
-        // Header column X distribution
-        const colPad = cardW / 5;
-        const headerY = cardY + 54 * scale;
-
-        this.lbHeaderRank.style.fontSize = Math.max(
-          10,
-          Math.min(12, 12 * scale),
-        );
-        this.lbHeaderScore.style.fontSize = Math.max(
-          10,
-          Math.min(12, 12 * scale),
-        );
-        this.lbHeaderMoves.style.fontSize = Math.max(
-          10,
-          Math.min(12, 12 * scale),
-        );
-        this.lbHeaderTime.style.fontSize = Math.max(
-          10,
-          Math.min(12, 12 * scale),
-        );
-        this.lbHeaderDate.style.fontSize = Math.max(
-          10,
-          Math.min(12, 12 * scale),
-        );
-
-        this.lbHeaderRank.position.set(cardX + colPad * 0.45, headerY);
-        this.lbHeaderScore.position.set(cardX + colPad * 1.35, headerY);
-        this.lbHeaderMoves.position.set(cardX + colPad * 2.3, headerY);
-        this.lbHeaderTime.position.set(cardX + colPad * 3.25, headerY);
-        this.lbHeaderDate.position.set(cardX + colPad * 4.2, headerY);
-
-        // Table body font size and vertical Y start
-        const colFontSize = Math.max(9, Math.min(11.5, 11.5 * scale));
-        this.lbColRank.style.fontSize = colFontSize;
-        this.lbColScore.style.fontSize = colFontSize;
-        this.lbColMoves.style.fontSize = colFontSize;
-        this.lbColTime.style.fontSize = colFontSize;
-        this.lbColDate.style.fontSize = colFontSize;
-
-        const tableStartY = cardY + 86 * scale;
-
-        const record = getStats().records[this.leaderboardModal.levelIndex];
-        const hasHistory =
-          record && record.history && record.history.length > 0;
-
-        if (!hasHistory) {
-          this.lbColDate.position.set(sw / 2, cardY + cardH / 2 - 10 * scale);
-        } else {
-          this.lbColRank.position.set(cardX + colPad * 0.45, tableStartY);
-          this.lbColScore.position.set(cardX + colPad * 1.35, tableStartY);
-          this.lbColMoves.position.set(cardX + colPad * 2.3, tableStartY);
-          this.lbColTime.position.set(cardX + colPad * 3.25, tableStartY);
-          this.lbColDate.position.set(cardX + colPad * 4.2, tableStartY);
+        if (row.emptyText) {
+          row.emptyText.position.set(0, panelH / 2 - 40 * scale);
+          row.emptyText.style.fontSize = Math.max(20, Math.min(26, 26 * scale));
+          return;
         }
 
-        // Close button
-        const closeBtnW = Math.max(150, Math.min(200, 200 * scale));
-        const closeBtnH = Math.max(42, Math.min(56, 56 * scale));
-        this.lbCloseBtn.position.set(sw / 2, cardY + cardH - 30 * scale);
-        this.lbCloseBtn.updateStyle(closeBtnW, closeBtnH);
+        const cellFontSize = Math.max(22, Math.min(30, 30 * scale));
+
+        if (row.cellRank) {
+          row.cellRank.position.set(-panelW * 0.33, 0);
+          const isMedal = idx === 0 || idx === 1 || idx === 2;
+          row.cellRank.style.fontSize = isMedal
+            ? Math.max(54, Math.min(72, 72 * scale))
+            : cellFontSize;
+        }
+        if (row.cellScore) {
+          row.cellScore.position.set(0, 0);
+          row.cellScore.style.fontSize = cellFontSize;
+        }
+        if (row.cellTime) {
+          row.cellTime.position.set(panelW * 0.33, 0);
+          row.cellTime.style.fontSize = cellFontSize;
+        }
+
+        if (row.bgStripe) {
+          let fillColor = 0x5c0612;
+          let strokeColor = 0xffea00;
+          let fillAlpha = 0.85;
+          let strokeAlpha = 1.0;
+          let strokeWidth = 1.5;
+
+          if (row.isHighlightedPlayerRun) {
+            // Player's last run inside top 10 (crimson lacquer highlight with border matching rank)
+            fillColor = 0x5c0612;
+            fillAlpha = 0.85;
+            strokeAlpha = 1.0;
+
+            if (idx === 0) {
+              strokeColor = 0xffea00; // Gold border
+              strokeWidth = 2.0;
+            } else if (idx === 1) {
+              strokeColor = 0xe0e0e0; // Silver border
+              strokeWidth = 1.8;
+            } else if (idx === 2) {
+              strokeColor = 0xd4a373; // Bronze border
+              strokeWidth = 1.6;
+            } else {
+              strokeColor = 0xffea00; // General gold border
+              strokeWidth = 1.5;
+            }
+          } else {
+            // Static Top 3 decorative styles
+            if (idx === 0) {
+              fillColor = 0xffea00;
+              fillAlpha = 0.16;
+              strokeColor = 0xffea00;
+              strokeAlpha = 0.8;
+              strokeWidth = 2.0;
+            } else if (idx === 1) {
+              fillColor = 0xffffff;
+              fillAlpha = 0.12;
+              strokeColor = 0xe0e0e0;
+              strokeAlpha = 0.75;
+              strokeWidth = 1.8;
+            } else if (idx === 2) {
+              fillColor = 0xd4a373;
+              fillAlpha = 0.12;
+              strokeColor = 0xd4a373;
+              strokeAlpha = 0.7;
+              strokeWidth = 1.6;
+            }
+          }
+
+          row.bgStripe
+            .clear()
+            .roundRect(
+              -panelW / 2 + 10,
+              -rowSpacing / 2 + 1,
+              panelW - 20,
+              rowSpacing - 2,
+              6,
+            )
+            .fill({ color: fillColor, alpha: fillAlpha })
+            .stroke({
+              width: strokeWidth,
+              color: strokeColor,
+              alpha: strokeAlpha,
+            });
+        }
+      });
+
+      // Position personal rank row separately if it exists (pinned to bottom of panel)
+      if (this.achievementsPersonalRankRow) {
+        const row = this.achievementsPersonalRankRow;
+        const rowY = panelY + panelH - 36 * scale;
+        row.position.set(sw / 2, rowY);
+
+        const cellFontSize = Math.max(22, Math.min(30, 30 * scale));
+
+        if (row.cellRank) {
+          row.cellRank.position.set(-panelW * 0.33, 0);
+          row.cellRank.style.fontSize = cellFontSize;
+        }
+        if (row.cellScore) {
+          row.cellScore.position.set(0, 0);
+          row.cellScore.style.fontSize = cellFontSize;
+        }
+        if (row.cellTime) {
+          row.cellTime.position.set(panelW * 0.33, 0);
+          row.cellTime.style.fontSize = cellFontSize;
+        }
+
+        if (row.bgStripe) {
+          row.bgStripe
+            .clear()
+            .roundRect(
+              -panelW / 2 + 10,
+              -rowSpacing / 2 + 1,
+              panelW - 20,
+              rowSpacing - 2,
+              6,
+            )
+            .fill({ color: 0x5c0612, alpha: 0.85 })
+            .stroke({
+              width: 1.5,
+              color: 0xffea00,
+              alpha: 1.0,
+            });
+        }
       }
 
-      const btnW = Math.max(150, Math.min(200, 200 * scale));
-      const btnH = Math.max(42, Math.min(56, 56 * scale));
-      this.resetStatsBtn.position.set(
-        sw / 2 - 115 * scale,
-        panelY + panelH + 50 * scale,
-      );
-      this.resetStatsBtn.updateStyle(btnW, btnH, false);
+      const btnW = Math.max(180, Math.min(240, 240 * scale));
+      const btnH = Math.max(48, Math.min(64, 64 * scale));
 
       this.achievementsBackBtn.position.set(
-        sw / 2 + 115 * scale,
+        sw / 2,
         panelY + panelH + 50 * scale,
       );
       this.achievementsBackBtn.updateStyle(btnW, btnH, true);
@@ -2917,28 +3855,13 @@ export class GameController extends Container {
       const ctrlY = sh - 42;
       const btnRadius = 26;
 
-      this.homeButton.position.set(sw / 2 - 105, ctrlY);
-      this.homeButton.bg
-        .clear()
-        .circle(0, 0, btnRadius)
-        .fill({ color: 0x360207, alpha: 0.85 })
-        .stroke({ width: 1.5, color: 0xd4af37 });
+      this.homeButton.visible = false;
+      this.restartButton.visible = false;
 
-      this.muteButton.position.set(sw / 2 - 35, ctrlY);
-      this.muteButton.bg
-        .clear()
-        .circle(0, 0, btnRadius)
-        .fill({ color: 0x360207, alpha: 0.85 })
-        .stroke({ width: 1.5, color: audio.isMuted ? 0xd32f2f : 0xffea00 });
+      this.settingsBtnIngame.position.set(sw / 2 - 45, ctrlY);
+      this.settingsBtnIngame.updateStyle(btnRadius);
 
-      this.restartButton.position.set(sw / 2 + 35, ctrlY);
-      this.restartButton.bg
-        .clear()
-        .circle(0, 0, btnRadius)
-        .fill({ color: 0x360207, alpha: 0.85 })
-        .stroke({ width: 1.5, color: 0xffea00 });
-
-      this.hintButton.position.set(sw / 2 + 105, ctrlY);
+      this.hintButton.position.set(sw / 2 + 45, ctrlY);
       this.hintButton.bg
         .clear()
         .circle(0, 0, btnRadius)
@@ -3161,5 +4084,12 @@ export class GameController extends Container {
     if (window.parent !== window) {
       window.parent.postMessage({ type: "trigger_google_login" }, "*");
     }
+  }
+
+  destroy(options) {
+    if (this._onWheelScroll) {
+      window.removeEventListener("wheel", this._onWheelScroll);
+    }
+    super.destroy(options);
   }
 }
