@@ -5,18 +5,19 @@ import { GameController } from "./game";
   // 1. Create a new Application instance
   const app = new Application();
 
+  const container = document.getElementById("pixi-container") || document.body;
+
   // 2. Initialize the application asynchronously (Vite safe IIFE pattern)
   await app.init({
     background: "#0a0b1e",
-    resizeTo: window,
+    resizeTo: container,
     antialias: true,
     autoDensity: true,
     resolution: window.devicePixelRatio || 1,
   });
 
   // 3. Append the canvas view to the DOM container
-  const container = document.getElementById("pixi-container");
-  if (container) {
+  if (container.id === "pixi-container") {
     container.innerHTML = ""; // Clear loader text
     container.appendChild(app.canvas);
   } else {
@@ -33,9 +34,23 @@ import { GameController } from "./game";
     game.update(ticker);
   });
 
-  // 6. Connect window resize to game layout updates
-  window.addEventListener("resize", () => {
-    app.renderer.resize(window.innerWidth, window.innerHeight);
+  // 6. Robust resize function that reads container size
+  const handleResize = () => {
+    const w = container.clientWidth || window.innerWidth;
+    const h = container.clientHeight || window.innerHeight;
+    app.renderer.resize(w, h);
     game.resize();
-  });
+  };
+
+  // Connect window resize and ResizeObserver to game layout updates
+  window.addEventListener("resize", handleResize);
+  if (window.ResizeObserver) {
+    const resizeObserver = new window.ResizeObserver(() => {
+      handleResize();
+    });
+    resizeObserver.observe(container);
+  }
+
+  // Run initial resize to align everything correctly
+  handleResize();
 })();

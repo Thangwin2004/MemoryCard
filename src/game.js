@@ -28,7 +28,7 @@ function gameAlert(message) {
           left: 0;
           width: 100dvw;
           height: 100dvh;
-          background: rgba(0, 0, 0, 0.7);
+          background: rgba(0, 0, 0, 0.65);
           backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(6px);
           display: flex;
@@ -39,45 +39,40 @@ function gameAlert(message) {
           transition: opacity 0.25s ease;
         }
         .game-alert-card {
-          background: linear-gradient(135deg, #2c080d 0%, #150005 100%);
-          border: 2px solid #d4af37;
-          box-shadow: 0 0 25px rgba(212, 175, 55, 0.3), inset 0 0 15px rgba(0, 0, 0, 0.6);
-          border-radius: 16px;
-          padding: 24px;
+          background: #fffae6;
+          border: 5px solid #d32f2f;
+          box-shadow: inset 0 0 0 2.5px #ffea00, 0 10px 25px rgba(0, 0, 0, 0.35);
+          border-radius: 20px;
+          padding: 28px 24px;
           width: 85%;
           max-width: 340px;
           text-align: center;
           transform: scale(0.85);
           transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: 'Outfit', sans-serif;
         }
         .game-alert-text {
-          color: #fdf5e6;
-          font-size: 16px;
+          color: #5c0612;
+          font-size: 17px;
           line-height: 1.6;
           margin: 0 0 24px 0;
-          font-weight: 500;
-          text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-        }
-        .game-alert-button {
-          background: linear-gradient(90deg, #d4af37 0%, #b89326 100%);
-          color: #1b0103;
-          border: 1px solid #ffea88;
-          border-radius: 24px;
-          padding: 10px 32px;
-          font-size: 15px;
           font-weight: 700;
+          text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+        }
+        .game-alert-img-btn {
+          height: 48px;
+          width: auto;
           cursor: pointer;
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-          transition: transform 0.15s, box-shadow 0.15s;
+          transition: transform 0.1s ease, filter 0.1s ease;
           outline: none;
         }
-        .game-alert-button:hover {
-          transform: translateY(-2px) scale(1.05);
-          box-shadow: 0 6px 15px rgba(212, 175, 55, 0.5);
+        .game-alert-img-btn:hover {
+          transform: scale(1.08);
+          filter: brightness(1.08);
         }
-        .game-alert-button:active {
-          transform: translateY(1px);
+        .game-alert-img-btn:active {
+          transform: scale(0.96);
+          filter: brightness(0.92);
         }
       `;
       document.head.appendChild(style);
@@ -97,9 +92,10 @@ function gameAlert(message) {
     text.className = "game-alert-text";
     text.innerText = message;
 
-    const button = document.createElement("button");
-    button.className = "game-alert-button";
-    button.innerText = "ĐỒNG Ý";
+    const button = document.createElement("img");
+    button.className = "game-alert-img-btn";
+    button.src = "/assest/iconbtn/yes_btn.png";
+    button.alt = "ĐỒNG Ý";
 
     card.appendChild(text);
     card.appendChild(button);
@@ -203,6 +199,48 @@ function saveStats(stats) {
   }
 }
 
+// Reusable helper to map text emojis/keys to high-quality PNG button icons
+function getIconForEmoji(emojiOrText) {
+  if (
+    emojiOrText.includes("↩️") ||
+    emojiOrText.includes("back_btn") ||
+    emojiOrText.includes("QUAY LẠI")
+  )
+    return "/assest/iconbtn/back_btn.png";
+  if (
+    emojiOrText.includes("🏠") ||
+    emojiOrText.includes("Home_btn") ||
+    emojiOrText.includes("TRANG CHỦ")
+  )
+    return "/assest/iconbtn/Home_btn.png";
+  if (
+    emojiOrText.includes("🔄") ||
+    emojiOrText.includes("replay_btn") ||
+    emojiOrText.includes("CHƠI LẠI")
+  )
+    return "/assest/iconbtn/replay_btn.png";
+  if (
+    emojiOrText.includes("▶️") ||
+    emojiOrText.includes("continue_btn") ||
+    emojiOrText.includes("CHƠI TIẾP") ||
+    emojiOrText.includes("TIẾP TỤC")
+  )
+    return "/assest/iconbtn/continue_btn.png";
+  if (
+    emojiOrText.includes("🗑️") ||
+    emojiOrText.includes("delete_btn") ||
+    emojiOrText.includes("XÓA DỮ LIỆU")
+  )
+    return "/assest/iconbtn/delete_btn.png";
+  if (
+    emojiOrText.includes("📺") ||
+    emojiOrText.includes("x2_btn") ||
+    emojiOrText.includes("x2 ĐIỂM")
+  )
+    return "/assest/iconbtn/x2_btn.png";
+  return null;
+}
+
 // Reusable menu button builder
 function createMenuButton(text, onClick) {
   const btn = new Container();
@@ -212,7 +250,51 @@ function createMenuButton(text, onClick) {
   const bg = new Graphics();
   btn.addChild(bg);
 
-  if (text.startsWith("GOOGLE_ICON")) {
+  const iconPath = getIconForEmoji(text);
+
+  if (iconPath) {
+    // Parse text to strip emoji/icon keywords
+    let textStr = text;
+    if (text.includes(" ")) {
+      const spaceIdx = text.indexOf(" ");
+      textStr = text.substring(spaceIdx + 1);
+    }
+
+    const icon = new Sprite();
+    btn.addChild(icon);
+    btn.icon = icon;
+
+    const label = new Text({
+      text: textStr,
+      style: new TextStyle({
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 14,
+        fill: "#ffffff",
+        fontWeight: "bold",
+        letterSpacing: 0.5,
+      }),
+    });
+    label.anchor.set(0.5);
+    btn.addChild(label);
+    btn.label = label;
+
+    Assets.load(iconPath)
+      .then((texture) => {
+        icon.texture = texture;
+        icon.anchor.set(0.5);
+        icon.width = 24;
+        icon.height = 24;
+
+        // Position icon and label horizontally centered
+        const gap = 10;
+        const totalW = icon.width + gap + label.width;
+        icon.x = -totalW / 2 + icon.width / 2;
+        label.x = totalW / 2 - label.width / 2;
+      })
+      .catch((err) => {
+        console.error("Failed to load icon:", iconPath, err);
+      });
+  } else if (text.startsWith("GOOGLE_ICON")) {
     const displayText = text.includes(":") ? text.split(":")[1] : "ĐĂNG NHẬP";
 
     const label = new Text({
@@ -329,7 +411,16 @@ function createMenuButton(text, onClick) {
         }
       }
 
-      if (btn.emojiText) {
+      if (btn.icon) {
+        const gap = w < 150 ? 6 : 10;
+        const iconSize = w < 150 ? 18 : 24;
+        btn.icon.width = iconSize;
+        btn.icon.height = iconSize;
+
+        const totalW = btn.icon.width + gap + btn.label.width;
+        btn.icon.x = -totalW / 2 + btn.icon.width / 2;
+        btn.label.x = totalW / 2 - btn.label.width / 2;
+      } else if (btn.emojiText) {
         const gap = w < 150 ? 6 : 12;
         const totalW = btn.emojiText.width + gap + btn.label.width;
         btn.emojiText.x = -totalW / 2 + btn.emojiText.width / 2;
@@ -395,20 +486,20 @@ function createPlayButton(text, onClick) {
       .roundRect(-size / 2, -size / 2 + 6, size, size, 16)
       .fill({ color: 0x000000, alpha: 0.45 });
 
-    // 2. 3D Extrusion base (deep luxurious lacquer burgundy)
+    // 2. 3D Extrusion base (bright dark red shadow base)
     bg.clear()
       .roundRect(-size / 2, -size / 2 + 4, size, size, 16)
-      .fill({ color: 0x4a000a })
-      .stroke({ width: 1, color: 0x240003 });
+      .fill({ color: 0x800a12 })
+      .stroke({ width: 1, color: 0x4a000a });
 
-    // 3. Main button body - premium smooth gradient (light crimson to deep crimson lacquer)
+    // 3. Main button body - premium smooth gradient (light vibrant coral to bright red)
     const btnGrad = new FillGradient({
       start: { x: 0, y: -size / 2 },
       end: { x: 0, y: size / 2 },
       colorStops: [
-        { offset: 0, color: 0xff3b4e }, // Vibrant crimson highlight
-        { offset: 0.4, color: 0xd32f2f }, // Standard lacquer red
-        { offset: 1, color: 0x6e0912 }, // Deep rich lacquer burgundy
+        { offset: 0, color: 0xff6b8b }, // Vibrant light coral red
+        { offset: 0.35, color: 0xff1a40 }, // Bright popping crimson red
+        { offset: 1, color: 0xd32f2f }, // Solid standard bright red
       ],
     });
 
@@ -417,7 +508,7 @@ function createPlayButton(text, onClick) {
       end: { x: size / 2, y: size / 2 },
       colorStops: [
         { offset: 0, color: 0xffea00 },
-        { offset: 0.5, color: 0xb89326 },
+        { offset: 0.5, color: 0xffa200 },
         { offset: 1, color: 0xffea00 },
       ],
     });
@@ -426,13 +517,13 @@ function createPlayButton(text, onClick) {
       .fill(btnGrad)
       .stroke({ width: 2, fill: goldGrad });
 
-    // 4. Glossy highlight sheen on top
+    // 4. Glossy highlight sheen on top (more prominent white highlight sheen)
     highlight
       .clear()
       .roundRect(-size / 2 + 4, -size / 2 + 3, size - 8, size * 0.35, 12)
-      .fill({ color: 0xffffff, alpha: 0.18 });
+      .fill({ color: 0xffffff, alpha: 0.28 });
 
-    // 5. Play icon (triangle pointing right in gold with a nice 3D drop shadow)
+    // 5. Play icon (triangle pointing right in yellow/gold with a 3D drop shadow)
     const triW = size * 0.35;
     const triH = size * 0.38;
     icon
@@ -450,7 +541,7 @@ function createPlayButton(text, onClick) {
       // Main triangle in gold
       .poly([-triW * 0.4, -triH / 2, triW * 0.6, 0, -triW * 0.4, triH / 2])
       .fill(goldGrad)
-      .stroke({ width: 1.2, color: 0x3d0006 });
+      .stroke({ width: 1.2, color: 0x6e0912 });
   };
 
   btn.updateStyle(btn.w, btn.h);
@@ -476,70 +567,140 @@ function createCircularButton(emojiText, onClick) {
   btn.eventMode = "static";
   btn.cursor = "pointer";
 
+  let useImage = false;
+  let imagePath = "";
+
+  if (emojiText === "🏆") {
+    useImage = true;
+    imagePath = "/assest/iconbtn/trophy_btn.png";
+  } else if (emojiText === "⚙️") {
+    useImage = true;
+    imagePath = "/assest/iconbtn/setting_btn.png";
+  } else if (emojiText === "💡") {
+    useImage = true;
+    imagePath = "/assest/iconbtn/hint_btn.png";
+  } else if (emojiText === "⏱️") {
+    useImage = true;
+    imagePath = "/assest/iconbtn/revive_btn.png";
+  } else if (emojiText === "🏠") {
+    useImage = true;
+    imagePath = "/assest/iconbtn/Home_btn.png";
+  } else if (emojiText === "🔄") {
+    useImage = true;
+    imagePath = "/assest/iconbtn/replay_btn.png";
+  } else if (
+    emojiText === "📺" ||
+    emojiText === "x2" ||
+    emojiText === "x2 ĐIỂM"
+  ) {
+    useImage = true;
+    imagePath = "/assest/iconbtn/x2_btn.png";
+  } else if (
+    emojiText === "▶️" ||
+    emojiText === "continue_btn" ||
+    emojiText === "CHƠI TIẾP" ||
+    emojiText === "TIẾP TỤC"
+  ) {
+    useImage = true;
+    imagePath = "/assest/iconbtn/continue_btn.png";
+  } else if (emojiText === "back_btn" || emojiText === "QUAY LẠI") {
+    useImage = true;
+    imagePath = "/assest/iconbtn/back_btn.png";
+  }
+
   const shadow = new Graphics();
   const bg = new Graphics();
   const highlight = new Graphics();
+  let label = null;
+  let sprite = null;
 
-  btn.addChild(shadow);
-  btn.addChild(bg);
-  btn.addChild(highlight);
+  if (useImage) {
+    sprite = new Sprite();
+    sprite.anchor.set(0.5);
+    btn.addChild(sprite);
+    btn.sprite = sprite;
 
-  const label = new Text({
-    text: emojiText,
-    style: new TextStyle({
-      fontFamily: "Outfit, sans-serif",
-      fontSize: 22,
-      fill: "#ffffff",
-      dropShadow: { color: 0x000000, blur: 2, distance: 1.5 },
-    }),
-  });
-  label.anchor.set(0.5);
-  btn.addChild(label);
+    Assets.load(imagePath)
+      .then((texture) => {
+        sprite.texture = texture;
+        if (btn.r) {
+          sprite.width = btn.r * 2;
+          sprite.height = btn.r * 2;
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load circular icon:", imagePath, err);
+      });
+  } else {
+    btn.addChild(shadow);
+    btn.addChild(bg);
+    btn.addChild(highlight);
+
+    label = new Text({
+      text: emojiText,
+      style: new TextStyle({
+        fontFamily: "Outfit, sans-serif",
+        fontSize: 22,
+        fill: "#ffffff",
+        dropShadow: { color: 0x000000, blur: 2, distance: 1.5 },
+      }),
+    });
+    label.anchor.set(0.5);
+    btn.addChild(label);
+  }
 
   btn.r = 26;
 
   btn.updateStyle = (r) => {
     btn.r = r;
+    if (useImage) {
+      if (sprite && sprite.texture) {
+        sprite.width = r * 2;
+        sprite.height = r * 2;
+      }
+    } else {
+      // 1. Soft 3D drop shadow (translucent black)
+      shadow.clear().circle(0, 4, r).fill({ color: 0x000000, alpha: 0.45 });
 
-    // 1. Soft 3D drop shadow (translucent black)
-    shadow.clear().circle(0, 4, r).fill({ color: 0x000000, alpha: 0.45 });
+      // 2. 3D Extrusion base (deep luxurious lacquer burgundy)
+      bg.clear()
+        .circle(0, 3, r)
+        .fill({ color: 0x4a000a })
+        .stroke({ width: 1, color: 0x240003 });
 
-    // 2. 3D Extrusion base (deep luxurious lacquer burgundy)
-    bg.clear()
-      .circle(0, 3, r)
-      .fill({ color: 0x4a000a })
-      .stroke({ width: 1, color: 0x240003 });
+      // 3. Main button body - premium smooth gradient (light crimson to deep crimson lacquer)
+      const btnGrad = new FillGradient({
+        start: { x: 0, y: -r },
+        end: { x: 0, y: r },
+        colorStops: [
+          { offset: 0, color: 0xff3b4e }, // Vibrant crimson highlight
+          { offset: 0.4, color: 0xd32f2f }, // Standard lacquer red
+          { offset: 1, color: 0x6e0912 }, // Deep rich lacquer burgundy
+        ],
+      });
 
-    // 3. Main button body - premium smooth gradient (light crimson to deep crimson lacquer)
-    const btnGrad = new FillGradient({
-      start: { x: 0, y: -r },
-      end: { x: 0, y: r },
-      colorStops: [
-        { offset: 0, color: 0xff3b4e }, // Vibrant crimson highlight
-        { offset: 0.4, color: 0xd32f2f }, // Standard lacquer red
-        { offset: 1, color: 0x6e0912 }, // Deep rich lacquer burgundy
-      ],
-    });
+      const goldGrad = new FillGradient({
+        start: { x: -r, y: -r },
+        end: { x: r, y: r },
+        colorStops: [
+          { offset: 0, color: 0xffea00 },
+          { offset: 0.5, color: 0xb89326 },
+          { offset: 1, color: 0xffea00 },
+        ],
+      });
 
-    const goldGrad = new FillGradient({
-      start: { x: -r, y: -r },
-      end: { x: r, y: r },
-      colorStops: [
-        { offset: 0, color: 0xffea00 },
-        { offset: 0.5, color: 0xb89326 },
-        { offset: 1, color: 0xffea00 },
-      ],
-    });
+      bg.circle(0, 0, r).fill(btnGrad).stroke({ width: 2, fill: goldGrad });
 
-    bg.circle(0, 0, r).fill(btnGrad).stroke({ width: 2, fill: goldGrad });
+      // 4. Glossy highlight sheen on top
+      highlight
+        .clear()
+        .ellipse(0, -r * 0.4, r * 0.7, r * 0.35)
+        .fill({ color: 0xffffff, alpha: 0.18 });
 
-    // 4. Glossy highlight sheen on top
-    highlight
-      .clear()
-      .ellipse(0, -r * 0.4, r * 0.7, r * 0.35)
-      .fill({ color: 0xffffff, alpha: 0.18 });
-
-    label.style.fontSize = Math.round(r * 0.95);
+      if (label) {
+        label.style.fontSize = Math.round(r * 0.95);
+      }
+    }
   };
 
   btn.updateStyle(btn.r);
@@ -870,7 +1031,7 @@ export class GameController extends Container {
     const headerStyle = new TextStyle({
       fontFamily: "Outfit, sans-serif",
       fontSize: 12,
-      fill: 0xd4af37,
+      fill: 0x5c0612,
       fontWeight: "bold",
       align: "center",
     });
@@ -1044,30 +1205,9 @@ export class GameController extends Container {
     this.gamePlayContainer.addChild(this.timerBarFill);
 
     // Home, Mute and Restart Buttons
-    this.homeButton = new Container();
-    this.homeButton.eventMode = "static";
-    this.homeButton.cursor = "pointer";
-    const homeBg = new Graphics();
-    this.homeText = new Text({
-      text: "🏠",
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 24,
-        fill: "#ffffff",
-      }),
-    });
-    this.homeText.anchor.set(0.5);
-    this.homeButton.addChild(homeBg, this.homeText);
-    this.homeButton.bg = homeBg;
-    this.homeButton.on("pointertap", () => {
+    this.homeButton = createCircularButton("🏠", () => {
       this.isGameOver = true; // halt gameplay loop
       this.switchState("MAIN_MENU");
-    });
-    this.homeButton.on("pointerover", () => {
-      gsap.to(this.homeButton.scale, { x: 1.08, y: 1.08, duration: 0.15 });
-    });
-    this.homeButton.on("pointerout", () => {
-      gsap.to(this.homeButton.scale, { x: 1.0, y: 1.0, duration: 0.15 });
     });
     this.gamePlayContainer.addChild(this.homeButton);
 
@@ -1080,55 +1220,13 @@ export class GameController extends Container {
     );
     this.gamePlayContainer.addChild(this.settingsBtnIngame);
 
-    this.restartButton = new Container();
-    this.restartButton.eventMode = "static";
-    this.restartButton.cursor = "pointer";
-    const restartBg = new Graphics();
-    this.restartText = new Text({
-      text: "🔄",
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 24,
-        fill: "#ffffff",
-      }),
-    });
-    this.restartText.anchor.set(0.5);
-    this.restartButton.addChild(restartBg, this.restartText);
-    this.restartButton.bg = restartBg;
-    this.restartButton.on("pointertap", () =>
+    this.restartButton = createCircularButton("🔄", () =>
       this.initGame(this.currentLevelIndex),
     );
-    this.restartButton.on("pointerover", () => {
-      gsap.to(this.restartButton.scale, { x: 1.08, y: 1.08, duration: 0.15 });
-    });
-    this.restartButton.on("pointerout", () => {
-      gsap.to(this.restartButton.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-    });
     this.gamePlayContainer.addChild(this.restartButton);
 
     // Hint button (Rewarded Ad)
-    this.hintButton = new Container();
-    this.hintButton.eventMode = "static";
-    this.hintButton.cursor = "pointer";
-    const hintBg = new Graphics();
-    this.hintText = new Text({
-      text: "💡",
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 24,
-        fill: "#ffffff",
-      }),
-    });
-    this.hintText.anchor.set(0.5);
-    this.hintButton.addChild(hintBg, this.hintText);
-    this.hintButton.bg = hintBg;
-    this.hintButton.on("pointerover", () => {
-      gsap.to(this.hintButton.scale, { x: 1.08, y: 1.08, duration: 0.15 });
-    });
-    this.hintButton.on("pointerout", () => {
-      gsap.to(this.hintButton.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-    });
-    this.hintButton.on("pointertap", async () => {
+    this.hintButton = createCircularButton("💡", async () => {
       if (this.isHintActive) return;
       const success = await AdManager.showRewardedVideo();
       if (success) {
@@ -1144,19 +1242,6 @@ export class GameController extends Container {
       }
     });
     this.gamePlayContainer.addChild(this.hintButton);
-
-    // Add hover scaling effects to make buttons feel premium
-    const addHoverScaling = (btn) => {
-      btn.on("pointerover", () => {
-        gsap.to(btn.scale, { x: 1.12, y: 1.12, duration: 0.15 });
-      });
-      btn.on("pointerout", () => {
-        gsap.to(btn.scale, { x: 1, y: 1, duration: 0.15 });
-      });
-    };
-    addHoverScaling(this.homeButton);
-    addHoverScaling(this.restartButton);
-    addHoverScaling(this.hintButton);
   }
 
   switchState(newState) {
@@ -1221,10 +1306,10 @@ export class GameController extends Container {
     if (this.achievementsUserText) {
       if (currentUser) {
         this.achievementsUserText.text = `Tài khoản: ${currentUser.name} (Đã đăng nhập)`;
-        this.achievementsUserText.style.fill = 0xffea00;
+        this.achievementsUserText.style.fill = 0xd32f2f;
       } else {
         this.achievementsUserText.text = `Tài khoản: Khách (Điểm lưu thiết bị)`;
-        this.achievementsUserText.style.fill = 0xcccccc;
+        this.achievementsUserText.style.fill = 0x5c0612;
       }
     }
 
@@ -1291,41 +1376,37 @@ export class GameController extends Container {
     const cellStyle = new TextStyle({
       fontFamily: "Outfit, sans-serif",
       fontSize: 12,
-      fill: "#ffffff",
+      fill: "#5c0612",
       fontWeight: "bold",
     });
 
     const highlightedStyle = new TextStyle({
       fontFamily: "Outfit, sans-serif",
       fontSize: 12,
-      fill: 0xffea00,
+      fill: 0xd32f2f,
       fontWeight: "900",
-      dropShadow: { color: 0x2b050a, blur: 2, distance: 1 },
     });
 
     // Gold, Silver, Bronze styles for top 3
     const top1Style = new TextStyle({
       fontFamily: "Outfit, sans-serif",
       fontSize: 12,
-      fill: 0xffea00, // Gold
+      fill: 0x8a6d20, // Gold
       fontWeight: "900",
-      dropShadow: { color: 0x2b050a, blur: 2.5, distance: 1 },
     });
 
     const top2Style = new TextStyle({
       fontFamily: "Outfit, sans-serif",
       fontSize: 12,
-      fill: 0xe0e0e0, // Silver
+      fill: 0x5a5a5a, // Silver
       fontWeight: "900",
-      dropShadow: { color: 0x2b050a, blur: 2.5, distance: 1 },
     });
 
     const top3Style = new TextStyle({
       fontFamily: "Outfit, sans-serif",
       fontSize: 12,
-      fill: 0xd4a373, // Bronze
+      fill: 0x8c5a3c, // Bronze
       fontWeight: "900",
-      dropShadow: { color: 0x2b050a, blur: 2.5, distance: 1 },
     });
 
     if (globalHistory.length === 0) {
@@ -1335,7 +1416,7 @@ export class GameController extends Container {
         style: new TextStyle({
           fontFamily: "Outfit, sans-serif",
           fontSize: 14,
-          fill: "#ffffff",
+          fill: "#5c0612",
           align: "center",
         }),
       });
@@ -1473,7 +1554,7 @@ export class GameController extends Container {
     overlay.addChild(darkBg);
 
     const cardW = 340;
-    const cardH = isIngame ? 310 : 260;
+    const cardH = isIngame ? 252 : 220;
 
     // Set pause state for ingame settings
     if (isIngame) {
@@ -1486,11 +1567,13 @@ export class GameController extends Container {
       .fill({ color: 0x000000, alpha: 0.35 });
     overlay.addChild(cardShadow);
 
-    // Glassmorphic translucent dark card
+    // Warm bright yellow card background with red border and gold inner line
     const cardBg = new Graphics()
       .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 16)
-      .fill({ color: 0x150103, alpha: 0.92 })
-      .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.85 });
+      .fill({ color: 0xfffae6 })
+      .stroke({ width: 5, color: 0xd32f2f })
+      .roundRect(-cardW / 2 + 5, -cardH / 2 + 5, cardW - 10, cardH - 10, 12)
+      .stroke({ width: 1.5, color: 0xffea00 });
     overlay.addChild(cardBg);
 
     // Title
@@ -1499,40 +1582,35 @@ export class GameController extends Container {
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
         fontSize: 20,
-        fill: 0xffea00,
+        fill: 0xd32f2f,
         fontWeight: "bold",
         letterSpacing: 1.8,
         align: "center",
-        dropShadow: { color: 0x000000, blur: 4, distance: 2 },
       }),
     });
     titleText.anchor.set(0.5);
     titleText.position.set(0, -cardH / 2 + 32);
     overlay.addChild(titleText);
 
-    // Circular '✕' Close Button in Top-Right
+    // Circular Close Button in Top-Right
     const closeBtn = new Container();
     closeBtn.eventMode = "static";
     closeBtn.cursor = "pointer";
     closeBtn.position.set(cardW / 2 - 22, -cardH / 2 + 22);
 
-    const closeBg = new Graphics()
-      .circle(0, 0, 13)
-      .fill({ color: 0x1b0103, alpha: 0.8 })
-      .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.8 });
-    closeBtn.addChild(closeBg);
+    const closeSprite = new Sprite();
+    closeSprite.anchor.set(0.5);
+    closeSprite.width = 32;
+    closeSprite.height = 32;
+    closeBtn.addChild(closeSprite);
 
-    const closeText = new Text({
-      text: "✕",
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 12,
-        fill: "#ffffff",
-        fontWeight: "bold",
-      }),
-    });
-    closeText.anchor.set(0.5);
-    closeBtn.addChild(closeText);
+    Assets.load("/assest/iconbtn/close_btn.png")
+      .then((texture) => {
+        closeSprite.texture = texture;
+      })
+      .catch((err) => {
+        console.error("Failed to load close_btn.png in settings:", err);
+      });
 
     closeBtn.on("pointertap", () => {
       audio.playFlip();
@@ -1542,11 +1620,9 @@ export class GameController extends Container {
 
     closeBtn.on("pointerover", () => {
       gsap.to(closeBtn.scale, { x: 1.15, y: 1.15, duration: 0.15 });
-      closeBg.stroke({ width: 1.5, color: 0xffea00 });
     });
     closeBtn.on("pointerout", () => {
       gsap.to(closeBtn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-      closeBg.stroke({ width: 1.2, color: 0xd4af37, alpha: 0.8 });
     });
     closeBtn.visible = !isIngame;
     overlay.addChild(closeBtn);
@@ -1556,64 +1632,65 @@ export class GameController extends Container {
       const row = new Container();
       row.position.set(0, yPos);
 
-      // Left label
+      // Left label (dark red)
       const label = new Text({
         text: labelText,
         style: new TextStyle({
           fontFamily: "Outfit, sans-serif",
-          fontSize: 15,
-          fill: "#ffffff",
+          fontSize: 18,
+          fill: "#5c0612",
           fontWeight: "bold",
           letterSpacing: 0.8,
         }),
       });
       label.anchor.set(0, 0.5);
-      label.position.set(-95, 0);
+      label.position.set(-110, 0);
       row.addChild(label);
 
       // Right slider track
-      const trackW = 52;
-      const trackH = 26;
       const track = new Container();
       track.eventMode = "static";
       track.cursor = "pointer";
-      track.position.set(65, 0);
+      track.position.set(70, 0);
       row.addChild(track);
 
-      // Create a background Graphics for the track
-      const trackBg = new Graphics();
-      track.addChild(trackBg);
+      const toggleSprite = new Sprite();
+      toggleSprite.anchor.set(0.5);
+      toggleSprite.width = 72;
+      toggleSprite.height = 36;
+      track.addChild(toggleSprite);
 
-      // Slider knob
-      const knob = new Graphics()
-        .circle(0, 0, 10)
-        .fill({ color: 0xffffff })
-        .stroke({ width: 1, color: 0xdddddd });
-      knob.position.set(0, 0);
-      track.addChild(knob);
+      let texOn = null;
+      let texOff = null;
 
-      const drawTrack = (isMuted) => {
-        trackBg
-          .clear()
-          .roundRect(-trackW / 2, -trackH / 2, trackW, trackH, trackH / 2)
-          .fill({ color: isMuted ? 0x4f4f4f : 0x2ecc71 })
-          .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.7 });
+      Promise.all([
+        Assets.load("/assest/iconbtn/toggle_on.png"),
+        Assets.load("/assest/iconbtn/toggle_off.png"),
+      ])
+        .then(([tOn, tOff]) => {
+          texOn = tOn;
+          texOff = tOff;
+          updateToggleState(initialMuteState);
+        })
+        .catch((err) => {
+          console.error("Failed to load toggle textures:", err);
+        });
+
+      const updateToggleState = (isMuted) => {
+        if (!texOn || !texOff) return;
+        toggleSprite.texture = isMuted ? texOff : texOn;
       };
-
-      // Initialize
-      drawTrack(initialMuteState);
-      knob.x = initialMuteState ? -trackW / 2 + 12 : trackW / 2 - 12;
 
       const handleToggle = () => {
         audio.playFlip();
         const isMuted = onToggle();
-        drawTrack(isMuted);
-        const targetKnobX = isMuted ? -trackW / 2 + 12 : trackW / 2 - 12;
-        gsap.to(knob, {
-          x: targetKnobX,
-          duration: 0.2,
-          ease: "power2.out",
-        });
+        updateToggleState(isMuted);
+
+        gsap.fromTo(
+          track.scale,
+          { x: 0.8, y: 0.8 },
+          { x: 1, y: 1, duration: 0.25, ease: "back.out(1.8)" },
+        );
         this.resize();
       };
 
@@ -1626,8 +1703,8 @@ export class GameController extends Container {
     };
 
     // Add Music and SFX rows
-    const musicRowY = isIngame ? -65 : -25;
-    const sfxRowY = isIngame ? -20 : 15;
+    const musicRowY = isIngame ? -55 : -25;
+    const sfxRowY = isIngame ? -10 : 15;
 
     const musicRow = createToggleRow(
       "🎵 NHẠC NÈN",
@@ -1644,80 +1721,55 @@ export class GameController extends Container {
 
     // In-game buttons (Home, Restart, Continue)
     if (isIngame) {
-      const homeBtn = createMenuButton("🏠 TRANG CHỦ", () => {
+      // Clean circular buttons placed side by side (enlarged to updateStyle(30))
+      const homeBtn = createCircularButton("🏠", () => {
         this.overlayContainer.removeChildren();
         this.isGameOver = true;
         this.isPaused = false;
         this.switchState("MAIN_MENU");
       });
-      homeBtn.updateStyle(120, 38, false); // dark style
-      homeBtn.position.set(-65, 35);
+      homeBtn.position.set(-72, 72);
+      homeBtn.updateStyle(30);
       overlay.addChild(homeBtn);
 
-      const replayBtn = createMenuButton("🔄 CHƠI LẠI", () => {
+      const replayBtn = createCircularButton("🔄", () => {
         this.overlayContainer.removeChildren();
         this.isPaused = false;
         this.initGame(this.currentLevelIndex);
         this.switchState("PLAYING");
       });
-      replayBtn.updateStyle(120, 38, false); // dark style
-      replayBtn.position.set(65, 35);
+      replayBtn.position.set(72, 72);
+      replayBtn.updateStyle(30);
       overlay.addChild(replayBtn);
 
-      const continueBtn = createMenuButton("▶️ TIẾP TỤC", () => {
+      const continueBtn = createCircularButton("▶️", () => {
         audio.playFlip();
         this.overlayContainer.removeChildren();
         this.isPaused = false;
       });
-      continueBtn.updateStyle(250, 38, true); // crimson / red style
-      continueBtn.position.set(0, 95);
+      continueBtn.position.set(0, 72);
+      continueBtn.updateStyle(30);
       overlay.addChild(continueBtn);
     }
 
     if (!isIngame) {
-      // Modern Outline Reset Data button
-      const resetBtn = new Container();
-      resetBtn.eventMode = "static";
-      resetBtn.cursor = "pointer";
-      resetBtn.position.set(0, 60);
-
-      const resetW = 230;
-      const resetH = 38;
-
-      const resetBg = new Graphics()
-        .roundRect(-resetW / 2, -resetH / 2, resetW, resetH, resetH / 2)
-        .fill({ color: 0x1b0103, alpha: 0.5 })
-        .stroke({ width: 1.5, color: 0xd32f2f, alpha: 0.8 });
-      resetBtn.addChild(resetBg);
-
-      const resetText = new Text({
-        text: "🗑️ XÓA DỮ LIỆU THÀNH TÍCH",
-        style: new TextStyle({
-          fontFamily: "Outfit, sans-serif",
-          fontSize: 13,
-          fill: "#fdf5e6",
-          fontWeight: "bold",
-          letterSpacing: 0.5,
-        }),
-      });
-      resetText.anchor.set(0.5);
-      resetBtn.addChild(resetText);
-
-      resetBtn.on("pointertap", async () => {
-        audio.playFlip();
-        // Use the HTML custom modal gameAlert to confirm
-        const confirmReset = await new Promise((resolve) => {
-          if (!document.getElementById("game-confirm-styles")) {
-            const style = document.createElement("style");
-            style.id = "game-confirm-styles";
-            style.textContent = `
+      // Modern Reset Data button
+      const resetBtn = createMenuButton(
+        "🗑️ XÓA DỮ LIỆU THÀNH TÍCH",
+        async () => {
+          audio.playFlip();
+          const confirmReset = await new Promise((resolve) => {
+            if (!document.getElementById("game-confirm-styles")) {
+              const style = document.createElement("style");
+              style.id = "game-confirm-styles";
+              style.textContent = `
               .game-confirm-overlay {
                 position: fixed;
                 top: 0;
                 left: 0;
                 width: 100dvw;
                 height: 100dvh;
-                background: rgba(0, 0, 0, 0.7);
+                background: rgba(0, 0, 0, 0.65);
                 backdrop-filter: blur(6px);
                 -webkit-backdrop-filter: blur(6px);
                 display: flex;
@@ -1728,150 +1780,133 @@ export class GameController extends Container {
                 transition: opacity 0.25s ease;
               }
               .game-confirm-card {
-                background: linear-gradient(135deg, #2c080d 0%, #150005 100%);
-                border: 2px solid #d4af37;
-                box-shadow: 0 0 25px rgba(212, 175, 55, 0.3), inset 0 0 15px rgba(0, 0, 0, 0.6);
-                border-radius: 16px;
-                padding: 24px;
+                background: #fffae6;
+                border: 5px solid #d32f2f;
+                box-shadow: inset 0 0 0 2.5px #ffea00, 0 10px 25px rgba(0, 0, 0, 0.35);
+                border-radius: 20px;
+                padding: 28px 24px;
                 width: 85%;
                 max-width: 340px;
                 text-align: center;
                 transform: scale(0.85);
                 transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-family: 'Outfit', sans-serif;
               }
               .game-confirm-text {
-                color: #fdf5e6;
-                font-size: 16px;
+                color: #5c0612;
+                font-size: 17px;
                 line-height: 1.6;
                 margin: 0 0 24px 0;
-                font-weight: 500;
-                text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+                font-weight: 700;
+                text-shadow: 0 1px 0 rgba(255,255,255,0.8);
               }
               .game-confirm-actions {
                 display: flex;
-                justify-content: space-around;
-                gap: 12px;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
               }
-              .game-confirm-button {
-                border-radius: 24px;
-                padding: 10px 24px;
-                font-size: 14px;
-                font-weight: 700;
+              .game-confirm-img-btn {
+                height: 48px;
+                width: auto;
                 cursor: pointer;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-                transition: transform 0.15s, box-shadow 0.15s;
+                transition: transform 0.1s ease, filter 0.1s ease;
                 outline: none;
               }
-              .game-confirm-btn-yes {
-                background: linear-gradient(90deg, #d4af37 0%, #b89326 100%);
-                color: #1b0103;
-                border: 1px solid #ffea88;
+              .game-confirm-img-btn:hover {
+                transform: scale(1.08);
+                filter: brightness(1.08);
               }
-              .game-confirm-btn-no {
-                background: #3e0c12;
-                color: #ffffff;
-                border: 1px solid #d32f2f;
-              }
-              .game-confirm-button:hover {
-                transform: translateY(-2px) scale(1.05);
-              }
-              .game-confirm-button:active {
-                transform: translateY(1px);
+              .game-confirm-img-btn:active {
+                transform: scale(0.96);
+                filter: brightness(0.92);
               }
             `;
-            document.head.appendChild(style);
+              document.head.appendChild(style);
+            }
+
+            const overlay = document.createElement("div");
+            overlay.className = "game-confirm-overlay";
+
+            const card = document.createElement("div");
+            card.className = "game-confirm-card";
+
+            const text = document.createElement("p");
+            text.className = "game-confirm-text";
+            text.innerText =
+              "Bạn có chắc chắn muốn xóa toàn bộ lịch sử thành tích không?";
+
+            const actions = document.createElement("div");
+            actions.className = "game-confirm-actions";
+
+            const btnYes = document.createElement("img");
+            btnYes.className = "game-confirm-img-btn";
+            btnYes.src = "/assest/iconbtn/yes_btn.png";
+            btnYes.alt = "ĐỒNG Ý";
+
+            const btnNo = document.createElement("img");
+            btnNo.className = "game-confirm-img-btn";
+            btnNo.src = "/assest/iconbtn/close_btn.png";
+            btnNo.alt = "KHÔNG";
+
+            actions.appendChild(btnYes);
+            actions.appendChild(btnNo);
+            card.appendChild(text);
+            card.appendChild(actions);
+            overlay.appendChild(card);
+
+            const container = document.getElementById("app") || document.body;
+            container.appendChild(overlay);
+
+            requestAnimationFrame(() => {
+              overlay.style.opacity = "1";
+              card.style.transform = "scale(1)";
+            });
+
+            const closeConfirm = (res) => {
+              overlay.style.opacity = "0";
+              card.style.transform = "scale(0.85)";
+              setTimeout(() => {
+                overlay.remove();
+                resolve(res);
+              }, 250);
+            };
+
+            btnYes.onclick = () => closeConfirm(true);
+            btnNo.onclick = () => closeConfirm(false);
+          });
+
+          if (confirmReset) {
+            saveStats({
+              totalWins: 0,
+              records: {
+                0: {
+                  highScore: 0,
+                  bestTime: 9999,
+                  fewestMoves: 999,
+                  history: [],
+                },
+                1: {
+                  highScore: 0,
+                  bestTime: 9999,
+                  fewestMoves: 999,
+                  history: [],
+                },
+                2: {
+                  highScore: 0,
+                  bestTime: 9999,
+                  fewestMoves: 999,
+                  history: [],
+                },
+              },
+            });
+            this.updateAchievementsDisplay();
+            await gameAlert("🧹 Đã xóa sạch dữ liệu thành tích!");
           }
-
-          const overlay = document.createElement("div");
-          overlay.className = "game-confirm-overlay";
-
-          const card = document.createElement("div");
-          card.className = "game-confirm-card";
-
-          const text = document.createElement("p");
-          text.className = "game-confirm-text";
-          text.innerText =
-            "Bạn có chắc chắn muốn xóa toàn bộ lịch sử thành tích không?";
-
-          const actions = document.createElement("div");
-          actions.className = "game-confirm-actions";
-
-          const btnYes = document.createElement("button");
-          btnYes.className = "game-confirm-button game-confirm-btn-yes";
-          btnYes.innerText = "CÓ, XÓA HẾT";
-
-          const btnNo = document.createElement("button");
-          btnNo.className = "game-confirm-button game-confirm-btn-no";
-          btnNo.innerText = "KHÔNG";
-
-          actions.appendChild(btnYes);
-          actions.appendChild(btnNo);
-          card.appendChild(text);
-          card.appendChild(actions);
-          overlay.appendChild(card);
-
-          const container = document.getElementById("app") || document.body;
-          container.appendChild(overlay);
-
-          requestAnimationFrame(() => {
-            overlay.style.opacity = "1";
-            card.style.transform = "scale(1)";
-          });
-
-          const closeConfirm = (res) => {
-            overlay.style.opacity = "0";
-            card.style.transform = "scale(0.85)";
-            setTimeout(() => {
-              overlay.remove();
-              resolve(res);
-            }, 250);
-          };
-
-          btnYes.onclick = () => closeConfirm(true);
-          btnNo.onclick = () => closeConfirm(false);
-        });
-
-        if (confirmReset) {
-          saveStats({
-            totalWins: 0,
-            records: {
-              0: {
-                highScore: 0,
-                bestTime: 9999,
-                fewestMoves: 999,
-                history: [],
-              },
-              1: {
-                highScore: 0,
-                bestTime: 9999,
-                fewestMoves: 999,
-                history: [],
-              },
-              2: {
-                highScore: 0,
-                bestTime: 9999,
-                fewestMoves: 999,
-                history: [],
-              },
-            },
-          });
-          this.updateAchievementsDisplay();
-          await gameAlert("🧹 Đã xóa sạch dữ liệu thành tích!");
-        }
-      });
-
-      resetBtn.on("pointerover", () => {
-        gsap.to(resetBtn.scale, { x: 1.05, y: 1.05, duration: 0.15 });
-        resetBg.stroke({ width: 1.5, color: 0xd32f2f, alpha: 1.0 });
-        resetText.style.fill = "#ffffff";
-      });
-      resetBtn.on("pointerout", () => {
-        gsap.to(resetBtn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-        resetBg.stroke({ width: 1.5, color: 0xd32f2f, alpha: 0.8 });
-        resetText.style.fill = "#fdf5e6";
-      });
-
+        },
+      );
+      resetBtn.updateStyle(230, 38, false); // dark style
+      resetBtn.position.set(0, 60);
       overlay.addChild(resetBtn);
     }
 
@@ -2069,23 +2104,10 @@ export class GameController extends Container {
     const overlay = new Graphics();
     overlay
       .roundRect(0, 0, 380, 540, 20)
-      .fill(
-        new FillGradient({
-          start: { x: 0, y: 0 },
-          end: { x: 380, y: 540 },
-          colorStops: [
-            { offset: 0, color: 0x4a0a14 },
-            { offset: 0.5, color: 0x240206 },
-            { offset: 1, color: 0x0f0003 },
-          ],
-        }),
-      )
-      .stroke({ width: 3, color: 0xd4af37 });
-
-    // Inner border
-    overlay
-      .roundRect(6, 6, 380 - 12, 540 - 12, 14)
-      .stroke({ width: 1, color: 0xffd700, alpha: 0.4 });
+      .fill({ color: 0xfffae6 })
+      .stroke({ width: 5, color: 0xd32f2f })
+      .roundRect(5, 5, 380 - 10, 540 - 10, 16)
+      .stroke({ width: 1.5, color: 0xffea00 });
 
     const overlayScale = Math.min(
       1.0,
@@ -2504,21 +2526,21 @@ export class GameController extends Container {
     // 7. Horizontal Stats Panel (Enlarged 4-column horizontal stats box replacing vertical list)
     const statsPanel = new Graphics()
       .roundRect(20, 210, 340, 115, 12)
-      .fill({ color: 0x1b0103, alpha: 0.8 })
-      .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.75 });
+      .fill({ color: 0xffecc6, alpha: 0.85 })
+      .stroke({ width: 1.5, color: 0xd32f2f, alpha: 0.4 });
     overlay.addChild(statsPanel);
 
     const colLabelStyle = new TextStyle({
       fontFamily: "Outfit, sans-serif",
       fontSize: 12,
-      fill: 0xb89326,
+      fill: 0x5c0612,
       fontWeight: "bold",
     });
 
     const colValueStyle = new TextStyle({
       fontFamily: "Outfit, sans-serif",
       fontSize: 20,
-      fill: 0xffea00,
+      fill: 0xd32f2f,
       fontWeight: "900",
     });
 
@@ -2613,7 +2635,7 @@ export class GameController extends Container {
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
         fontSize: 12,
-        fill: 0xffea00,
+        fill: 0xd32f2f,
         fontWeight: "bold",
       }),
     });
@@ -2647,7 +2669,7 @@ export class GameController extends Container {
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
         fontSize: 11,
-        fill: 0xd4af37,
+        fill: 0xd32f2f,
         fontWeight: "bold",
         letterSpacing: 1,
       }),
@@ -2686,7 +2708,7 @@ export class GameController extends Container {
         .circle(0, 0, itemSize / 2 + 2)
         .stroke({ width: 2.0, color: 0xffea00 }) // Bright gold
         .circle(0, 0, itemSize / 2)
-        .fill({ color: 0x1b0103, alpha: 0.9 })
+        .fill({ color: 0xffffff, alpha: 0.95 })
         .stroke({ width: 1.0, color: 0xd4af37 });
       itemContainer.addChild(frame);
 
@@ -2732,137 +2754,34 @@ export class GameController extends Container {
     this.app.ticker.add(scrollParade);
     this.victoryParadeTickerFn = scrollParade;
 
-    // 9. Capsule Action Buttons
-    const drawCapsuleButton = (x, y, label, type, onClick) => {
-      const btn = new Container();
-      btn.eventMode = "static";
-      btn.cursor = "pointer";
-      btn.position.set(x, y);
-
-      let colors;
-      let labelColor = 0xffffff;
-      if (type === "red") {
-        colors = [0xd32f2f, 0x8a1c1c];
-      } else if (type === "green") {
-        colors = [0x4caf50, 0x2e7d32];
-      } else {
-        colors = [0xffea00, 0xb89326];
-        labelColor = 0x1b0103;
-      }
-
-      const btnW = 114;
-      const btnH = 42;
-
-      const grad = new FillGradient({
-        start: { x: -btnW / 2, y: -btnH / 2 },
-        end: { x: btnW / 2, y: btnH / 2 },
-        colorStops: [
-          { offset: 0, color: colors[0] },
-          { offset: 1, color: colors[1] },
-        ],
-      });
-
-      const bg = new Graphics()
-        .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 10)
-        .fill(grad)
-        .stroke({ width: 1.5, color: type === "gold" ? 0x1b0103 : 0xffea00 });
-
-      const spaceIdx = label.indexOf(" ");
-      if (spaceIdx !== -1 && label.charCodeAt(0) > 127) {
-        const emoji = label.substring(0, spaceIdx);
-        const textStr = label.substring(spaceIdx + 1);
-
-        const emojiText = new Text({
-          text: emoji,
-          style: new TextStyle({
-            fontFamily: "Outfit, sans-serif",
-            fontSize: 22,
-            fill: labelColor,
-          }),
-        });
-        emojiText.anchor.set(0.5);
-        btn.addChild(emojiText);
-
-        const txt = new Text({
-          text: textStr,
-          style: new TextStyle({
-            fontFamily: "Outfit, sans-serif",
-            fontSize: 10.5,
-            fill: labelColor,
-            fontWeight: "bold",
-          }),
-        });
-        txt.anchor.set(0.5);
-        btn.addChild(txt);
-
-        // Align emoji and text horizontally
-        const gap = 5;
-        const totalW = emojiText.width + gap + txt.width;
-        emojiText.x = -totalW / 2 + emojiText.width / 2;
-        txt.x = totalW / 2 - txt.width / 2;
-      } else {
-        const txt = new Text({
-          text: label,
-          style: new TextStyle({
-            fontFamily: "Outfit, sans-serif",
-            fontSize: 11,
-            fill: labelColor,
-            fontWeight: "bold",
-          }),
-        });
-        txt.anchor.set(0.5);
-        btn.addChild(txt);
-      }
-
-      btn.addChild(bg);
-      // Ensure text layers are drawn on top of the bg
-      if (btn.children.length > 1) {
-        // bg is added last, so put it at index 0
-        btn.setChildIndex(bg, 0);
-      }
-
-      btn.on("pointertap", onClick);
-      btn.on("pointerover", () => {
-        gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
-      });
-      btn.on("pointerout", () => {
-        gsap.to(btn.scale, { x: 1, y: 1, duration: 0.15 });
-      });
-
-      return btn;
-    };
-
     // Home button
-    const btnHome = drawCapsuleButton(72, 485, "🏠 TRANG CHỦ", "red", () =>
+    const btnHome = createCircularButton("🏠", () =>
       this.switchState("MAIN_MENU"),
     );
+    btnHome.position.set(110, 485);
+    btnHome.updateStyle(32);
 
     // Double score button
-    const btnDouble = drawCapsuleButton(
-      190,
-      485,
-      "📺 x2 ĐIỂM",
-      "gold",
-      async () => {
-        const success = await AdManager.showRewardedVideo();
-        if (success) {
-          this.score = this.score * 2;
-          gsap.killTweensOf(statsObj);
-          valScore.text = this.score.toString();
-          btnDouble.visible = false;
-        }
-      },
-    );
+    const btnDouble = createCircularButton("📺", async () => {
+      const success = await AdManager.showRewardedVideo();
+      if (success) {
+        this.score = this.score * 2;
+        gsap.killTweensOf(statsObj);
+        valScore.text = this.score.toString();
+        btnDouble.visible = false;
+      }
+    });
+    btnDouble.position.set(190, 485);
+    btnDouble.updateStyle(32);
 
     // Play next level
-    const nextBtnLabel =
-      this.currentLevelIndex < LEVELS.length - 1
-        ? "▶️ CHƠI TIẾP"
-        : "🔄 CHƠI LẠI";
-    const btnNext = drawCapsuleButton(308, 485, nextBtnLabel, "green", () => {
+    const nextEmoji = this.currentLevelIndex < LEVELS.length - 1 ? "▶️" : "🔄";
+    const btnNext = createCircularButton(nextEmoji, () => {
       const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
       this.initGame(nextIdx);
     });
+    btnNext.position.set(270, 485);
+    btnNext.updateStyle(32);
 
     overlay.addChild(btnHome, btnDouble, btnNext);
 
@@ -2942,8 +2861,10 @@ export class GameController extends Container {
     const overlay = new Graphics();
     overlay
       .roundRect(0, 0, 360, 220, 16)
-      .fill({ color: 0x2b050a, alpha: 0.95 })
-      .stroke({ width: 2.5, color: 0xd32f2f });
+      .fill({ color: 0xfffae6 })
+      .stroke({ width: 5, color: 0xd32f2f })
+      .roundRect(5, 5, 360 - 10, 220 - 10, 12)
+      .stroke({ width: 1.5, color: 0xffea00 });
 
     const defeatText = new Text({
       text: "HẾT GIỜ",
@@ -2964,7 +2885,7 @@ export class GameController extends Container {
       style: new TextStyle({
         fontFamily: "Outfit, sans-serif",
         fontSize: 16,
-        fill: 0xffecb3,
+        fill: 0x5c0612,
         align: "center",
         lineHeight: 28,
       }),
@@ -2973,30 +2894,8 @@ export class GameController extends Container {
     descText.position.set(180, 105);
     overlay.addChild(descText);
 
-    // Try again button (Right)
-    const btnRetry = new Container();
-    btnRetry.eventMode = "static";
-    btnRetry.cursor = "pointer";
-    btnRetry.position.set(250, 170);
-
-    const btnRetryBg = new Graphics();
-    btnRetryBg
-      .circle(0, 0, 18)
-      .fill(0xd32f2f)
-      .stroke({ width: 1.5, color: 0xffea00 });
-
-    const btnRetryLabel = new Text({
-      text: "🔄",
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 15,
-        fill: 0xffffff,
-        fontWeight: "bold",
-      }),
-    });
-    btnRetryLabel.anchor.set(0.5);
-    btnRetry.addChild(btnRetryBg, btnRetryLabel);
-    btnRetry.on("pointertap", async () => {
+    // Try again button (Right) - enlarged to updateStyle(30)
+    const btnRetry = createCircularButton("🔄", async () => {
       this.defeatCount = (this.defeatCount || 0) + 1;
       if (this.defeatCount >= 3) {
         this.defeatCount = 0;
@@ -3004,41 +2903,12 @@ export class GameController extends Container {
       }
       this.initGame(this.currentLevelIndex);
     });
-
-    btnRetry.on("pointerover", () => {
-      gsap.to(btnRetry.scale, { x: 1.12, y: 1.12, duration: 0.15 });
-    });
-    btnRetry.on("pointerout", () => {
-      gsap.to(btnRetry.scale, { x: 1, y: 1, duration: 0.15 });
-    });
-
+    btnRetry.position.set(260, 170);
+    btnRetry.updateStyle(30);
     overlay.addChild(btnRetry);
 
-    // Continue button (Rewarded Ad) - positioned in the middle
-    const btnContinue = new Container();
-    btnContinue.eventMode = "static";
-    btnContinue.cursor = "pointer";
-    btnContinue.position.set(180, 170);
-
-    const btnContinueBg = new Graphics();
-    btnContinueBg
-      .circle(0, 0, 18)
-      .fill(0xffea00)
-      .stroke({ width: 1.5, color: 0x1b0103 });
-
-    const btnContinueLabel = new Text({
-      text: "⏱️",
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 15,
-        fill: 0x1b0103,
-        fontWeight: "bold",
-      }),
-    });
-    btnContinueLabel.anchor.set(0.5);
-    btnContinue.addChild(btnContinueBg, btnContinueLabel);
-
-    btnContinue.on("pointertap", async () => {
+    // Continue button (Rewarded Ad) - positioned in the middle - enlarged to updateStyle(30)
+    const btnContinue = createCircularButton("⏱️", async () => {
       const success = await AdManager.showRewardedVideo();
       if (success) {
         this.timeRemaining += 30;
@@ -3047,48 +2917,16 @@ export class GameController extends Container {
         this.switchState("PLAYING");
       }
     });
-
-    btnContinue.on("pointerover", () => {
-      gsap.to(btnContinue.scale, { x: 1.12, y: 1.12, duration: 0.15 });
-    });
-    btnContinue.on("pointerout", () => {
-      gsap.to(btnContinue.scale, { x: 1, y: 1, duration: 0.15 });
-    });
-
+    btnContinue.position.set(180, 170);
+    btnContinue.updateStyle(30);
     overlay.addChild(btnContinue);
 
-    // Home button (Left)
-    const btnHome = new Container();
-    btnHome.eventMode = "static";
-    btnHome.cursor = "pointer";
-    btnHome.position.set(110, 170);
-
-    const btnHomeBg = new Graphics();
-    btnHomeBg
-      .circle(0, 0, 18)
-      .fill(0x1b0103)
-      .stroke({ width: 1.5, color: 0xd4af37 });
-
-    const btnHomeLabel = new Text({
-      text: "🏠",
-      style: new TextStyle({
-        fontFamily: "Outfit, sans-serif",
-        fontSize: 15,
-        fill: 0xffffff,
-        fontWeight: "bold",
-      }),
-    });
-    btnHomeLabel.anchor.set(0.5);
-    btnHome.addChild(btnHomeBg, btnHomeLabel);
-    btnHome.on("pointertap", () => this.switchState("MAIN_MENU"));
-
-    btnHome.on("pointerover", () => {
-      gsap.to(btnHome.scale, { x: 1.12, y: 1.12, duration: 0.15 });
-    });
-    btnHome.on("pointerout", () => {
-      gsap.to(btnHome.scale, { x: 1, y: 1, duration: 0.15 });
-    });
-
+    // Home button (Left) - enlarged to updateStyle(30)
+    const btnHome = createCircularButton("🏠", () =>
+      this.switchState("MAIN_MENU"),
+    );
+    btnHome.position.set(100, 170);
+    btnHome.updateStyle(30);
     overlay.addChild(btnHome);
 
     // 2. Elastic Entrance for Defeat Modal
@@ -3563,8 +3401,16 @@ export class GameController extends Container {
       this.achievementsPanel
         .clear()
         .roundRect(sw / 2 - panelW / 2, panelY, panelW, panelH, 12)
-        .fill({ color: 0x1b0103, alpha: 0.65 })
-        .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.45 });
+        .fill({ color: 0xfffae6, alpha: 0.95 })
+        .stroke({ width: 5, color: 0xd32f2f })
+        .roundRect(
+          sw / 2 - panelW / 2 + 5,
+          panelY + 5,
+          panelW - 10,
+          panelH - 10,
+          8,
+        )
+        .stroke({ width: 1.5, color: 0xffea00 });
 
       // Column Header positioning
       const headerY = panelY + 14 * scale;
@@ -3589,8 +3435,8 @@ export class GameController extends Container {
       const hasPersonalRank = !!this.achievementsPersonalRankRow;
       this.achievementsPanel.setStrokeStyle({
         width: 0.8,
-        color: 0xd4af37,
-        alpha: 0.22,
+        color: 0xd32f2f,
+        alpha: 0.35,
       });
       this.achievementsPanel
         .moveTo(sw / 2 - panelW / 2 + 15, panelY + 54 * scale)
@@ -3668,48 +3514,47 @@ export class GameController extends Container {
         }
 
         if (row.bgStripe) {
-          let fillColor = 0x5c0612;
-          let strokeColor = 0xffea00;
-          let fillAlpha = 0.85;
-          let strokeAlpha = 1.0;
-          let strokeWidth = 1.5;
+          let fillColor = 0xffffff;
+          let strokeColor = 0xd32f2f;
+          let fillAlpha = 0.8;
+          let strokeAlpha = 0.2;
+          let strokeWidth = 1.0;
 
           if (row.isHighlightedPlayerRun) {
-            // Player's last run inside top 10 (crimson lacquer highlight with border matching rank)
-            fillColor = 0x5c0612;
-            fillAlpha = 0.85;
+            // Player's last run inside top 10 (soft yellow-orange highlight with red border)
+            fillColor = 0xffecc6;
+            fillAlpha = 0.95;
+            strokeColor = 0xd32f2f;
             strokeAlpha = 1.0;
+            strokeWidth = 1.5;
 
             if (idx === 0) {
               strokeColor = 0xffea00; // Gold border
               strokeWidth = 2.0;
             } else if (idx === 1) {
-              strokeColor = 0xe0e0e0; // Silver border
+              strokeColor = 0xcccccc; // Silver border
               strokeWidth = 1.8;
             } else if (idx === 2) {
               strokeColor = 0xd4a373; // Bronze border
               strokeWidth = 1.6;
-            } else {
-              strokeColor = 0xffea00; // General gold border
-              strokeWidth = 1.5;
             }
           } else {
             // Static Top 3 decorative styles
             if (idx === 0) {
-              fillColor = 0xffea00;
-              fillAlpha = 0.16;
+              fillColor = 0xfffae6; // Soft gold
+              fillAlpha = 0.95;
               strokeColor = 0xffea00;
               strokeAlpha = 0.8;
               strokeWidth = 2.0;
             } else if (idx === 1) {
-              fillColor = 0xffffff;
-              fillAlpha = 0.12;
-              strokeColor = 0xe0e0e0;
+              fillColor = 0xf2f2f2; // Soft silver
+              fillAlpha = 0.95;
+              strokeColor = 0xcccccc;
               strokeAlpha = 0.75;
               strokeWidth = 1.8;
             } else if (idx === 2) {
-              fillColor = 0xd4a373;
-              fillAlpha = 0.12;
+              fillColor = 0xfaf0e6; // Soft bronze
+              fillAlpha = 0.95;
               strokeColor = 0xd4a373;
               strokeAlpha = 0.7;
               strokeWidth = 1.6;
@@ -3765,10 +3610,10 @@ export class GameController extends Container {
               rowSpacing - 2,
               6,
             )
-            .fill({ color: 0x5c0612, alpha: 0.85 })
+            .fill({ color: 0xffecc6, alpha: 0.95 })
             .stroke({
               width: 1.5,
-              color: 0xffea00,
+              color: 0xd32f2f,
               alpha: 1.0,
             });
         }
@@ -3862,11 +3707,7 @@ export class GameController extends Container {
       this.settingsBtnIngame.updateStyle(btnRadius);
 
       this.hintButton.position.set(sw / 2 + 45, ctrlY);
-      this.hintButton.bg
-        .clear()
-        .circle(0, 0, btnRadius)
-        .fill({ color: 0x360207, alpha: 0.85 })
-        .stroke({ width: 1.5, color: 0xffea00 });
+      this.hintButton.updateStyle(btnRadius);
     }
 
     if (this.overlayContainer.children.length > 0) {
@@ -3877,99 +3718,6 @@ export class GameController extends Container {
   }
 
   initDOMOverlays() {
-    // 1. Fullscreen Button (iOS and cross-browser safe)
-    const fsBtn = document.getElementById("fullscreen-btn");
-    if (fsBtn) {
-      fsBtn.onclick = () => {
-        const docEl = document.documentElement;
-        const appEl = document.getElementById("app");
-        const isNativeFS = !!(
-          document.fullscreenElement ||
-          document.webkitFullscreenElement ||
-          document.mozFullScreenElement ||
-          document.msFullscreenElement
-        );
-        const isPseudoFS =
-          appEl && appEl.classList.contains("pseudo-fullscreen");
-
-        const enterPseudo = () => {
-          if (appEl) {
-            appEl.classList.add("pseudo-fullscreen");
-            setTimeout(() => {
-              window.dispatchEvent(new window.Event("resize"));
-            }, 100);
-          }
-        };
-
-        const exitPseudo = () => {
-          if (appEl) {
-            appEl.classList.remove("pseudo-fullscreen");
-            setTimeout(() => {
-              window.dispatchEvent(new window.Event("resize"));
-            }, 100);
-          }
-        };
-
-        if (!isNativeFS && !isPseudoFS) {
-          if (docEl.requestFullscreen) {
-            docEl.requestFullscreen().catch((err) => {
-              console.error(
-                "Error attempting to enable native fullscreen, falling back to pseudo:",
-                err,
-              );
-              enterPseudo();
-            });
-          } else if (docEl.webkitRequestFullscreen) {
-            docEl.webkitRequestFullscreen();
-          } else if (docEl.mozRequestFullScreen) {
-            docEl.mozRequestFullScreen();
-          } else if (docEl.msRequestFullscreen) {
-            docEl.msRequestFullscreen();
-          } else {
-            enterPseudo();
-          }
-        } else {
-          if (isNativeFS) {
-            if (document.exitFullscreen) {
-              document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-              document.webkitExitFullscreen();
-            } else if (document.mozCancelFullScreen) {
-              document.mozCancelFullScreen();
-            } else if (document.msExitFullscreen) {
-              document.msExitFullscreen();
-            }
-          }
-          if (isPseudoFS) {
-            exitPseudo();
-          }
-        }
-      };
-    }
-
-    // Clean up pseudo fullscreen if native fullscreen changes
-    const onFullscreenChange = () => {
-      const isNativeFS = !!(
-        document.fullscreenElement ||
-        document.webkitFullscreenElement ||
-        document.mozFullScreenElement ||
-        document.msFullscreenElement
-      );
-      if (isNativeFS) {
-        const appEl = document.getElementById("app");
-        if (appEl && appEl.classList.contains("pseudo-fullscreen")) {
-          appEl.classList.remove("pseudo-fullscreen");
-          setTimeout(() => {
-            window.dispatchEvent(new window.Event("resize"));
-          }, 100);
-        }
-      }
-    };
-    document.addEventListener("fullscreenchange", onFullscreenChange);
-    document.addEventListener("webkitfullscreenchange", onFullscreenChange);
-    document.addEventListener("mozfullscreenchange", onFullscreenChange);
-    document.addEventListener("MSFullscreenChange", onFullscreenChange);
-
     // 2. Google Modal Account Items (Fallback mock list)
     const modal = document.getElementById("google-login-modal");
     const accountItems = document.querySelectorAll(".google-account-item");
