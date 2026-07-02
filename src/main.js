@@ -1,4 +1,4 @@
-import { Application } from "pixi.js";
+import { Application, Assets } from "pixi.js";
 import { GameController } from "./game";
 
 (async () => {
@@ -8,7 +8,7 @@ import { GameController } from "./game";
   const container = document.getElementById("pixi-container") || document.body;
 
   // 2. Initialize the application asynchronously (Vite safe IIFE pattern)
-  PixiAssets.add({
+  Assets.add({
     alias: "next_btn",
     src: "/assest/iconbtn/next_btn.png",
   });
