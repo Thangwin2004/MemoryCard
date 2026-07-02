@@ -3292,17 +3292,23 @@ export class GameController extends Container {
         logoY + logoHeight / 2 + 85 * scale,
       );
 
-      // Center large Play button exactly in the middle of the Dong Son drum background
-      const playY = sh / 2;
-      const playW = Math.max(200, Math.min(260, 260 * scale));
-      const playH = Math.max(50, Math.min(68, 68 * scale));
+      // Center large Play button, moving it down to leave breathing room for title
+      const titleBottomY = logoY + logoHeight / 2 + 85 * scale;
+      const playY = Math.max(titleBottomY + 70 * scale, sh * 0.55);
+
+      const playW = Math.max(90, Math.min(100, 100 * scale));
+      const playH = Math.max(90, Math.min(100, 100 * scale));
       if (this.playBtn) {
         this.playBtn.position.set(sw / 2, playY);
-        this.playBtn.updateStyle(playW, playH);
+        // If it's a square button created by createPlayButton
+        if (this.playBtn.updateStyle) {
+          this.playBtn.updateStyle(playW, playH);
+        }
       }
 
       // Horizontal row of circular buttons below it (Achievements left, Settings right)
-      const circY = playY + 140 * scale;
+      // Push them to the bottom to fill empty space, but keep safe distance from Play button
+      const circY = Math.max(playY + 110 * scale, sh * 0.8);
       const circR = Math.max(22, Math.min(28, 28 * scale));
       const circGap = 28 * scale;
 
