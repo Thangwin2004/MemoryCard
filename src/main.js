@@ -8,6 +8,10 @@ import { GameController } from "./game";
   const container = document.getElementById("pixi-container") || document.body;
 
   // 2. Initialize the application asynchronously (Vite safe IIFE pattern)
+  PixiAssets.add({
+    alias: "next_btn",
+    src: "/assest/iconbtn/next_btn.png",
+  });
   await app.init({
     background: "#0a0b1e",
     resizeTo: container,

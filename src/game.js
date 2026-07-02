@@ -221,11 +221,11 @@ function getIconForEmoji(emojiOrText) {
     return "/assest/iconbtn/replay_btn.png";
   if (
     emojiOrText.includes("▶️") ||
-    emojiOrText.includes("continue_btn") ||
+    emojiOrText.includes("next_btn") ||
     emojiOrText.includes("CHƠI TIẾP") ||
     emojiOrText.includes("TIẾP TỤC")
   )
-    return "/assest/iconbtn/continue_btn.png";
+    return "/assest/iconbtn/next_btn.png";
   if (
     emojiOrText.includes("🗑️") ||
     emojiOrText.includes("delete_btn") ||
@@ -597,12 +597,12 @@ function createCircularButton(emojiText, onClick) {
     imagePath = "/assest/iconbtn/x2_btn.png";
   } else if (
     emojiText === "▶️" ||
-    emojiText === "continue_btn" ||
+    emojiText === "next_btn" ||
     emojiText === "CHƠI TIẾP" ||
     emojiText === "TIẾP TỤC"
   ) {
     useImage = true;
-    imagePath = "/assest/iconbtn/continue_btn.png";
+    imagePath = "/assest/iconbtn/next_btn.png";
   } else if (emojiText === "back_btn" || emojiText === "QUAY LẠI") {
     useImage = true;
     imagePath = "/assest/iconbtn/back_btn.png";
