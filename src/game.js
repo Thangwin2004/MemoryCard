@@ -2242,7 +2242,6 @@ export class GameController extends Container {
         fill: 0xffea00,
         fontWeight: "900",
         letterSpacing: 2,
-        stroke: { width: 8, color: 0xffea00 },
       }),
     });
     glowText.anchor.set(0.5);
@@ -2262,7 +2261,6 @@ export class GameController extends Container {
         fill: victoryTitleGrad,
         fontWeight: "900",
         letterSpacing: 2,
-        stroke: { width: 5, color: 0x360207 },
       }),
     });
     victoryText.anchor.set(0.5);
