@@ -32,6 +32,15 @@ import { GameController } from "./game";
     document.body.appendChild(app.canvas);
   }
 
+  // 3.5 Hide splash screen smoothly
+  const splashScreen = document.getElementById("splash-screen");
+  if (splashScreen) {
+    splashScreen.style.opacity = "0";
+    setTimeout(() => {
+      splashScreen.style.display = "none";
+    }, 500);
+  }
+
   // 4. Create the game manager container
   const game = new GameController(app);
   window.__game = game;
