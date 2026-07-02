@@ -1,22 +1,53 @@
 class AudioManager {
   constructor() {
     this.ctx = null;
+    this.bgmGain = null;
+    this.sfxGain = null;
     this.bgm = null;
     this.musicMuted = false;
     this.sfxMuted = false;
+    this.initialized = false;
   }
 
   init() {
-    if (this.ctx) return;
+    if (this.initialized) return;
+    this.initialized = true;
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
+        this.bgmGain = this.ctx.createGain();
+        this.sfxGain = this.ctx.createGain();
+
+        this.bgmGain.connect(this.ctx.destination);
+        this.sfxGain.connect(this.ctx.destination);
+
+        // Mute states
+        this.bgmGain.gain.value = this.musicMuted ? 0 : 1;
+        this.sfxGain.gain.value = this.sfxMuted ? 0 : 1;
       }
+
       this.bgm = new Audio("/assest/music/music.mp3");
       this.bgm.loop = true;
-      this.bgm.volume = 0.05;
-      if (!this.musicMuted && this.bgm) {
+      if (this.ctx && this.bgmGain) {
+        const source = this.ctx.createMediaElementSource(this.bgm);
+        const localGain = this.ctx.createGain();
+        localGain.gain.value = 0.05; // 0.05 is the volume setting for BGM
+        source.connect(localGain);
+        localGain.connect(this.bgmGain);
+      } else {
+        this.bgm.volume = 0.05;
+      }
+
+      if (!this.musicMuted && this.bgm && this.ctx) {
+        this.ctx.resume().then(() => {
+          this.bgm
+            .play()
+            .catch((e) =>
+              console.log("BGM play deferred until interaction:", e),
+            );
+        });
+      } else if (!this.musicMuted && this.bgm) {
         this.bgm
           .play()
           .catch((e) => console.log("BGM play deferred until interaction:", e));
@@ -26,26 +57,41 @@ class AudioManager {
     }
   }
 
-  toggleMusicMute() {
-    this.musicMuted = !this.musicMuted;
+  syncMuteState() {
+    if (this.ctx) {
+      this.bgmGain.gain.value = this.musicMuted ? 0 : 1;
+    }
+
     if (this.bgm) {
       if (this.musicMuted) {
         this.bgm.pause();
       } else {
+        if (this.ctx && this.ctx.state === "suspended") {
+          this.ctx.resume();
+        }
         this.bgm.play().catch((e) => console.log("BGM resume error:", e));
       }
     }
+  }
+
+  toggleMusicMute() {
+    this.musicMuted = !this.musicMuted;
+    this.syncMuteState();
     return this.musicMuted;
   }
 
   toggleSfxMute() {
     this.sfxMuted = !this.sfxMuted;
+    if (this.ctx) {
+      this.sfxGain.gain.value = this.sfxMuted ? 0 : 1;
+    }
     return this.sfxMuted;
   }
 
   playFlip() {
-    this.init();
+    if (!this.initialized) this.init();
     if (this.sfxMuted || !this.ctx) return;
+    if (this.ctx.state === "suspended") this.ctx.resume();
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -58,15 +104,16 @@ class AudioManager {
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.sfxGain);
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.1);
   }
 
   playMatch() {
-    this.init();
+    if (!this.initialized) this.init();
     if (this.sfxMuted || !this.ctx) return;
+    if (this.ctx.state === "suspended") this.ctx.resume();
 
     const playTone = (freq, delay, duration) => {
       const osc = this.ctx.createOscillator();
@@ -86,7 +133,7 @@ class AudioManager {
       );
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.sfxGain);
 
       osc.start(this.ctx.currentTime + delay);
       osc.stop(this.ctx.currentTime + delay + duration);
@@ -98,8 +145,9 @@ class AudioManager {
   }
 
   playFail() {
-    this.init();
+    if (!this.initialized) this.init();
     if (this.sfxMuted || !this.ctx) return;
+    if (this.ctx.state === "suspended") this.ctx.resume();
 
     const playTone = (
       freq,
@@ -136,7 +184,7 @@ class AudioManager {
 
       osc.connect(filter);
       filter.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.sfxGain);
 
       osc.start(this.ctx.currentTime + delay);
       osc.stop(this.ctx.currentTime + delay + duration);
@@ -149,8 +197,9 @@ class AudioManager {
   }
 
   playVictory() {
-    this.init();
+    if (!this.initialized) this.init();
     if (this.sfxMuted || !this.ctx) return;
+    if (this.ctx.state === "suspended") this.ctx.resume();
 
     const playTone = (freq, delay, duration, type = "sine", volume = 0.12) => {
       const osc = this.ctx.createOscillator();
@@ -178,7 +227,7 @@ class AudioManager {
       );
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.sfxGain);
 
       vibrato.start(this.ctx.currentTime + delay);
       osc.start(this.ctx.currentTime + delay);
