@@ -227,6 +227,11 @@ function getIconForEmoji(emojiOrText) {
   )
     return "/assest/iconbtn/next_btn.png";
   if (
+    emojiOrText.includes("⏯️") ||
+    emojiOrText.includes("continue_btn")
+  )
+    return "/assest/iconbtn/continue_btn.png";
+  if (
     emojiOrText.includes("🗑️") ||
     emojiOrText.includes("delete_btn") ||
     emojiOrText.includes("XÓA DỮ LIỆU")
@@ -603,6 +608,12 @@ function createCircularButton(emojiText, onClick) {
   ) {
     useImage = true;
     imagePath = "/assest/iconbtn/next_btn.png";
+  } else if (
+    emojiText === "⏯️" ||
+    emojiText === "continue_btn"
+  ) {
+    useImage = true;
+    imagePath = "/assest/iconbtn/continue_btn.png";
   } else if (emojiText === "back_btn" || emojiText === "QUAY LẠI") {
     useImage = true;
     imagePath = "/assest/iconbtn/back_btn.png";
@@ -1740,7 +1751,7 @@ export class GameController extends Container {
       replayBtn.updateStyle(30);
       overlay.addChild(replayBtn);
 
-      const continueBtn = createCircularButton("▶️", () => {
+      const continueBtn = createCircularButton("⏯️", () => {
         audio.playFlip();
         this.overlayContainer.removeChildren();
         this.isPaused = false;
