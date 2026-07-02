@@ -75,7 +75,7 @@ export class Card extends Container {
 
     // Add tiny brand text on the back
     const brandStyle = new TextStyle({
-      fontFamily: "Outfit, sans-serif",
+      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
       fontSize: 8,
       fill: 0xffea00,
       fontWeight: "bold",
