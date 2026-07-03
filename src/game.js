@@ -122,6 +122,119 @@ function gameAlert(message) {
   });
 }
 
+function gameConfirm(message) {
+  return new Promise((resolve) => {
+    if (!document.getElementById("game-confirm-styles")) {
+      const style = document.createElement("style");
+      style.id = "game-confirm-styles";
+      style.textContent = `
+        .game-confirm-overlay {
+          position: fixed;
+          top: 0; left: 0;
+          width: 100dvw; height: 100dvh;
+          background: rgba(0, 0, 0, 0.65);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          display: flex; justify-content: center; align-items: center;
+          z-index: 110000;
+          opacity: 0;
+          transition: opacity 0.25s ease;
+        }
+        .game-confirm-card {
+          background: #fffae6;
+          border: 5px solid #d32f2f;
+          box-shadow: inset 0 0 0 2.5px #ffea00, 0 10px 25px rgba(0, 0, 0, 0.35);
+          border-radius: 20px;
+          padding: 28px 24px;
+          width: 85%; max-width: 340px;
+          text-align: center;
+          transform: scale(0.85);
+          transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          font-family: 'Be Vietnam Pro', sans-serif;
+        }
+        .game-confirm-text {
+          color: #5c0612;
+          font-size: 17px;
+          line-height: 1.6;
+          margin: 0 0 24px 0;
+          font-weight: 700;
+        }
+        .game-confirm-actions {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 20px;
+        }
+        .game-confirm-img-btn {
+          height: 48px;
+          width: auto;
+          cursor: pointer;
+          transition: transform 0.1s ease, filter 0.1s ease;
+          outline: none;
+        }
+        .game-confirm-img-btn:hover {
+          transform: scale(1.08);
+          filter: brightness(1.08);
+        }
+        .game-confirm-img-btn:active {
+          transform: scale(0.96);
+          filter: brightness(0.92);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const overlay = document.createElement("div");
+    overlay.className = "game-confirm-overlay";
+
+    const card = document.createElement("div");
+    card.className = "game-confirm-card";
+
+    const text = document.createElement("p");
+    text.className = "game-confirm-text";
+    text.innerText = message;
+
+    const actions = document.createElement("div");
+    actions.className = "game-confirm-actions";
+
+    const btnYes = document.createElement("img");
+    btnYes.className = "game-confirm-img-btn";
+    btnYes.src = "/assest/iconbtn/yes_btn.png";
+    btnYes.alt = "ĐỒNG Ý";
+
+    const btnNo = document.createElement("img");
+    btnNo.className = "game-confirm-img-btn";
+    btnNo.src = "/assest/iconbtn/close_btn.png";
+    btnNo.alt = "KHÔNG";
+
+    actions.appendChild(btnYes);
+    actions.appendChild(btnNo);
+    card.appendChild(text);
+    card.appendChild(actions);
+    overlay.appendChild(card);
+
+    const container = document.getElementById("app") || document.body;
+    container.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.transform = "scale(1)";
+    });
+
+    const closeConfirm = (res) => {
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => {
+        overlay.remove();
+        resolve(res);
+      }, 250);
+    };
+
+    btnYes.onclick = () => closeConfirm(true);
+    btnNo.onclick = () => closeConfirm(false);
+  });
+}
+
 export const AdManager = {
   showRewardedVideo: async () => {
     console.log("[AdManager] Requesting Rewarded Video Ad...");
@@ -1252,7 +1365,7 @@ export class GameController extends Container {
 
     this.mainMenuContainer.visible = newState === "MAIN_MENU";
     this.levelSelectContainer.visible = newState === "LEVEL_SELECT";
-    this.achievementsContainer.visible = newState === "ACHIEVEMENTS";
+    this.achievementsContainer.visible = false; // Always false, handled by HTML DOM
     this.gamePlayContainer.visible = newState === "PLAYING";
     this.gridContainer.visible = newState === "PLAYING";
 
@@ -1294,7 +1407,9 @@ export class GameController extends Container {
     }
 
     if (newState === "ACHIEVEMENTS") {
-      this.updateAchievementsDisplay();
+      this.showHTMLAchievements();
+    } else {
+      this.hideHTMLAchievements();
     }
 
     this.resize();
@@ -1538,391 +1653,191 @@ export class GameController extends Container {
 
   showSettingsModal(isIngame = false) {
     audio.playFlip();
+    this.injectHTMLPopupStyles();
 
     // Prevent duplicate modals
-    this.overlayContainer.removeChildren();
+    const existing = document.getElementById("game-settings-overlay-id");
+    if (existing) existing.remove();
 
-    const overlay = new Container();
-    this.overlayContainer.addChild(overlay);
-
-    const darkBg = new Graphics()
-      .rect(
-        -this.app.screen.width,
-        -this.app.screen.height,
-        this.app.screen.width * 2,
-        this.app.screen.height * 2,
-      )
-      .fill({ color: 0x000000, alpha: 0.65 });
-    darkBg.eventMode = "static"; // Block clicks underneath
-    overlay.addChild(darkBg);
-
-    const cardW = 340;
-    const cardH = isIngame ? 252 : 220;
-
-    // Set pause state for ingame settings
     if (isIngame) {
       this.isPaused = true;
     }
 
-    // Drop shadow
-    const cardShadow = new Graphics()
-      .roundRect(-cardW / 2 + 5, -cardH / 2 + 5, cardW, cardH, 16)
-      .fill({ color: 0x000000, alpha: 0.35 });
-    overlay.addChild(cardShadow);
+    const overlay = document.createElement("div");
+    overlay.id = "game-settings-overlay-id";
+    overlay.className = "game-popup-overlay";
 
-    // Warm bright yellow card background with red border and gold inner line
-    const cardBg = new Graphics()
-      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 16)
-      .fill({ color: 0xfffae6 })
-      .stroke({ width: 5, color: 0xd32f2f })
-      .roundRect(-cardW / 2 + 5, -cardH / 2 + 5, cardW - 10, cardH - 10, 12)
-      .stroke({ width: 1.5, color: 0xffea00 });
-    overlay.addChild(cardBg);
+    const card = document.createElement("div");
+    card.className = "game-popup-card";
 
     // Title
-    const titleText = new Text({
-      text: "CÀI ĐẶT GAME",
-      style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 20,
-        fill: 0xd32f2f,
-        fontWeight: "bold",
-        letterSpacing: 1.8,
-        align: "center",
-      }),
-    });
-    titleText.anchor.set(0.5);
-    titleText.position.set(0, -cardH / 2 + 32);
-    overlay.addChild(titleText);
+    const title = document.createElement("div");
+    title.className = "game-popup-title";
+    title.innerText = "CÀI ĐẶT GAME";
+    card.appendChild(title);
 
-    // Circular Close Button in Top-Right
-    const closeBtn = new Container();
-    closeBtn.eventMode = "static";
-    closeBtn.cursor = "pointer";
-    closeBtn.position.set(cardW / 2 - 22, -cardH / 2 + 22);
-
-    const closeSprite = new Sprite();
-    closeSprite.anchor.set(0.5);
-    closeSprite.width = 32;
-    closeSprite.height = 32;
-    closeBtn.addChild(closeSprite);
-
-    Assets.load("/assest/iconbtn/close_btn.png")
-      .then((texture) => {
-        closeSprite.texture = texture;
-      })
-      .catch((err) => {
-        console.error("Failed to load close_btn.png in settings:", err);
-      });
-
-    closeBtn.on("pointertap", () => {
-      audio.playFlip();
-      this.overlayContainer.removeChildren();
-      this.isPaused = false;
-    });
-
-    closeBtn.on("pointerover", () => {
-      gsap.to(closeBtn.scale, { x: 1.15, y: 1.15, duration: 0.15 });
-    });
-    closeBtn.on("pointerout", () => {
-      gsap.to(closeBtn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-    });
-    closeBtn.visible = !isIngame;
-    overlay.addChild(closeBtn);
-
-    // Reusable Toggle Row Builder
-    const createToggleRow = (labelText, yPos, initialMuteState, onToggle) => {
-      const row = new Container();
-      row.position.set(0, yPos);
-
-      // Left label (dark red)
-      const label = new Text({
-        text: labelText,
-        style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-          fontSize: 18,
-          fill: "#5c0612",
-          fontWeight: "bold",
-          letterSpacing: 0.8,
-        }),
-      });
-      label.anchor.set(0, 0.5);
-      label.position.set(-110, 0);
-      row.addChild(label);
-
-      // Right slider track
-      const track = new Container();
-      track.eventMode = "static";
-      track.cursor = "pointer";
-      track.position.set(70, 0);
-      row.addChild(track);
-
-      const toggleSprite = new Sprite();
-      toggleSprite.anchor.set(0.5);
-      toggleSprite.width = 72;
-      toggleSprite.height = 36;
-      track.addChild(toggleSprite);
-
-      let texOn = null;
-      let texOff = null;
-
-      Promise.all([
-        Assets.load("/assest/iconbtn/toggle_on.png"),
-        Assets.load("/assest/iconbtn/toggle_off.png"),
-      ])
-        .then(([tOn, tOff]) => {
-          texOn = tOn;
-          texOff = tOff;
-          updateToggleState(initialMuteState);
-        })
-        .catch((err) => {
-          console.error("Failed to load toggle textures:", err);
-        });
-
-      const updateToggleState = (isMuted) => {
-        if (!texOn || !texOff) return;
-        toggleSprite.texture = isMuted ? texOff : texOn;
-      };
-
-      const handleToggle = () => {
+    // Close button (only visible if not ingame pause, or let close button resume)
+    if (!isIngame) {
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "game-popup-close-btn";
+      closeBtn.addEventListener("click", () => {
         audio.playFlip();
-        const isMuted = onToggle();
-        updateToggleState(isMuted);
-
-        gsap.fromTo(
-          track.scale,
-          { x: 0.8, y: 0.8 },
-          { x: 1, y: 1, duration: 0.25, ease: "back.out(1.8)" },
-        );
-        this.resize();
-      };
-
-      track.on("pointertap", handleToggle);
-      label.eventMode = "static";
-      label.cursor = "pointer";
-      label.on("pointertap", handleToggle);
-
-      return row;
-    };
-
-    // Add Music and SFX rows
-    const musicRowY = isIngame ? -55 : -25;
-    const sfxRowY = isIngame ? -10 : 15;
-
-    const musicRow = createToggleRow(
-      "🎵 NHẠC NÈN",
-      musicRowY,
-      audio.musicMuted,
-      () => audio.toggleMusicMute(),
-    );
-    const sfxRow = createToggleRow("🔊 HIỆU ỨNG", sfxRowY, audio.sfxMuted, () =>
-      audio.toggleSfxMute(),
-    );
-
-    overlay.addChild(musicRow);
-    overlay.addChild(sfxRow);
-
-    // In-game buttons (Home, Restart, Continue)
-    if (isIngame) {
-      // Clean circular buttons placed side by side (enlarged to updateStyle(30))
-      const homeBtn = createCircularButton("🏠", () => {
-        this.overlayContainer.removeChildren();
-        this.isGameOver = true;
-        this.isPaused = false;
-        this.switchState("MAIN_MENU");
+        overlay.style.opacity = "0";
+        card.style.transform = "scale(0.85)";
+        setTimeout(() => {
+          overlay.remove();
+        }, 250);
       });
-      homeBtn.position.set(-72, 72);
-      homeBtn.updateStyle(30);
-      overlay.addChild(homeBtn);
+      card.appendChild(closeBtn);
+    }
 
-      const replayBtn = createCircularButton("🔄", () => {
-        this.overlayContainer.removeChildren();
+    const rowContainer = document.createElement("div");
+    rowContainer.className = "game-settings-row-container";
+
+    // Music row
+    const musicRow = document.createElement("div");
+    musicRow.className = "game-settings-row";
+    const musicLabel = document.createElement("span");
+    musicLabel.className = "game-settings-label";
+    musicLabel.innerText = "🎵 Nhạc nền";
+    musicRow.appendChild(musicLabel);
+
+    const musicToggle = document.createElement("button");
+    musicToggle.className = "game-settings-toggle-btn";
+    musicToggle.style.backgroundImage = `url(${audio.musicMuted ? "/assest/iconbtn/toggle_off.png" : "/assest/iconbtn/toggle_on.png"})`;
+    musicToggle.addEventListener("click", () => {
+      audio.playFlip();
+      audio.toggleMusicMute();
+      musicToggle.style.backgroundImage = `url(${audio.musicMuted ? "/assest/iconbtn/toggle_off.png" : "/assest/iconbtn/toggle_on.png"})`;
+    });
+    musicRow.appendChild(musicToggle);
+    rowContainer.appendChild(musicRow);
+
+    // SFX row
+    const sfxRow = document.createElement("div");
+    sfxRow.className = "game-settings-row";
+    const sfxLabel = document.createElement("span");
+    sfxLabel.className = "game-settings-label";
+    sfxLabel.innerText = "🔊 Hiệu ứng";
+    sfxRow.appendChild(sfxLabel);
+
+    const sfxToggle = document.createElement("button");
+    sfxToggle.className = "game-settings-toggle-btn";
+    sfxToggle.style.backgroundImage = `url(${audio.sfxMuted ? "/assest/iconbtn/toggle_off.png" : "/assest/iconbtn/toggle_on.png"})`;
+    sfxToggle.addEventListener("click", () => {
+      audio.playFlip();
+      audio.toggleSfxMute();
+      sfxToggle.style.backgroundImage = `url(${audio.sfxMuted ? "/assest/iconbtn/toggle_off.png" : "/assest/iconbtn/toggle_on.png"})`;
+    });
+    sfxRow.appendChild(sfxToggle);
+    rowContainer.appendChild(sfxRow);
+
+    card.appendChild(rowContainer);
+
+    // Reset high score button (only if not ingame)
+    if (!isIngame) {
+      const resetBtn = document.createElement("button");
+      resetBtn.className = "game-settings-reset-btn";
+      resetBtn.innerHTML = `<img src="/assest/iconbtn/delete_btn.png" class="game-settings-reset-icon" alt="" /> XÓA LỊCH SỬ`;
+      resetBtn.addEventListener("click", async () => {
+        audio.playFlip();
+        const confirmReset = await gameConfirm(
+          "Bạn có chắc chắn muốn xóa toàn bộ dữ liệu kỷ lục không?",
+        );
+        if (confirmReset) {
+          saveStats({
+            totalWins: 0,
+            records: {
+              0: {
+                highScore: 0,
+                bestTime: 9999,
+                fewestMoves: 999,
+                history: [],
+              },
+              1: {
+                highScore: 0,
+                bestTime: 9999,
+                fewestMoves: 999,
+                history: [],
+              },
+              2: {
+                highScore: 0,
+                bestTime: 9999,
+                fewestMoves: 999,
+                history: [],
+              },
+            },
+          });
+          this.updateAchievementsDisplay();
+          await gameAlert("Đã xóa toàn bộ dữ liệu thành công!");
+          overlay.style.opacity = "0";
+          card.style.transform = "scale(0.85)";
+          setTimeout(() => {
+            overlay.remove();
+          }, 250);
+        }
+      });
+      card.appendChild(resetBtn);
+    }
+
+    // In-game buttons (Home, Replay, Continue)
+    if (isIngame) {
+      const actionContainer = document.createElement("div");
+      actionContainer.className = "game-paused-action-container";
+
+      // Home
+      const homeBtn = document.createElement("button");
+      homeBtn.className = "game-paused-btn";
+      homeBtn.style.backgroundImage = "url(/assest/iconbtn/Home_btn.png)";
+      homeBtn.addEventListener("click", async () => {
+        audio.playFlip();
+        const confirmQuit = await gameConfirm(
+          "Bạn có muốn thoát về màn hình chính?",
+        );
+        if (confirmQuit) {
+          overlay.remove();
+          this.isGameOver = true;
+          this.isPaused = false;
+          this.switchState("MAIN_MENU");
+        }
+      });
+      actionContainer.appendChild(homeBtn);
+
+      // Replay
+      const replayBtn = document.createElement("button");
+      replayBtn.className = "game-paused-btn";
+      replayBtn.style.backgroundImage = "url(/assest/iconbtn/replay_btn.png)";
+      replayBtn.addEventListener("click", () => {
+        audio.playFlip();
+        overlay.remove();
         this.isPaused = false;
         this.initGame(this.currentLevelIndex);
         this.switchState("PLAYING");
       });
-      replayBtn.position.set(72, 72);
-      replayBtn.updateStyle(30);
-      overlay.addChild(replayBtn);
+      actionContainer.appendChild(replayBtn);
 
-      const continueBtn = createCircularButton("⏯️", () => {
+      // Resume
+      const resumeBtn = document.createElement("button");
+      resumeBtn.className = "game-paused-btn";
+      resumeBtn.style.backgroundImage = "url(/assest/iconbtn/continue_btn.png)";
+      resumeBtn.addEventListener("click", () => {
         audio.playFlip();
-        this.overlayContainer.removeChildren();
+        overlay.remove();
         this.isPaused = false;
       });
-      continueBtn.position.set(0, 72);
-      continueBtn.updateStyle(30);
-      overlay.addChild(continueBtn);
+      actionContainer.appendChild(resumeBtn);
+
+      card.appendChild(actionContainer);
     }
 
-    if (!isIngame) {
-      // Modern Reset Data button
-      const resetBtn = createMenuButton(
-        "🗑️ XÓA DỮ LIỆU THÀNH TÍCH",
-        async () => {
-          audio.playFlip();
-          const confirmReset = await new Promise((resolve) => {
-            if (!document.getElementById("game-confirm-styles")) {
-              const style = document.createElement("style");
-              style.id = "game-confirm-styles";
-              style.textContent = `
-              .game-confirm-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100dvw;
-                height: 100dvh;
-                background: rgba(0, 0, 0, 0.65);
-                backdrop-filter: blur(6px);
-                -webkit-backdrop-filter: blur(6px);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 110000;
-                opacity: 0;
-                transition: opacity 0.25s ease;
-              }
-              .game-confirm-card {
-                background: #fffae6;
-                border: 5px solid #d32f2f;
-                box-shadow: inset 0 0 0 2.5px #ffea00, 0 10px 25px rgba(0, 0, 0, 0.35);
-                border-radius: 20px;
-                padding: 28px 24px;
-                width: 85%;
-                max-width: 340px;
-                text-align: center;
-                transform: scale(0.85);
-                transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                font-family: 'Outfit', sans-serif;
-              }
-              .game-confirm-text {
-                color: #5c0612;
-                font-size: 17px;
-                line-height: 1.6;
-                margin: 0 0 24px 0;
-                font-weight: 700;
-                text-shadow: 0 1px 0 rgba(255,255,255,0.8);
-              }
-              .game-confirm-actions {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                gap: 20px;
-              }
-              .game-confirm-img-btn {
-                height: 48px;
-                width: auto;
-                cursor: pointer;
-                transition: transform 0.1s ease, filter 0.1s ease;
-                outline: none;
-              }
-              .game-confirm-img-btn:hover {
-                transform: scale(1.08);
-                filter: brightness(1.08);
-              }
-              .game-confirm-img-btn:active {
-                transform: scale(0.96);
-                filter: brightness(0.92);
-              }
-            `;
-              document.head.appendChild(style);
-            }
+    overlay.appendChild(card);
+    const appContainer = document.getElementById("app") || document.body;
+    appContainer.appendChild(overlay);
 
-            const overlay = document.createElement("div");
-            overlay.className = "game-confirm-overlay";
-
-            const card = document.createElement("div");
-            card.className = "game-confirm-card";
-
-            const text = document.createElement("p");
-            text.className = "game-confirm-text";
-            text.innerText =
-              "Bạn có chắc chắn muốn xóa toàn bộ lịch sử thành tích không?";
-
-            const actions = document.createElement("div");
-            actions.className = "game-confirm-actions";
-
-            const btnYes = document.createElement("img");
-            btnYes.className = "game-confirm-img-btn";
-            btnYes.src = "/assest/iconbtn/yes_btn.png";
-            btnYes.alt = "ĐỒNG Ý";
-
-            const btnNo = document.createElement("img");
-            btnNo.className = "game-confirm-img-btn";
-            btnNo.src = "/assest/iconbtn/close_btn.png";
-            btnNo.alt = "KHÔNG";
-
-            actions.appendChild(btnYes);
-            actions.appendChild(btnNo);
-            card.appendChild(text);
-            card.appendChild(actions);
-            overlay.appendChild(card);
-
-            const container = document.getElementById("app") || document.body;
-            container.appendChild(overlay);
-
-            requestAnimationFrame(() => {
-              overlay.style.opacity = "1";
-              card.style.transform = "scale(1)";
-            });
-
-            const closeConfirm = (res) => {
-              overlay.style.opacity = "0";
-              card.style.transform = "scale(0.85)";
-              setTimeout(() => {
-                overlay.remove();
-                resolve(res);
-              }, 250);
-            };
-
-            btnYes.onclick = () => closeConfirm(true);
-            btnNo.onclick = () => closeConfirm(false);
-          });
-
-          if (confirmReset) {
-            saveStats({
-              totalWins: 0,
-              records: {
-                0: {
-                  highScore: 0,
-                  bestTime: 9999,
-                  fewestMoves: 999,
-                  history: [],
-                },
-                1: {
-                  highScore: 0,
-                  bestTime: 9999,
-                  fewestMoves: 999,
-                  history: [],
-                },
-                2: {
-                  highScore: 0,
-                  bestTime: 9999,
-                  fewestMoves: 999,
-                  history: [],
-                },
-              },
-            });
-            this.updateAchievementsDisplay();
-            await gameAlert("🧹 Đã xóa sạch dữ liệu thành tích!");
-          }
-        },
-      );
-      resetBtn.updateStyle(230, 38, false); // dark style
-      resetBtn.position.set(0, 60);
-      overlay.addChild(resetBtn);
-    }
-
-    // Center settings modal on resize
-    this.resize();
-
-    // Fade/Scale in modal
-    overlay.scale.set(0);
-    gsap.to(overlay.scale, {
-      x: 1,
-      y: 1,
-      duration: 0.45,
-      ease: "back.out(1.5)",
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.opacity = "1";
+      card.style.transform = "scale(1)";
     });
   }
 
@@ -3833,6 +3748,561 @@ export class GameController extends Container {
   showGoogleLoginModal() {
     if (window.parent !== window) {
       window.parent.postMessage({ type: "trigger_google_login" }, "*");
+    }
+  }
+
+  injectHTMLPopupStyles() {
+    if (!document.getElementById("game-popup-shared-styles")) {
+      const style = document.createElement("style");
+      style.id = "game-popup-shared-styles";
+      style.textContent = `
+        .game-popup-overlay {
+          position: fixed;
+          top: 0; left: 0;
+          width: 100dvw; height: 100dvh;
+          background: rgba(0, 0, 0, 0.65);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          display: flex; justify-content: center; align-items: center;
+          z-index: 100000;
+          opacity: 0;
+          transition: opacity 0.25s ease;
+          box-sizing: border-box;
+        }
+        .game-popup-card {
+          background: #fffae6;
+          border: 5px solid #d32f2f;
+          box-shadow: inset 0 0 0 2.5px #ffea00, 0 6px 0 #8a0000, 0 12px 25px rgba(0, 0, 0, 0.35);
+          border-radius: 20px;
+          padding: 36px 24px 20px 24px;
+          width: 90%; max-width: 380px;
+          text-align: center;
+          position: relative;
+          transform: scale(0.85);
+          transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+          font-family: 'Be Vietnam Pro', sans-serif;
+          box-sizing: border-box;
+          opacity: 0;
+        }
+        .game-popup-card.wide {
+          max-width: 440px;
+        }
+        .game-popup-title {
+          position: absolute;
+          top: -25px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: linear-gradient(180deg, #ff6b6b 0%, #d32f2f 100%);
+          border: 2.5px solid #fff8b3;
+          border-radius: 12px;
+          box-shadow: 0 4px 0 #8a0000;
+          color: #ffffff;
+          font-family: 'Be Vietnam Pro', sans-serif;
+          font-size: 20px;
+          font-weight: 800;
+          letter-spacing: 1.5px;
+          padding: 6px 32px;
+          text-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+          white-space: nowrap;
+          text-transform: uppercase;
+        }
+        .game-popup-close-btn {
+          position: absolute;
+          top: -16px;
+          right: -16px;
+          width: 40px;
+          height: 40px;
+          border: none;
+          background: url(/assest/iconbtn/close_btn.png) no-repeat center center;
+          background-size: contain;
+          cursor: pointer;
+          transition: transform 0.15s ease;
+          z-index: 100100;
+        }
+        .game-popup-close-btn:hover {
+          transform: scale(1.1);
+        }
+        .game-popup-close-btn:active {
+          transform: scale(0.9);
+        }
+        .game-settings-row-container {
+          margin-top: 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          width: 100%;
+        }
+        .game-settings-row {
+          background: #ffffff;
+          border: 3.5px solid #ffccbc;
+          border-radius: 15px;
+          padding: 10px 18px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-sizing: border-box;
+          height: 62px;
+        }
+        .game-settings-label {
+          font-family: 'Be Vietnam Pro', sans-serif;
+          font-size: 18px;
+          font-weight: 700;
+          color: #5c0612;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .game-settings-toggle-btn {
+          width: 68px;
+          height: 42px;
+          border: none;
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          background-color: transparent;
+          cursor: pointer;
+          transition: transform 0.1s ease;
+        }
+        .game-settings-toggle-btn:hover {
+          transform: scale(1.06);
+        }
+        .game-settings-toggle-btn:active {
+          transform: scale(0.95);
+        }
+        .game-settings-reset-btn {
+          background: linear-gradient(180deg, #ff6b6b 0%, #d32f2f 100%);
+          border: none;
+          box-shadow: 0 4px 0 #8a0000;
+          border-radius: 12px;
+          color: #ffffff;
+          font-family: 'Be Vietnam Pro', sans-serif;
+          font-size: 14px;
+          font-weight: 800;
+          padding: 10px 20px;
+          cursor: pointer;
+          margin-top: 20px;
+          transition: transform 0.1s ease, filter 0.1s ease;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+        .game-settings-reset-icon {
+          width: 24px;
+          height: 24px;
+          object-fit: contain;
+        }
+        .game-settings-reset-btn:hover {
+          transform: scale(1.05);
+          filter: brightness(1.05);
+        }
+        .game-settings-reset-btn:active {
+          transform: translateY(2px);
+          box-shadow: 0 2px 0 #8a0000;
+        }
+
+        /* Paused popup */
+        .game-paused-action-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 20px;
+          margin-top: 24px;
+        }
+        .game-paused-btn {
+          width: 52px;
+          height: 52px;
+          border: none;
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          background-color: transparent;
+          cursor: pointer;
+          transition: transform 0.15s ease, filter 0.15s ease;
+        }
+        .game-paused-btn:hover {
+          transform: scale(1.1);
+        }
+        .game-paused-btn:active {
+          transform: scale(0.9);
+        }
+
+        /* Achievements popup */
+        .game-achievements-user-text {
+          font-family: 'Be Vietnam Pro', sans-serif;
+          font-size: 13px;
+          font-weight: 700;
+          color: #5c0612;
+          margin: 10px 0;
+          text-align: center;
+        }
+        .game-achievements-user-text.logged-in {
+          color: #d32f2f;
+        }
+        .game-achievements-level-selector {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          margin-top: 14px;
+        }
+        .game-achievements-arrow-btn {
+          background: none;
+          border: none;
+          font-size: 22px;
+          color: #d32f2f;
+          cursor: pointer;
+          transition: transform 0.1s ease;
+        }
+        .game-achievements-arrow-btn:hover {
+          transform: scale(1.2);
+        }
+        .game-achievements-level-name {
+          font-family: 'Be Vietnam Pro', sans-serif;
+          font-size: 22px;
+          font-weight: 800;
+          color: #e53935;
+          min-width: 180px;
+          text-align: center;
+        }
+        .game-achievements-table {
+          width: 100%;
+          margin-top: 16px;
+          border-collapse: collapse;
+          font-family: 'Be Vietnam Pro', sans-serif;
+        }
+        .game-achievements-table th {
+          font-size: 12px;
+          font-weight: 800;
+          color: #5c0612;
+          padding: 6px 4px;
+          border-bottom: 2px solid #ffccbc;
+        }
+        .game-achievements-table td {
+          font-size: 12px;
+          font-weight: 700;
+          color: #5c0612;
+          padding: 8px 4px;
+          text-align: center;
+        }
+        .game-achievements-table tr.highlighted td {
+          color: #d32f2f;
+          font-weight: 900;
+        }
+        .game-achievements-table tr.rank-0 td {
+          color: #8a6d20;
+          font-weight: 900;
+        }
+        .game-achievements-table tr.rank-1 td {
+          color: #5a5a5a;
+          font-weight: 900;
+        }
+        .game-achievements-table tr.rank-2 td {
+          color: #8c5a3c;
+          font-weight: 900;
+        }
+        .game-achievements-table tbody tr {
+          border-bottom: 1px solid #ffebe6;
+        }
+        .game-achievements-table tbody tr:last-child {
+          border-bottom: none;
+        }
+        .game-achievements-table-container {
+          max-height: 220px;
+          overflow-y: auto;
+          margin-top: 10px;
+          padding-right: 4px;
+        }
+        .game-achievements-table-container::-webkit-scrollbar {
+          width: 6px;
+        }
+        .game-achievements-table-container::-webkit-scrollbar-track {
+          background: #f1ebd8;
+          border-radius: 4px;
+        }
+        .game-achievements-table-container::-webkit-scrollbar-thumb {
+          background: #c5beaa;
+          border-radius: 4px;
+        }
+        /* Footer personal best */
+        .game-achievements-footer {
+          margin-top: 14px;
+          background: #fff3cd;
+          border: 2px solid #ffea00;
+          border-radius: 12px;
+          padding: 10px 14px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          height: 48px;
+          box-sizing: border-box;
+          font-family: 'Be Vietnam Pro', sans-serif;
+        }
+        .game-achievements-footer-item {
+          font-size: 13px;
+          font-weight: 900;
+          color: #d32f2f;
+          width: 33%;
+          text-align: center;
+        }
+        .game-achievements-footer-item:first-child {
+          text-align: left;
+        }
+        .game-achievements-footer-item:last-child {
+          text-align: right;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }
+
+  showHTMLAchievements() {
+    this.injectHTMLPopupStyles();
+
+    let overlay = document.getElementById("game-achievements-overlay-id");
+    let card;
+    if (overlay) {
+      card = overlay.querySelector(".game-popup-card");
+      card.innerHTML = "";
+    } else {
+      overlay = document.createElement("div");
+      overlay.id = "game-achievements-overlay-id";
+      overlay.className = "game-popup-overlay";
+
+      card = document.createElement("div");
+      card.className = "game-popup-card wide";
+      overlay.appendChild(card);
+      const appContainer = document.getElementById("app") || document.body;
+      appContainer.appendChild(overlay);
+    }
+
+    // Ribbon Title
+    const title = document.createElement("div");
+    title.className = "game-popup-title";
+    title.innerText = "BẢNG VÀNG";
+    card.appendChild(title);
+
+    // Close button
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "game-popup-close-btn";
+    closeBtn.addEventListener("click", () => {
+      audio.playFlip();
+      this.hideHTMLAchievements();
+      this.switchState("MAIN_MENU");
+    });
+    card.appendChild(closeBtn);
+
+    // User profile status
+    const userText = document.createElement("div");
+    userText.className = `game-achievements-user-text${currentUser ? " logged-in" : ""}`;
+    if (currentUser) {
+      userText.innerText = `Tài khoản: ${currentUser.name} (Đã đăng nhập)`;
+    } else {
+      userText.innerText = `Tài khoản: Khách (Điểm lưu thiết bị)`;
+    }
+    card.appendChild(userText);
+
+    // Level Selector
+    const levelSelector = document.createElement("div");
+    levelSelector.className = "game-achievements-level-selector";
+
+    const leftArrow = document.createElement("button");
+    leftArrow.className = "game-achievements-arrow-btn";
+    leftArrow.innerText = "◀";
+    leftArrow.addEventListener("click", () => {
+      audio.playFlip();
+      this.achievementsLevelIndex =
+        (this.achievementsLevelIndex - 1 + LEVELS.length) % LEVELS.length;
+      this.showHTMLAchievements();
+    });
+    levelSelector.appendChild(leftArrow);
+
+    const levelName = document.createElement("span");
+    levelName.className = "game-achievements-level-name";
+    levelName.innerText = LEVELS[this.achievementsLevelIndex].name;
+    levelSelector.appendChild(levelName);
+
+    const rightArrow = document.createElement("button");
+    rightArrow.className = "game-achievements-arrow-btn";
+    rightArrow.innerText = "▶";
+    rightArrow.addEventListener("click", () => {
+      audio.playFlip();
+      this.achievementsLevelIndex =
+        (this.achievementsLevelIndex + 1) % LEVELS.length;
+      this.showHTMLAchievements();
+    });
+    levelSelector.appendChild(rightArrow);
+
+    card.appendChild(levelSelector);
+
+    // Gather records
+    const activeKey = currentUser
+      ? `${LOCAL_STORAGE_KEY}_${currentUser.id}`
+      : LOCAL_STORAGE_KEY;
+    const globalHistory = [];
+    try {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i);
+        if (key.startsWith(LOCAL_STORAGE_KEY)) {
+          const dataStr = window.localStorage.getItem(key);
+          if (dataStr) {
+            const statsObj = JSON.parse(dataStr);
+            let pName = "Khách";
+            if (statsObj.userName) {
+              pName = statsObj.userName;
+            } else if (key.startsWith(`${LOCAL_STORAGE_KEY}_`)) {
+              pName = "Người chơi";
+            }
+            const record =
+              statsObj.records && statsObj.records[this.achievementsLevelIndex];
+            const history = (record && record.history) || [];
+            if (history.length > 0) {
+              const bestRun = history[0];
+              globalHistory.push({
+                ...bestRun,
+                playerName: pName,
+                profileKey: key,
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    globalHistory.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (a.time !== b.time) return a.time - b.time;
+      return a.moves - b.moves;
+    });
+
+    const currentStats = getStats();
+    const currentRecord = currentStats.records[this.achievementsLevelIndex];
+    const currentHistory = (currentRecord && currentRecord.history) || [];
+    const levelBestRun = currentHistory.length > 0 ? currentHistory[0] : null;
+
+    // Table container
+    const tableContainer = document.createElement("div");
+    tableContainer.className = "game-achievements-table-container";
+
+    const table = document.createElement("table");
+    table.className = "game-achievements-table";
+
+    const thead = document.createElement("thead");
+    thead.innerHTML = `
+      <tr>
+        <th>HẠNG</th>
+        <th>TÊN</th>
+        <th>ĐIỂM</th>
+        <th>LƯỢT VÀ T.GIAN</th>
+      </tr>
+    `;
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    if (globalHistory.length === 0) {
+      const emptyRow = document.createElement("tr");
+      emptyRow.innerHTML = `<td colspan="4" style="padding: 20px; font-style: italic;">Chưa có thành tích kỷ lục.</td>`;
+      tbody.appendChild(emptyRow);
+    } else {
+      const limit = Math.min(10, globalHistory.length);
+      for (let i = 0; i < limit; i++) {
+        const run = globalHistory[i];
+        const isCurrentPlayer = run.profileKey === activeKey;
+
+        let rankDisplay = `${i + 1}`;
+        if (i === 0) rankDisplay = "🥇";
+        else if (i === 1) rankDisplay = "🥈";
+        else if (i === 2) rankDisplay = "🥉";
+
+        if (isCurrentPlayer) {
+          rankDisplay = `${rankDisplay} 👤`;
+        }
+
+        const row = document.createElement("tr");
+        if (isCurrentPlayer) row.className = "highlighted";
+        if (i < 3) row.classList.add(`rank-${i}`);
+
+        row.innerHTML = `
+          <td>${rankDisplay}</td>
+          <td>${run.playerName}</td>
+          <td>${run.score}</td>
+          <td>${run.moves} lượt (${run.time}s)</td>
+        `;
+        tbody.appendChild(row);
+      }
+    }
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    card.appendChild(tableContainer);
+
+    // Personal Best Footer
+    if (levelBestRun) {
+      const userRankIndex = globalHistory.findIndex(
+        (run) => run.profileKey === activeKey,
+      );
+      let rankDisplay = 0;
+      if (userRankIndex !== -1) {
+        rankDisplay = userRankIndex + 1;
+      } else {
+        const betterCount = globalHistory.filter((r) => {
+          if (r.score !== levelBestRun.score)
+            return r.score > levelBestRun.score;
+          if (r.time !== levelBestRun.time) return r.time < levelBestRun.time;
+          return r.moves < levelBestRun.moves;
+        }).length;
+        rankDisplay = betterCount + 1;
+      }
+
+      let rankText = `${rankDisplay}`;
+      if (rankDisplay === 1) rankText = "🥇";
+      else if (rankDisplay === 2) rankText = "🥈";
+      else if (rankDisplay === 3) rankText = "🥉";
+
+      const footer = document.createElement("div");
+      footer.className = "game-achievements-footer";
+
+      const rankItem = document.createElement("div");
+      rankItem.className = "game-achievements-footer-item";
+      rankItem.innerText = `PB: Hạng ${rankText}`;
+      footer.appendChild(rankItem);
+
+      const scoreItem = document.createElement("div");
+      scoreItem.className = "game-achievements-footer-item";
+      scoreItem.innerText = `Điểm: ${levelBestRun.score}`;
+      footer.appendChild(scoreItem);
+
+      const timeItem = document.createElement("div");
+      timeItem.className = "game-achievements-footer-item";
+      timeItem.innerText = `${levelBestRun.time}s (${levelBestRun.moves} l)`;
+      footer.appendChild(timeItem);
+
+      card.appendChild(footer);
+    }
+
+    if (overlay.style.opacity !== "1") {
+      requestAnimationFrame(() => {
+        overlay.style.opacity = "1";
+        card.style.opacity = "1";
+        card.style.transform = "scale(1)";
+      });
+    }
+  }
+
+  hideHTMLAchievements() {
+    const overlay = document.getElementById("game-achievements-overlay-id");
+    if (overlay) {
+      const card = overlay.querySelector(".game-popup-card");
+      overlay.style.opacity = "0";
+      if (card) {
+        card.style.opacity = "0";
+        card.style.transform = "scale(0.85)";
+      }
+      setTimeout(() => {
+        overlay.remove();
+      }, 250);
     }
   }
 
