@@ -3973,10 +3973,14 @@ export class GameController extends Container {
           font-family: 'Be Vietnam Pro', sans-serif;
         }
         .game-achievements-table th {
+          position: sticky;
+          top: 0;
+          background: #fffae6;
+          z-index: 10;
           font-size: 12px;
           font-weight: 800;
           color: #5c0612;
-          padding: 6px 4px;
+          padding: 8px 4px;
           border-bottom: 2px solid #ffccbc;
         }
         .game-achievements-table td {
@@ -4009,7 +4013,7 @@ export class GameController extends Container {
           border-bottom: none;
         }
         .game-achievements-table-container {
-          max-height: 220px;
+          max-height: min(350px, 50vh);
           overflow-y: auto;
           margin-top: 10px;
           padding-right: 4px;
