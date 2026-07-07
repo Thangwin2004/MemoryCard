@@ -238,25 +238,18 @@ function gameConfirm(message) {
 export const AdManager = {
   showRewardedVideo: async () => {
     console.log("[AdManager] Requesting Rewarded Video Ad...");
-    await gameAlert(
-      "📺 Đang tải quảng cáo... Vui lòng xem hết để nhận phần thưởng!",
-    );
     return new Promise((resolve) => {
-      setTimeout(async () => {
-        await gameAlert(
-          "🎉 Cảm ơn bạn đã xem quảng cáo! Phần thưởng đã được mở khóa.",
-        );
+      setTimeout(() => {
         resolve(true);
-      }, 2000);
+      }, 500);
     });
   },
   showInterstitial: async () => {
     console.log("[AdManager] Showing Interstitial Ad...");
-    await gameAlert("📺 Đang hiển thị quảng cáo giữa màn hình...");
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve(true);
-      }, 1000);
+      }, 500);
     });
   },
 };
@@ -1361,6 +1354,7 @@ export class GameController extends Container {
   }
 
   switchState(newState) {
+    const oldState = this.gameState;
     this.gameState = newState;
 
     this.mainMenuContainer.visible = newState === "MAIN_MENU";
@@ -1789,17 +1783,12 @@ export class GameController extends Container {
       const homeBtn = document.createElement("button");
       homeBtn.className = "game-paused-btn";
       homeBtn.style.backgroundImage = "url(/assest/iconbtn/Home_btn.png)";
-      homeBtn.addEventListener("click", async () => {
+      homeBtn.addEventListener("click", () => {
         audio.playFlip();
-        const confirmQuit = await gameConfirm(
-          "Bạn có muốn thoát về màn hình chính?",
-        );
-        if (confirmQuit) {
-          overlay.remove();
-          this.isGameOver = true;
-          this.isPaused = false;
-          this.switchState("MAIN_MENU");
-        }
+        overlay.remove();
+        this.isGameOver = true;
+        this.isPaused = false;
+        this.switchState("MAIN_MENU");
       });
       actionContainer.appendChild(homeBtn);
 
@@ -1851,6 +1840,7 @@ export class GameController extends Container {
     this.combo = 0;
     this.timeRemaining = config.maxTime;
     this.isGameOver = false;
+    this.hasRevivedThisRun = false;
     this.isHintActive = false;
     this.isPaused = false;
 
@@ -2748,9 +2738,107 @@ export class GameController extends Container {
     }
   }
 
+  showReviveOffer(onRevive, onSkip) {
+    const existing = document.getElementById("game-revive-overlay-id");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "game-revive-overlay-id";
+    overlay.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
+
+    const card = document.createElement("div");
+    card.style.cssText = "background:#fffae6;border:6px solid #d32f2f;border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #ffea00, 0 15px 30px rgba(0,0,0,0.5);";
+
+    const title = document.createElement("div");
+    title.innerText = "HỒI SINH";
+    title.style.cssText = "font-size:32px;font-weight:900;color:#d32f2f;text-shadow: 0 1px 0 rgba(255,255,255,0.8);margin-bottom:20px;font-family:'Outfit', 'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
+
+    const heartIcon = document.createElement("div");
+    heartIcon.innerText = "💖";
+    heartIcon.style.cssText = "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,100,150,0.6);";
+    heartIcon.animate([
+      { transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }
+    ], { duration: 1200, iterations: Infinity, easing: "ease-in-out" });
+
+    const yesBtn = document.createElement("button");
+    yesBtn.style.cssText = "background:linear-gradient(to bottom, #7CD41E, #62A816);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4C8210, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
+
+    const tvIcon = document.createElement("img");
+    tvIcon.src = "/assest/iconbtn/images.png";
+    tvIcon.style.cssText = "height:30px;width:auto;margin-right:15px;";
+
+    const yesText = document.createElement("span");
+    yesText.innerText = "CÓ";
+    yesText.style.textShadow = "0 2px 4px rgba(0,0,0,0.3)";
+
+    yesBtn.appendChild(tvIcon);
+    yesBtn.appendChild(yesText);
+
+    const skipText = document.createElement("div");
+    skipText.innerText = "Không, cảm ơn";
+    skipText.style.cssText = "margin-top:15px;font-family:sans-serif;font-size:16px;color:#888;text-decoration:underline;cursor:pointer;font-weight:bold;";
+
+    card.appendChild(title);
+    card.appendChild(heartIcon);
+    card.appendChild(yesBtn);
+    card.appendChild(skipText);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const cleanup = () => {
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => overlay.remove(), 250);
+    };
+
+    let isHandlingClick = false;
+    yesBtn.addEventListener("click", () => {
+      if (isHandlingClick) return;
+      isHandlingClick = true;
+      cleanup();
+      onRevive();
+    });
+
+    skipText.addEventListener("click", () => {
+      if (isHandlingClick) return;
+      isHandlingClick = true;
+      cleanup();
+      onSkip();
+    });
+
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.transform = "scale(1)";
+    });
+  }
+
   triggerDefeat() {
     this.isGameOver = true;
     audio.playFail();
+
+    if (!this.hasRevivedThisRun) {
+      this.showReviveOffer(
+        async () => {
+          const success = await AdManager.showRewardedVideo();
+          if (success) {
+            this.hasRevivedThisRun = true;
+            this.timeRemaining += 30;
+            this.isGameOver = false;
+            this.switchState("PLAYING");
+          } else {
+            this.showDefeatScreen();
+          }
+        },
+        () => {
+          this.showDefeatScreen();
+        }
+      );
+    } else {
+      this.showDefeatScreen();
+    }
+  }
+
+  showDefeatScreen() {
 
     // 1. Board shake on defeat to make it feel dramatic
     const originalGridX = this.gridContainer.x;
@@ -2814,29 +2902,18 @@ export class GameController extends Container {
       }
       this.initGame(this.currentLevelIndex);
     });
-    btnRetry.position.set(260, 170);
+    btnRetry.position.set(220, 170); // Centered a bit more since continue is removed
     btnRetry.updateStyle(30);
     overlay.addChild(btnRetry);
 
-    // Continue button (Rewarded Ad) - positioned in the middle - enlarged to updateStyle(30)
-    const btnContinue = createCircularButton("⏱️", async () => {
-      const success = await AdManager.showRewardedVideo();
-      if (success) {
-        this.timeRemaining += 30;
-        this.isGameOver = false;
-        this.overlayContainer.removeChild(overlay);
-        this.switchState("PLAYING");
-      }
-    });
-    btnContinue.position.set(180, 170);
-    btnContinue.updateStyle(30);
-    overlay.addChild(btnContinue);
-
+    // Remove the old continue button since it's now in the Revive Offer
+    // Continuing via the old button is no longer needed.
+    
     // Home button (Left) - enlarged to updateStyle(30)
     const btnHome = createCircularButton("🏠", () =>
       this.switchState("MAIN_MENU"),
     );
-    btnHome.position.set(100, 170);
+    btnHome.position.set(140, 170); // Centered a bit more
     btnHome.updateStyle(30);
     overlay.addChild(btnHome);
 
