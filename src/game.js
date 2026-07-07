@@ -1354,7 +1354,6 @@ export class GameController extends Container {
   }
 
   switchState(newState) {
-    const oldState = this.gameState;
     this.gameState = newState;
 
     this.mainMenuContainer.visible = newState === "MAIN_MENU";
@@ -2744,24 +2743,36 @@ export class GameController extends Container {
 
     const overlay = document.createElement("div");
     overlay.id = "game-revive-overlay-id";
-    overlay.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
+    overlay.style.cssText =
+      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
 
     const card = document.createElement("div");
-    card.style.cssText = "background:#fffae6;border:6px solid #d32f2f;border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #ffea00, 0 15px 30px rgba(0,0,0,0.5);";
+    card.style.cssText =
+      "background:#fffae6;border:6px solid #d32f2f;border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #ffea00, 0 15px 30px rgba(0,0,0,0.5);";
 
     const title = document.createElement("div");
     title.innerText = "HỒI SINH";
-    title.style.cssText = "font-size:32px;font-weight:900;color:#d32f2f;text-shadow: 0 1px 0 rgba(255,255,255,0.8);margin-bottom:20px;font-family:'Outfit', 'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
+    title.style.cssText =
+      "font-size:32px;font-weight:900;color:#d32f2f;text-shadow: 0 1px 0 rgba(255,255,255,0.8);margin-bottom:20px;font-family:'Outfit', 'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
 
     const heartIcon = document.createElement("div");
     heartIcon.innerText = "💖";
-    heartIcon.style.cssText = "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,100,150,0.6);";
-    heartIcon.animate([
-      { transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }
-    ], { duration: 1200, iterations: Infinity, easing: "ease-in-out" });
+    heartIcon.style.cssText =
+      "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,100,150,0.6);";
+    heartIcon.animate(
+      [
+        { transform: "scale(1)" },
+        { transform: "scale(1.2)" },
+        { transform: "scale(1)" },
+        { transform: "scale(1.2)" },
+        { transform: "scale(1)" },
+      ],
+      { duration: 1200, iterations: Infinity, easing: "ease-in-out" },
+    );
 
     const yesBtn = document.createElement("button");
-    yesBtn.style.cssText = "background:linear-gradient(to bottom, #7CD41E, #62A816);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4C8210, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
+    yesBtn.style.cssText =
+      "background:linear-gradient(to bottom, #7CD41E, #62A816);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4C8210, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
 
     const tvIcon = document.createElement("img");
     tvIcon.src = "/assest/iconbtn/images.png";
@@ -2776,7 +2787,8 @@ export class GameController extends Container {
 
     const skipText = document.createElement("div");
     skipText.innerText = "Không, cảm ơn";
-    skipText.style.cssText = "margin-top:15px;font-family:sans-serif;font-size:16px;color:#888;text-decoration:underline;cursor:pointer;font-weight:bold;";
+    skipText.style.cssText =
+      "margin-top:15px;font-family:sans-serif;font-size:16px;color:#888;text-decoration:underline;cursor:pointer;font-weight:bold;";
 
     card.appendChild(title);
     card.appendChild(heartIcon);
@@ -2831,7 +2843,7 @@ export class GameController extends Container {
         },
         () => {
           this.showDefeatScreen();
-        }
+        },
       );
     } else {
       this.showDefeatScreen();
@@ -2839,7 +2851,6 @@ export class GameController extends Container {
   }
 
   showDefeatScreen() {
-
     // 1. Board shake on defeat to make it feel dramatic
     const originalGridX = this.gridContainer.x;
     gsap.fromTo(
@@ -2908,7 +2919,7 @@ export class GameController extends Container {
 
     // Remove the old continue button since it's now in the Revive Offer
     // Continuing via the old button is no longer needed.
-    
+
     // Home button (Left) - enlarged to updateStyle(30)
     const btnHome = createCircularButton("🏠", () =>
       this.switchState("MAIN_MENU"),
@@ -2939,20 +2950,12 @@ export class GameController extends Container {
 
     // 3. Staggered Button Entrance Animations
     btnHome.scale.set(0);
-    btnContinue.scale.set(0);
     btnRetry.scale.set(0);
     gsap.to(btnHome.scale, {
       x: 1,
       y: 1,
       duration: 0.35,
       delay: 0.45,
-      ease: "back.out(1.7)",
-    });
-    gsap.to(btnContinue.scale, {
-      x: 1,
-      y: 1,
-      duration: 0.35,
-      delay: 0.58,
       ease: "back.out(1.7)",
     });
     gsap.to(btnRetry.scale, {
