@@ -1999,719 +1999,17 @@ export class GameController extends Container {
       return a.moves - b.moves;
     });
 
-    // Keep top 100 records to show ranks outside top 10
     prevRecord.history = prevRecord.history.slice(0, 100);
-
     stats.lastRunId = runId;
     stats.totalWins++;
     saveStats(stats);
 
     const accuracy = Math.round((config.pairs / this.moves) * 100);
 
-    const overlay = new Graphics();
-    overlay
-      .roundRect(0, 0, 380, 540, 20)
-      .fill({ color: 0xfffae6 })
-      .stroke({ width: 5, color: 0xd32f2f })
-      .roundRect(5, 5, 380 - 10, 540 - 10, 16)
-      .stroke({ width: 1.5, color: 0xffea00 });
+    // Continue drawing fireworks behind the HTML UI using PixiJS
+    this.overlayContainer.removeChildren(); // clear canvas overlays
 
-    const overlayScale = Math.min(
-      1.0,
-      this.app.screen.width / 450,
-      this.app.screen.height / 700,
-    );
-
-    // 1. Fullscreen Dark Overlay & Background Thematic Lanterns
-    const darkBg = new Graphics()
-      .rect(0, 0, this.app.screen.width, this.app.screen.height)
-      .fill({ color: 0x000000, alpha: 0.5 });
-    this.overlayContainer.addChild(darkBg);
-
-    const leftLantern = new Text({
-      text: "🏮",
-      style: new TextStyle({ fontSize: 48 }),
-    });
-    leftLantern.anchor.set(0.5);
-    leftLantern.position.set(
-      this.app.screen.width / 2 - 210,
-      this.app.screen.height / 2 - 250,
-    );
-    this.overlayContainer.addChild(leftLantern);
-
-    const rightLantern = new Text({
-      text: "🏮",
-      style: new TextStyle({ fontSize: 48 }),
-    });
-    rightLantern.anchor.set(0.5);
-    rightLantern.position.set(
-      this.app.screen.width / 2 + 210,
-      this.app.screen.height / 2 - 250,
-    );
-    this.overlayContainer.addChild(rightLantern);
-
-    // 2. Gold Rotating Sunburst Rays
-    const raysContainer = new Container();
-    raysContainer.position.set(
-      this.app.screen.width / 2,
-      this.app.screen.height / 2,
-    );
-    raysContainer.scale.set(0);
-    this.overlayContainer.addChild(raysContainer);
-
-    const numRays = 16;
-    const rayAngle = (Math.PI * 2) / numRays;
-    const rayRadius = 400;
-    const raysGraphics = new Graphics();
-    for (let i = 0; i < numRays; i++) {
-      const angleStart = i * rayAngle;
-      const angleEnd = angleStart + rayAngle * 0.45;
-      raysGraphics
-        .moveTo(0, 0)
-        .arc(0, 0, rayRadius, angleStart, angleEnd)
-        .lineTo(0, 0)
-        .fill({ color: 0xffea00, alpha: 0.12 });
-    }
-    raysContainer.addChild(raysGraphics);
-
-    const rotateRays = (ticker) => {
-      raysGraphics.rotation += 0.005 * ticker.deltaTime;
-    };
-    this.app.ticker.add(rotateRays);
-    this.raysTickerFn = rotateRays;
-
-    gsap.to(raysContainer.scale, {
-      x: overlayScale,
-      y: overlayScale,
-      duration: 1.2,
-      ease: "power2.out",
-    });
-
-    // 3. Matched Avatars list configuration
-    const uniqueAvatars = [...new Set(this.cards.map((c) => c.avatarFile))];
-
-    // 4. Overlay Card Setup
-    overlay.pivot.set(190, 270);
-    overlay.scale.set(0);
-    overlay.x = this.app.screen.width / 2;
-    overlay.y = this.app.screen.height / 2;
-    this.overlayContainer.addChild(overlay);
-
-    gsap.to(overlay.scale, {
-      x: overlayScale,
-      y: overlayScale,
-      duration: 0.8,
-      ease: "elastic.out(1.0, 0.65)",
-    });
-
-    // Three Gold Stars
-    const starsContainer = new Container();
-    starsContainer.position.set(190, -105);
-    overlay.addChild(starsContainer);
-
-    const drawStar = (size) => {
-      return new Graphics()
-        .star(0, 0, 5, size, size * 0.45)
-        .fill({ color: 0xffea00 })
-        .stroke({ width: 1.5, color: 0xb89326 });
-    };
-
-    const leftStar = drawStar(15);
-    leftStar.position.set(-65, 12);
-    leftStar.rotation = -0.2;
-
-    const middleStar = drawStar(22);
-    middleStar.position.set(0, 0);
-
-    const rightStar = drawStar(15);
-    rightStar.position.set(65, 12);
-    rightStar.rotation = 0.2;
-
-    starsContainer.addChild(leftStar, middleStar, rightStar);
-
-    const victoryTitleGrad = new FillGradient({
-      end: { x: 0, y: 34 },
-      colorStops: [
-        { offset: 0, color: 0xffe500 },
-        { offset: 1, color: 0xff7b00 },
-      ],
-    });
-
-    // Create a title container for the glow + text combination to float together
-    const titleContainer = new Container();
-    titleContainer.position.set(190, -50);
-    overlay.addChild(titleContainer);
-
-    // Glow Text Layer (behind)
-    const glowText = new Text({
-      text: "CHIẾN THẮNG",
-      style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 34,
-        fill: 0xffea00,
-        fontWeight: "900",
-        letterSpacing: 2,
-      }),
-    });
-    glowText.anchor.set(0.5);
-    titleContainer.addChild(glowText);
-
-    // Apply BlurFilter to create the shining neon glow effect
-    const glowFilter = new BlurFilter();
-    glowFilter.strength = 6;
-    glowText.filters = [glowFilter];
-
-    // Main Victory Text Layer (on top)
-    const victoryText = new Text({
-      text: "CHIẾN THẮNG",
-      style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 34,
-        fill: victoryTitleGrad,
-        fontWeight: "900",
-        letterSpacing: 2,
-      }),
-    });
-    victoryText.anchor.set(0.5);
-    titleContainer.addChild(victoryText);
-
-    // Animate glow text alpha to create a breathing light pulse effect
-    const glowBreathe = gsap.to(glowText, {
-      alpha: 0.35,
-      duration: 1.2,
-      yoyo: true,
-      repeat: -1,
-      ease: "sine.inOut",
-    });
-    this.victoryTweens.push(glowBreathe);
-
-    // Pop-in entry animation for the entire title container
-    titleContainer.scale.set(0);
-    const textScaleTween = gsap.to(titleContainer.scale, {
-      x: 1,
-      y: 1,
-      duration: 1.0,
-      delay: 0.4,
-      ease: "elastic.out(1.2, 0.5)",
-    });
-    this.victoryTweens.push(textScaleTween);
-
-    // Floating/swaying animation for the entire title container
-    const textFloatTween = gsap.to(titleContainer, {
-      y: "-=5",
-      duration: 1.5,
-      yoyo: true,
-      repeat: -1,
-      ease: "sine.inOut",
-      delay: 0.8,
-    });
-    const textRotateTween = gsap.to(titleContainer, {
-      rotation: 0.04,
-      duration: 2.0,
-      yoyo: true,
-      repeat: -1,
-      ease: "sine.inOut",
-      delay: 0.8,
-    });
-    this.victoryTweens.push(textFloatTween, textRotateTween);
-
-    // Continuous Sparkles around victory title
-    const globalTextX = this.app.screen.width / 2;
-    const globalTextY = this.app.screen.height / 2 - 50 * overlayScale;
-
-    // Spawn initial big burst
-    setTimeout(() => {
-      if (this.isGameOver) {
-        this.particles.spawnBurst(globalTextX, globalTextY, 15);
-      }
-    }, 450);
-
-    const textSparkleInterval = setInterval(() => {
-      if (!this.isGameOver) {
-        clearInterval(textSparkleInterval);
-        return;
-      }
-      const rx = globalTextX + (Math.random() - 0.5) * 220 * overlayScale;
-      const ry = globalTextY + (Math.random() - 0.5) * 35 * overlayScale;
-      this.particles.spawnBurst(rx, ry, 2);
-    }, 250);
-    this.victoryIntervals.push(textSparkleInterval);
-
-    // 6. Dong Son Bronze Drum & Lac Bird Badge in Center (Geometric Dong Son Style!)
-    const badgeContainer = new Container();
-    badgeContainer.position.set(190, 95); // Shifted up to the top
-    overlay.addChild(badgeContainer);
-
-    // Define the Lac Bird Context (facing right, elegant crane-like flying silhouette with authentic Dong Son drum patterns!)
-    const lacBirdCtx = new GraphicsContext()
-      // --- Base Silhouette ---
-      // Beak (very long, slender, slightly curved)
-      .moveTo(35, -4)
-      .lineTo(10, -2)
-      // Head
-      .quadraticCurveTo(12, -7, 8, -8)
-      // Plume Crest (sweeping back-left, long and curved at the tip)
-      .quadraticCurveTo(-2, -16, -20, -14)
-      .quadraticCurveTo(-22, -13, -20, -12) // tip
-      .quadraticCurveTo(-4, -10, 4, -5) // back of crest
-      // Neck
-      .quadraticCurveTo(-4, 2, -12, 8)
-      // Body
-      .quadraticCurveTo(-25, 14, -40, 10)
-      // Tail (divided into 2 long flowing feathers)
-      .quadraticCurveTo(-55, 15, -68, 22) // upper tail tip
-      .quadraticCurveTo(-54, 11, -44, 5) // split indent
-      .quadraticCurveTo(-58, 12, -70, 14) // lower tail tip
-      .quadraticCurveTo(-48, 5, -38, 2)
-      // Back of body
-      .lineTo(-32, -3)
-      // Back of neck
-      .quadraticCurveTo(-18, -4, -4, -3)
-      // Connecting beak bottom
-      .lineTo(10, -4.5)
-      .lineTo(35, -4)
-      .closePath()
-      .fill({ color: 0xd4af37, alpha: 0.25 }) // Semi-transparent body fill
-      .stroke({ width: 1.5, color: 0xd4af37 }) // Clear golden outline
-
-      // --- Wings with Traditional Comb Feathers ---
-      // Upper Wing Base
-      .moveTo(-22, 0)
-      .bezierCurveTo(-15, -20, -5, -36, 10, -45) // wing tip
-      .bezierCurveTo(-2, -30, -8, -18, -12, -10)
-      .quadraticCurveTo(-16, -18, -20, 0)
-      .closePath()
-      .fill({ color: 0xd4af37, alpha: 0.3 })
-      .stroke({ width: 1.5, color: 0xd4af37 })
-
-      // Comb-like vertical lines on Upper Wing (traditional style!)
-      .moveTo(0, -20)
-      .lineTo(4, -32)
-      .moveTo(-4, -16)
-      .lineTo(-1, -26)
-      .moveTo(-8, -12)
-      .lineTo(-5, -20)
-      .moveTo(-12, -8)
-      .lineTo(-9, -14)
-      .stroke({ width: 1.2, color: 0xd4af37 })
-
-      // Lower Wing Base
-      .moveTo(-24, 5)
-      .bezierCurveTo(-30, 16, -36, 26, -42, 30) // wing tip
-      .quadraticCurveTo(-32, 18, -27, 10)
-      .quadraticCurveTo(-29, 12, -24, 5)
-      .closePath()
-      .fill({ color: 0xd4af37, alpha: 0.3 })
-      .stroke({ width: 1.2, color: 0xd4af37 })
-
-      // Comb-like lines on Lower Wing
-      .moveTo(-28, 12)
-      .lineTo(-34, 21)
-      .moveTo(-26, 9)
-      .lineTo(-31, 16)
-      .stroke({ width: 1.0, color: 0xd4af37 })
-
-      // --- Internal Dong Son Carving Details ---
-      // Beak center decorative line
-      .moveTo(11, -3.2)
-      .lineTo(32, -4)
-      .stroke({ width: 1.0, color: 0xd4af37, alpha: 0.7 })
-
-      // Big round Eye on the head (Very characteristic of Dong Son bird carvings!)
-      .circle(7, -5, 2.2)
-      .fill({ color: 0xffea00 })
-      .stroke({ width: 0.8, color: 0x3e2723 }) // Dark outline for eye
-
-      // Small pupil inside eye
-      .circle(7, -5, 0.8)
-      .fill({ color: 0x000000 })
-
-      // Concentric circles / dots on the body (Traditional patterns)
-      .circle(-18, 5, 2.8)
-      .stroke({ width: 1.0, color: 0xd4af37 })
-      .circle(-18, 5, 1.2)
-      .fill({ color: 0xffea00 })
-
-      .circle(-28, 4, 2.2)
-      .stroke({ width: 1.0, color: 0xd4af37 })
-      .circle(-28, 4, 0.8)
-      .fill({ color: 0xffea00 })
-
-      // Legs (slender, trailing back)
-      .moveTo(-35, 6)
-      .quadraticCurveTo(-48, 15, -58, 18)
-      .stroke({ width: 1.2, color: 0xd4af37 })
-      .moveTo(-32, 7)
-      .quadraticCurveTo(-45, 17, -55, 20)
-      .stroke({ width: 1.2, color: 0xd4af37 });
-
-    // Left Lac Bird (Mirrored horizontally since the base bird faces right, scaled up and positioned out!)
-    const leftBird = new Graphics(lacBirdCtx);
-    leftBird.position.set(-100, -5);
-    leftBird.scale.set(-1.6, 1.6); // Mirror horizontally
-    badgeContainer.addChild(leftBird);
-
-    // Right Lac Bird (Normal scale since the base bird faces right, scaled up and positioned out!)
-    const rightBird = new Graphics(lacBirdCtx);
-    rightBird.position.set(100, -5);
-    rightBird.scale.set(1.6); // Normal orientation
-    badgeContainer.addChild(rightBird);
-
-    // Central rotating Trống Đồng (Enlarged to radius 55!)
-    const drum = new Graphics()
-      .circle(0, 0, 55)
-      .fill(
-        new FillGradient({
-          start: { x: -55, y: -55 },
-          end: { x: 55, y: 55 },
-          colorStops: [
-            { offset: 0, color: 0xaa7c11 },
-            { offset: 0.5, color: 0x8a6d20 },
-            { offset: 1, color: 0x4a3b10 },
-          ],
-        }),
-      )
-      .stroke({ width: 2.8, color: 0xffea00 })
-      .circle(0, 0, 46)
-      .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.6 })
-      .circle(0, 0, 37)
-      .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.5 })
-      .circle(0, 0, 28)
-      .stroke({ width: 1.0, color: 0xd4af37, alpha: 0.4 })
-      .circle(0, 0, 18)
-      .stroke({ width: 0.8, color: 0xd4af37, alpha: 0.3 })
-      // Central sun star (12 points, enlarged!)
-      .star(0, 0, 12, 15, 6)
-      .fill({ color: 0xffea00 })
-      .stroke({ width: 1, color: 0xb89326 });
-    badgeContainer.addChild(drum);
-
-    // Add rotation to the drum
-    const drumRotateTween = gsap.to(drum, {
-      rotation: Math.PI * 2,
-      duration: 16,
-      repeat: -1,
-      ease: "none",
-    });
-    this.victoryTweens.push(drumRotateTween);
-
-    // Ribbon (Moved down below the larger drum)
-    if (isNewScore || isNewMoves || isNewTime) {
-      const ribbon = new Graphics()
-        .roundRect(-65, 38, 130, 20, 4)
-        .fill({ color: 0xd32f2f })
-        .stroke({ width: 1, color: 0xffea00 });
-      const ribbonText = new Text({
-        text: "KỶ LỤC MỚI!",
-        style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-          fontSize: 9,
-          fill: 0xffffff,
-          fontWeight: "bold",
-        }),
-      });
-      ribbonText.anchor.set(0.5);
-      ribbonText.position.set(0, 48);
-      badgeContainer.addChild(ribbon, ribbonText);
-    }
-
-    const formatTime = (secs) => {
-      const m = Math.floor(secs / 60)
-        .toString()
-        .padStart(2, "0");
-      const s = (secs % 60).toString().padStart(2, "0");
-      return `${m}:${s}`;
-    };
-
-    // 7. Horizontal Stats Panel (Enlarged 4-column horizontal stats box replacing vertical list)
-    const statsPanel = new Graphics()
-      .roundRect(20, 210, 340, 115, 12)
-      .fill({ color: 0xffecc6, alpha: 0.85 })
-      .stroke({ width: 1.5, color: 0xd32f2f, alpha: 0.4 });
-    overlay.addChild(statsPanel);
-
-    const colLabelStyle = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-      fontSize: 12,
-      fill: 0x5c0612,
-      fontWeight: "bold",
-    });
-
-    const colValueStyle = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-      fontSize: 20,
-      fill: 0xd32f2f,
-      fontWeight: "900",
-    });
-
-    const colIconStyle = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-      fontSize: 32,
-    });
-
-    const colWidth = 340 / 4;
-    const colY = 210;
-
-    // Column 0: Score
-    const iconScore = new Text({ text: "🏆", style: colIconStyle });
-    iconScore.anchor.set(0.5);
-    iconScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 28);
-
-    const lblScore = new Text({ text: "ĐIỂM", style: colLabelStyle });
-    lblScore.anchor.set(0.5);
-    lblScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 60);
-
-    const valScore = new Text({ text: "0", style: colValueStyle });
-    valScore.anchor.set(0.5);
-    valScore.position.set(20 + colWidth * 0 + colWidth / 2, colY + 90);
-
-    // Column 1: Moves
-    const iconMoves = new Text({ text: "🏃", style: colIconStyle });
-    iconMoves.anchor.set(0.5);
-    iconMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 28);
-
-    const lblMoves = new Text({ text: "LƯỢT ĐI", style: colLabelStyle });
-    lblMoves.anchor.set(0.5);
-    lblMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 60);
-
-    const valMoves = new Text({ text: "0", style: colValueStyle });
-    valMoves.anchor.set(0.5);
-    valMoves.position.set(20 + colWidth * 1 + colWidth / 2, colY + 90);
-
-    // Column 2: Time
-    const iconTime = new Text({ text: "⏱️", style: colIconStyle });
-    iconTime.anchor.set(0.5);
-    iconTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 28);
-
-    const lblTime = new Text({ text: "THỜI GIAN", style: colLabelStyle });
-    lblTime.anchor.set(0.5);
-    lblTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 60);
-
-    const valTime = new Text({ text: "00:00", style: colValueStyle });
-    valTime.anchor.set(0.5);
-    valTime.position.set(20 + colWidth * 2 + colWidth / 2, colY + 90);
-
-    // Column 3: Accuracy
-    const iconAccuracy = new Text({ text: "🎯", style: colIconStyle });
-    iconAccuracy.anchor.set(0.5);
-    iconAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 28);
-
-    const lblAccuracy = new Text({
-      text: "ĐỘ CHÍNH XÁC",
-      style: colLabelStyle,
-    });
-    lblAccuracy.anchor.set(0.5);
-    lblAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 60);
-
-    const valAccuracy = new Text({
-      text: `${accuracy}%`,
-      style: colValueStyle,
-    });
-    valAccuracy.anchor.set(0.5);
-    valAccuracy.position.set(20 + colWidth * 3 + colWidth / 2, colY + 90);
-
-    overlay.addChild(
-      iconScore,
-      lblScore,
-      valScore,
-      iconMoves,
-      lblMoves,
-      valMoves,
-      iconTime,
-      lblTime,
-      valTime,
-      iconAccuracy,
-      lblAccuracy,
-      valAccuracy,
-    );
-
-    // Sub congrats text below the horizontal box
-    let congratsText = "Chúc mừng bạn đã chiến thắng!";
-    if (isNewScore || isNewMoves || isNewTime) {
-      congratsText = "⭐ KỶ LỤC MỚI ĐÃ THIẾT LẬP! ⭐";
-    }
-    const congratsLabel = new Text({
-      text: congratsText,
-      style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 12,
-        fill: 0xd32f2f,
-        fontWeight: "bold",
-      }),
-    });
-    congratsLabel.anchor.set(0.5);
-    congratsLabel.position.set(190, 348);
-    overlay.addChild(congratsLabel);
-
-    // Stats GSAP Animations
-    const statsObj = { score: 0, moves: 0, time: 0 };
-    gsap.to(statsObj, {
-      score: this.score,
-      moves: this.moves,
-      time: Math.floor(elapsedTime),
-      duration: 1.2,
-      delay: 0.25,
-      ease: "power2.out",
-      onUpdate: () => {
-        const curScoreStr = Math.round(statsObj.score).toString();
-        const curMovesStr = Math.round(statsObj.moves).toString();
-        const curTimeStr = formatTime(Math.round(statsObj.time));
-
-        valScore.text = curScoreStr;
-        valMoves.text = curMovesStr;
-        valTime.text = curTimeStr;
-      },
-    });
-
-    // 8. Matched Avatars (Thành viên Bộ Lạc)
-    const tribeText = new Text({
-      text: "— THÀNH VIÊN BỘ LẠC —",
-      style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 11,
-        fill: 0xd32f2f,
-        fontWeight: "bold",
-        letterSpacing: 1,
-      }),
-    });
-    tribeText.anchor.set(0.5);
-    tribeText.position.set(190, 380);
-    overlay.addChild(tribeText);
-
-    // 8. Matched Avatars (Thành viên Bộ Lạc) - Horizontal scrolling strip with mask and wrap-around ticker
-    const avatarListContainer = new Container();
-    avatarListContainer.position.set(0, 426);
-    overlay.addChild(avatarListContainer);
-
-    // Mask for the scrolling area to fit inside victory panel (width 340, from x=20 to x=360)
-    const paradeMask = new Graphics().rect(20, 396, 340, 60).fill(0xffffff);
-    overlay.addChild(paradeMask);
-    avatarListContainer.mask = paradeMask;
-
-    const paradeSprites = [];
-    const itemSpacing = 58;
-    const itemSize = 48;
-
-    // Generate 16 items sequentially to cover width and enable seamless wrap scrolling
-    const numItems = 16;
-    for (let i = 0; i < numItems; i++) {
-      const avatarIdx = i % uniqueAvatars.length;
-      const avatarFile = uniqueAvatars[avatarIdx];
-
-      const itemContainer = new Container();
-      itemContainer.x = i * itemSpacing;
-      itemContainer.y = 0;
-      avatarListContainer.addChild(itemContainer);
-
-      // Styled circular gold frame to make it stand out
-      const frame = new Graphics()
-        .circle(0, 0, itemSize / 2 + 2)
-        .stroke({ width: 2.0, color: 0xffea00 }) // Bright gold
-        .circle(0, 0, itemSize / 2)
-        .fill({ color: 0xffffff, alpha: 0.95 })
-        .stroke({ width: 1.0, color: 0xd4af37 });
-      itemContainer.addChild(frame);
-
-      const spriteMask = new Graphics()
-        .circle(0, 0, itemSize / 2)
-        .fill(0xffffff);
-      itemContainer.addChild(spriteMask);
-
-      let texture;
-      try {
-        texture = Assets.get(getAvatarPath(avatarFile));
-      } catch (e) {
-        console.warn("Avatar texture not preloaded:", e);
-      }
-
-      if (texture) {
-        const sprite = new Sprite(texture);
-        sprite.anchor.set(0.5);
-        sprite.width = itemSize;
-        sprite.height = itemSize;
-        sprite.mask = spriteMask;
-        itemContainer.addChild(sprite);
-      }
-
-      paradeSprites.push(itemContainer);
-    }
-
-    // Horizontal scrolling ticker
-    const scrollParade = (ticker) => {
-      const speed = 0.8 * ticker.deltaTime;
-      paradeSprites.forEach((sprite) => {
-        sprite.x -= speed;
-        // Wrap once fully off the left edge of the mask (x = 20)
-        if (sprite.x < -40) {
-          let maxX = -9999;
-          paradeSprites.forEach((s) => {
-            if (s.x > maxX) maxX = s.x;
-          });
-          sprite.x = maxX + itemSpacing;
-        }
-      });
-    };
-    this.app.ticker.add(scrollParade);
-    this.victoryParadeTickerFn = scrollParade;
-
-    // Home button
-    const btnHome = createCircularButton("🏠", () =>
-      this.switchState("MAIN_MENU"),
-    );
-    btnHome.position.set(110, 485);
-    btnHome.updateStyle(32);
-
-    // Double score button
-    const btnDouble = createCircularButton("📺", async () => {
-      const success = await AdManager.showRewardedVideo();
-      if (success) {
-        this.score = this.score * 2;
-        gsap.killTweensOf(statsObj);
-        valScore.text = this.score.toString();
-        btnDouble.visible = false;
-      }
-    });
-    btnDouble.position.set(190, 485);
-    btnDouble.updateStyle(32);
-
-    // Play next level
-    const nextEmoji = this.currentLevelIndex < LEVELS.length - 1 ? "▶️" : "🔄";
-    const btnNext = createCircularButton(nextEmoji, () => {
-      const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
-      this.initGame(nextIdx);
-    });
-    btnNext.position.set(270, 485);
-    btnNext.updateStyle(32);
-
-    overlay.addChild(btnHome, btnDouble, btnNext);
-
-    // Staggered Entrance Animations
-    btnHome.scale.set(0);
-    btnDouble.scale.set(0);
-    btnNext.scale.set(0);
-    gsap.to(btnHome.scale, {
-      x: 1,
-      y: 1,
-      duration: 0.4,
-      delay: 0.6,
-      ease: "back.out(1.7)",
-    });
-    gsap.to(btnDouble.scale, {
-      x: 1,
-      y: 1,
-      duration: 0.4,
-      delay: 0.75,
-      ease: "back.out(1.7)",
-    });
-    gsap.to(btnNext.scale, {
-      x: 1,
-      y: 1,
-      duration: 0.4,
-      delay: 0.9,
-      ease: "back.out(1.7)",
-    });
-
-    // 10. Spawn Continuous Confetti Fireworks
+    // Spawn Continuous Confetti Fireworks
     this.victoryIntervalId = setInterval(() => {
       if (!this.isGameOver) {
         clearInterval(this.victoryIntervalId);
@@ -2724,7 +2022,6 @@ export class GameController extends Container {
       );
     }, 800);
 
-    // Initial fireworks bursts
     for (let i = 0; i < 4; i++) {
       setTimeout(() => {
         if (!this.isGameOver) return;
@@ -2735,6 +2032,314 @@ export class GameController extends Container {
         );
       }, i * 300);
     }
+
+    // BUILD HTML OVERLAY
+    const existing = document.getElementById("game-victory-overlay-id");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "game-victory-overlay-id";
+    overlay.style.cssText =
+      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Outfit', 'Nunito', Arial, sans-serif;overflow:hidden;";
+
+    // Dynamic scaling based on screen size (mimicking Canvas overlayScale)
+    const cw = window.innerWidth;
+    const ch = window.innerHeight;
+    const overlayScale = Math.min(1.0, cw / 450, ch / 700);
+
+    // Decorative Lanterns
+    const leftLantern = document.createElement("div");
+    leftLantern.innerText = "🏮";
+    leftLantern.style.cssText =
+      "position:absolute; font-size: 48px; left: calc(50% - 210px * " +
+      overlayScale +
+      "); top: calc(50% - 250px * " +
+      overlayScale +
+      "); transform: translate(-50%, -50%);";
+    const rightLantern = leftLantern.cloneNode(true);
+    rightLantern.style.left = "calc(50% + 210px * " + overlayScale + ")";
+    overlay.appendChild(leftLantern);
+    overlay.appendChild(rightLantern);
+
+    const card = document.createElement("div");
+    card.style.cssText = `
+      background:#fffae6;
+      border:5px solid #d32f2f;
+      border-radius:20px;
+      width:380px;
+      height:540px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      box-shadow:inset 0 0 0 4px #ffea00, 0 15px 30px rgba(0,0,0,0.5);
+      position:relative;
+      transform: scale(${overlayScale}) translateY(20px);
+      opacity: 0;
+      transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    `;
+
+    // SVG definitions for Drum and Lac Birds
+    const starPoints = Array.from({ length: 24 }, (_, i) => {
+      const r = i % 2 === 0 ? 15 : 6;
+      const a = (i * Math.PI) / 12;
+      return `${Math.cos(a) * r},${Math.sin(a) * r}`;
+    }).join(" ");
+
+    const lacBirdPath = `
+      <path d="M 35 -4 L 10 -2 Q 12 -7 8 -8 Q -2 -16 -20 -14 Q -22 -13 -20 -12 Q -4 -10 4 -5 Q -4 2 -12 8 Q -25 14 -40 10 Q -55 15 -68 22 Q -54 11 -44 5 Q -58 12 -70 14 Q -48 5 -38 2 L -32 -3 Q -18 -4 -4 -3 L 10 -4.5 Z" fill="rgba(212,175,55,0.25)" stroke="#d4af37" stroke-width="1.5" />
+      <path d="M -22 0 C -15 -20 -5 -36 10 -45 C -2 -30 -8 -18 -12 -10 Q -16 -18 -20 0 Z" fill="rgba(212,175,55,0.3)" stroke="#d4af37" stroke-width="1.5" />
+      <path d="M 0 -20 L 4 -32 M -4 -16 L -1 -26 M -8 -12 L -5 -20 M -12 -8 L -9 -14" stroke="#d4af37" stroke-width="1.2" />
+      <path d="M -24 5 C -30 16 -36 26 -42 30 Q -32 18 -27 10 Q -29 12 -24 5 Z" fill="rgba(212,175,55,0.3)" stroke="#d4af37" stroke-width="1.2" />
+      <path d="M -28 12 L -34 21 M -26 9 L -31 16" stroke="#d4af37" stroke-width="1.0" />
+      <path d="M 11 -3.2 L 32 -4" stroke="rgba(212,175,55,0.7)" stroke-width="1.0" />
+      <circle cx="7" cy="-5" r="2.2" fill="#ffea00" stroke="#3e2723" stroke-width="0.8" />
+      <circle cx="7" cy="-5" r="0.8" fill="#000000" />
+      <circle cx="-18" cy="5" r="2.8" fill="none" stroke="#d4af37" stroke-width="1.0" />
+      <circle cx="-18" cy="5" r="1.2" fill="#ffea00" />
+      <circle cx="-28" cy="4" r="2.2" fill="none" stroke="#d4af37" stroke-width="1.0" />
+      <circle cx="-28" cy="4" r="0.8" fill="#ffea00" />
+      <path d="M -35 6 Q -48 15 -58 18 M -32 7 Q -45 17 -55 20" fill="none" stroke="#d4af37" stroke-width="1.2" />
+    `;
+
+    const svgBadge = `
+      <svg width="240" height="120" viewBox="-120 -60 240 120" style="margin-top:20px;">
+        <defs>
+          <radialGradient id="drumGrad" cx="0.5" cy="0.5" r="0.5" fx="0.2" fy="0.2">
+            <stop offset="0%" stop-color="#aa7c11" />
+            <stop offset="50%" stop-color="#8a6d20" />
+            <stop offset="100%" stop-color="#4a3b10" />
+          </radialGradient>
+        </defs>
+        <!-- Left Bird -->
+        <g transform="translate(-85, 0) scale(-1.4, 1.4)">${lacBirdPath}</g>
+        <!-- Right Bird -->
+        <g transform="translate(85, 0) scale(1.4, 1.4)">${lacBirdPath}</g>
+        <!-- Rotating Drum -->
+        <g>
+          <circle cx="0" cy="0" r="55" fill="url(#drumGrad)" stroke="#ffea00" stroke-width="2.8"/>
+          <circle cx="0" cy="0" r="46" fill="none" stroke="rgba(212,175,55,0.6)" stroke-width="1.5"/>
+          <circle cx="0" cy="0" r="37" fill="none" stroke="rgba(212,175,55,0.5)" stroke-width="1.2"/>
+          <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(212,175,55,0.4)" stroke-width="1.0"/>
+          <circle cx="0" cy="0" r="18" fill="none" stroke="rgba(212,175,55,0.3)" stroke-width="0.8"/>
+          <polygon points="${starPoints}" fill="#ffea00" stroke="#b89326" stroke-width="1"/>
+          <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="16s" repeatCount="indefinite"/>
+        </g>
+      </svg>
+    `;
+    const badgeDiv = document.createElement("div");
+    badgeDiv.innerHTML = svgBadge;
+    badgeDiv.style.position = "relative";
+    card.appendChild(badgeDiv);
+
+    // New Record Ribbon
+    if (isNewScore || isNewMoves || isNewTime) {
+      const ribbon = document.createElement("div");
+      ribbon.innerText = "⭐ KỶ LỤC MỚI! ⭐";
+      ribbon.style.cssText =
+        "background:#d32f2f;color:#fff;border:2px solid #ffea00;border-radius:10px;padding:4px 12px;font-size:10px;font-weight:bold;margin-top:-15px;z-index:2;position:relative;";
+      card.appendChild(ribbon);
+    } else {
+      card.appendChild(document.createElement("div")).style.height = "10px";
+    }
+
+    // Stats Grid
+    const formatTime = (secs) => {
+      const m = Math.floor(secs / 60)
+        .toString()
+        .padStart(2, "0");
+      const s = (secs % 60).toString().padStart(2, "0");
+      return `${m}:${s}`;
+    };
+
+    const statsGrid = document.createElement("div");
+    statsGrid.style.cssText =
+      "background:rgba(255, 236, 198, 0.85);border:2px solid rgba(211, 47, 47, 0.4);border-radius:12px;width:340px;display:flex;justify-content:space-evenly;padding:15px 0;margin-top:20px;";
+
+    const createStatCol = (icon, label, valueId) => {
+      return `
+        <div style="display:flex;flex-direction:column;align-items:center;width:25%;">
+          <div style="font-size:24px;">${icon}</div>
+          <div style="font-size:11px;font-weight:bold;color:#5c0612;margin-top:8px;">${label}</div>
+          <div id="${valueId}" style="font-size:22px;font-weight:900;color:#d32f2f;margin-top:4px;">0</div>
+        </div>
+      `;
+    };
+
+    statsGrid.innerHTML =
+      createStatCol("🏆", "ĐIỂM", "stat-score") +
+      createStatCol("🏃", "LƯỢT ĐI", "stat-moves") +
+      createStatCol("⏱️", "THỜI GIAN", "stat-time") +
+      createStatCol("🎯", "ĐỘ CHÍNH XÁC", "stat-accuracy");
+
+    card.appendChild(statsGrid);
+
+    // Sub congrats text
+    const congratsLabel = document.createElement("div");
+    congratsLabel.innerText = "Chúc mừng bạn đã chiến thắng!";
+    congratsLabel.style.cssText =
+      "font-size:14px;color:#d32f2f;font-weight:bold;margin-top:15px;";
+    card.appendChild(congratsLabel);
+
+    // Tribe title
+    const tribeTitle = document.createElement("div");
+    tribeTitle.innerText = "— THÀNH VIÊN BỘ LẠC —";
+    tribeTitle.style.cssText =
+      "font-size:12px;color:#d32f2f;font-weight:bold;letter-spacing:1px;margin-top:15px;";
+    card.appendChild(tribeTitle);
+
+    // Avatar Strip
+    const uniqueAvatars = [...new Set(this.cards.map((c) => c.avatarFile))];
+    const repeatedAvatars = [
+      ...uniqueAvatars,
+      ...uniqueAvatars,
+      ...uniqueAvatars,
+      ...uniqueAvatars,
+    ].slice(0, 16);
+
+    // Add CSS Keyframes to document if not exists
+    if (!document.getElementById("avatar-marquee-style")) {
+      const style = document.createElement("style");
+      style.id = "avatar-marquee-style";
+      style.innerHTML = `
+        @keyframes scrollAvatarStrip {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(calc(-58px * ${uniqueAvatars.length})); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const stripContainer = document.createElement("div");
+    stripContainer.style.cssText =
+      "width:340px;height:52px;overflow:hidden;position:relative;margin-top:10px;";
+
+    const stripContent = document.createElement("div");
+    stripContent.style.cssText =
+      "display:flex;gap:10px;width:max-content;animation:scrollAvatarStrip " +
+      uniqueAvatars.length * 2 +
+      "s linear infinite;";
+
+    repeatedAvatars.forEach((file) => {
+      const imgCont = document.createElement("div");
+      imgCont.style.cssText =
+        "width:48px;height:48px;border-radius:50%;border:2px solid #ffea00;background:#fff;display:flex;justify-content:center;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.2);overflow:hidden;flex-shrink:0;";
+      const img = document.createElement("img");
+      img.src = `/assest/image/imagebldp/${file}`;
+      img.style.cssText = "width:100%;height:100%;object-fit:cover;";
+      img.onerror = () => {
+        img.style.display = "none";
+      }; // fallback
+      imgCont.appendChild(img);
+      stripContent.appendChild(imgCont);
+    });
+
+    stripContainer.appendChild(stripContent);
+    card.appendChild(stripContainer);
+
+    // Bottom Action Buttons
+    const btnRow = document.createElement("div");
+    btnRow.style.cssText =
+      "display:flex;justify-content:center;align-items:center;gap:15px;margin-top:20px;";
+
+    const createIconBtn = (iconUrl, onClick, isLarge) => {
+      const btn = document.createElement("button");
+      btn.style.cssText = `
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        border: none;
+        background-color: transparent;
+        background-image: url('${iconUrl}');
+        background-size: cover;
+        background-position: center;
+        cursor: pointer;
+        transition: transform 0.1s;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      `;
+      btn.addEventListener(
+        "mousedown",
+        () => (btn.style.transform = "scale(0.9)"),
+      );
+      btn.addEventListener("mouseup", () => (btn.style.transform = "scale(1)"));
+      btn.addEventListener(
+        "mouseleave",
+        () => (btn.style.transform = "scale(1)"),
+      );
+      btn.addEventListener("click", onClick);
+      return btn;
+    };
+
+    // Home
+    const btnHome = createIconBtn("/assest/iconbtn/Home_btn.png", () => {
+      audio.playClick();
+      if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
+      overlay.remove();
+      this.switchState("MAIN_MENU");
+    });
+
+    // Double (x2)
+    let hasDoubled = false;
+    const btnDouble = createIconBtn("/assest/iconbtn/x2_btn.png", async () => {
+      if (hasDoubled) return;
+      audio.playClick();
+      const success = await AdManager.showRewardedVideo();
+      if (success) {
+        hasDoubled = true;
+        this.score = this.score * 2;
+        document.getElementById("stat-score").innerText = this.score;
+        btnDouble.style.opacity = "0.5";
+        btnDouble.style.pointerEvents = "none";
+      }
+    });
+
+    // Next / Replay
+    const nextIcon =
+      this.currentLevelIndex < LEVELS.length - 1
+        ? "/assest/iconbtn/next_btn.png"
+        : "/assest/iconbtn/replay_btn.png";
+    const btnNext = createIconBtn(nextIcon, () => {
+      audio.playClick();
+      if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
+      overlay.remove();
+      const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
+      this.initGame(nextIdx);
+      this.switchState("PLAYING");
+    });
+
+    btnRow.appendChild(btnHome);
+    btnRow.appendChild(btnDouble);
+    btnRow.appendChild(btnNext);
+    card.appendChild(btnRow);
+
+    overlay.appendChild(card);
+    const appContainer = document.getElementById("app") || document.body;
+    appContainer.appendChild(overlay);
+
+    // Number counting animation
+    let curObj = { s: 0, m: 0, t: 0 };
+    gsap.to(curObj, {
+      s: this.score,
+      m: this.moves,
+      t: Math.floor(elapsedTime),
+      duration: 1.2,
+      delay: 0.25,
+      ease: "power2.out",
+      onUpdate: () => {
+        const scoreEl = document.getElementById("stat-score");
+        if (scoreEl) scoreEl.innerText = Math.round(curObj.s);
+        const movesEl = document.getElementById("stat-moves");
+        if (movesEl) movesEl.innerText = Math.round(curObj.m);
+        const timeEl = document.getElementById("stat-time");
+        if (timeEl) timeEl.innerText = formatTime(Math.round(curObj.t));
+      },
+    });
+    const accEl = document.getElementById("stat-accuracy");
+    if (accEl) accEl.innerText = `${accuracy}%`;
+
+    // Entrance animation
+    requestAnimationFrame(() => {
+      card.style.opacity = "1";
+      card.style.transform = "scale(" + overlayScale + ") translateY(0)";
+    });
   }
 
   showReviveOffer(onRevive, onSkip) {
