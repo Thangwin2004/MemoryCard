@@ -39,19 +39,29 @@ class AudioManager {
         this.bgm.volume = 0.05;
       }
 
-      if (!this.musicMuted && this.bgm && this.ctx) {
+      if (this.bgm && this.ctx) {
         this.ctx.resume().then(() => {
-          this.bgm
-            .play()
-            .catch((e) =>
-              console.log("BGM play deferred until interaction:", e),
-            );
+          this.bgm.play().catch((e) => console.log("BGM play deferred:", e));
         });
-      } else if (!this.musicMuted && this.bgm) {
-        this.bgm
-          .play()
-          .catch((e) => console.log("BGM play deferred until interaction:", e));
+      } else if (this.bgm) {
+        this.bgm.play().catch((e) => console.log("BGM play deferred:", e));
       }
+
+      // Global mobile audio unlocker
+      const unlockAudio = () => {
+        if (this.ctx && this.ctx.state === "suspended") {
+          this.ctx.resume();
+        }
+        if (this.bgm && this.bgm.paused && !this.musicMuted) {
+          this.bgm.play().catch(() => {});
+        }
+        document.removeEventListener("pointerdown", unlockAudio);
+        document.removeEventListener("touchstart", unlockAudio);
+        document.removeEventListener("click", unlockAudio);
+      };
+      document.addEventListener("pointerdown", unlockAudio, { once: true });
+      document.addEventListener("touchstart", unlockAudio, { once: true });
+      document.addEventListener("click", unlockAudio, { once: true });
     } catch (e) {
       console.warn("Audio initialization deferred/failed:", e);
     }
