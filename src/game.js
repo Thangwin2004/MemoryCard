@@ -2242,18 +2242,17 @@ export class GameController extends Container {
     btnRow.style.cssText =
       "display:flex;justify-content:center;align-items:center;gap:15px;margin-top:20px;";
 
-    const createIconBtn = (iconUrl, onClick, customBgSize) => {
+    const createIconBtn = (iconUrl, onClick, customBgStyle = "") => {
       const btn = document.createElement("button");
       btn.style.cssText = `
         width: 64px; height: 64px;
         border: none;
         background-color: transparent;
         background-image: url('${iconUrl}');
-        background-size: ${customBgSize || 'contain'};
         background-repeat: no-repeat;
-        background-position: center;
         cursor: pointer;
         transition: transform 0.1s;
+        ${customBgStyle || 'background-size: contain; background-position: center;'}
       `;
       btn.addEventListener(
         "mousedown",
@@ -2274,7 +2273,7 @@ export class GameController extends Container {
       if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
       overlay.remove();
       this.switchState("MAIN_MENU");
-    });
+    }, "background-size: 88%; background-position: center 30%;");
 
     // Double (x2)
     let hasDoubled = false;
@@ -2289,7 +2288,7 @@ export class GameController extends Container {
         btnDouble.style.opacity = "0.5";
         btnDouble.style.pointerEvents = "none";
       }
-    }, "82%");
+    }, "background-size: 78%; background-position: center center;");
 
     // Next / Replay
     const nextIcon =
@@ -2303,7 +2302,7 @@ export class GameController extends Container {
       const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
       this.initGame(nextIdx);
       this.switchState("PLAYING");
-    });
+    }, "background-size: 88%; background-position: center 70%;");
 
     btnRow.appendChild(btnHome);
     btnRow.appendChild(btnDouble);
