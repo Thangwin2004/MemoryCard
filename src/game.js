@@ -2242,14 +2242,14 @@ export class GameController extends Container {
     btnRow.style.cssText =
       "display:flex;justify-content:center;align-items:center;gap:15px;margin-top:20px;";
 
-    const createIconBtn = (iconUrl, onClick, isLarge) => {
+    const createIconBtn = (iconUrl, onClick, customBgSize) => {
       const btn = document.createElement("button");
       btn.style.cssText = `
         width: 64px; height: 64px;
         border: none;
         background-color: transparent;
         background-image: url('${iconUrl}');
-        background-size: contain;
+        background-size: ${customBgSize || 'contain'};
         background-repeat: no-repeat;
         background-position: center;
         cursor: pointer;
@@ -2289,7 +2289,7 @@ export class GameController extends Container {
         btnDouble.style.opacity = "0.5";
         btnDouble.style.pointerEvents = "none";
       }
-    });
+    }, "82%");
 
     // Next / Replay
     const nextIcon =
