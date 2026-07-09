@@ -2073,7 +2073,8 @@ export class GameController extends Container {
       align-items:center;
       box-shadow:inset 0 0 0 4px #ffea00, 0 15px 30px rgba(0,0,0,0.5);
       position:relative;
-      transform: scale(${overlayScale}) translateY(20px);
+      zoom: ${overlayScale};
+      transform: translateY(20px);
       opacity: 0;
       transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     `;
@@ -2337,7 +2338,7 @@ export class GameController extends Container {
     // Entrance animation
     requestAnimationFrame(() => {
       card.style.opacity = "1";
-      card.style.transform = "scale(" + overlayScale + ") translateY(0)";
+      card.style.transform = "translateY(0)";
     });
   }
 
