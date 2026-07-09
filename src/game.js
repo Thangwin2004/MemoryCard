@@ -2245,15 +2245,14 @@ export class GameController extends Container {
       const btn = document.createElement("button");
       btn.style.cssText = `
         width: 64px; height: 64px;
-        border-radius: 50%;
         border: none;
         background-color: transparent;
         background-image: url('${iconUrl}');
-        background-size: cover;
+        background-size: contain;
+        background-repeat: no-repeat;
         background-position: center;
         cursor: pointer;
         transition: transform 0.1s;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
       `;
       btn.addEventListener(
         "mousedown",
