@@ -2045,7 +2045,7 @@ export class GameController extends Container {
     // Dynamic scaling based on screen size (mimicking Canvas overlayScale)
     const cw = window.innerWidth;
     const ch = window.innerHeight;
-    const overlayScale = Math.min(1.0, cw / 450, ch / 700);
+    const overlayScale = Math.min(1.5, cw / 400, ch / 650);
 
     // Decorative Lanterns
     const leftLantern = document.createElement("div");
@@ -2535,8 +2535,8 @@ export class GameController extends Container {
     // 2. Elastic Entrance for Defeat Modal
     overlay.pivot.set(180, 110);
     const overlayScale = Math.min(
-      1.0,
-      this.app.screen.width / 450,
+      1.5,
+      this.app.screen.width / 400,
       this.app.screen.height / 650,
     );
     overlay.scale.set(0);
