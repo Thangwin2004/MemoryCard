@@ -2500,107 +2500,102 @@ export class GameController extends Container {
       },
     );
 
-    const overlay = new Container();
+    const existing = document.getElementById("game-defeat-overlay-id");
+    if (existing) existing.remove();
 
-    // Soft drop shadow
-    const shadow = new Graphics()
-      .roundRect(0, 8, 360, 240, 24)
-      .fill({ color: 0x000000, alpha: 0.15 });
-    overlay.addChild(shadow);
+    const overlay = document.createElement("div");
+    overlay.id = "game-defeat-overlay-id";
+    overlay.style.cssText =
+      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
 
-    // Clean white card face
-    const cardFace = new Graphics()
-      .roundRect(0, 0, 360, 240, 24)
-      .fill({ color: 0xffffff });
-    overlay.addChild(cardFace);
+    const card = document.createElement("div");
+    card.style.cssText =
+      "background:#fffae6;border:6px solid #b71c1c;border-radius:24px;width:340px;padding:50px 20px 40px 20px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #ffb300, 0 15px 30px rgba(0,0,0,0.5);position:relative;";
 
-    const defeatText = new Text({
-      text: "HẾT GIỜ",
-      style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 32,
-        fill: 0xe74c3c,
-        fontWeight: "900",
-        letterSpacing: 2,
-      }),
+    const ribbon = document.createElement("div");
+    ribbon.innerText = "HẾT GIỜ";
+    ribbon.style.cssText =
+      "position:absolute;top:-25px;left:50%;transform:translateX(-50%);background:linear-gradient(to bottom, #fff59d, #ffb300);color:#b71c1c;font-family:'Baloo 2', 'Be Vietnam Pro', sans-serif;font-size:26px;font-weight:900;padding:5px 40px;border-radius:25px;border:3px solid #ffffff;box-shadow:0 6px 0 #b28900, 0 8px 10px rgba(0,0,0,0.3);white-space:nowrap;letter-spacing:2px;text-shadow:0 1px 2px rgba(255,255,255,0.8);";
+
+    const descText = document.createElement("div");
+    descText.innerText = "Hãy thử sức lại nhé!";
+    descText.style.cssText =
+      "font-family:'Baloo 2', 'Outfit', 'Nunito', sans-serif;font-size:24px;color:#5c0612;text-align:center;line-height:1.6;font-weight:bold;margin-top:10px;margin-bottom:40px;white-space:pre-line;";
+
+    const btnContainer = document.createElement("div");
+    btnContainer.style.cssText =
+      "display:flex;gap:50px;justify-content:center;align-items:center;";
+
+    const createBtn = (iconUrl, onClick) => {
+      const btn = document.createElement("button");
+      btn.style.cssText = `width:72px;height:72px;border:none;background:url('${iconUrl}') no-repeat center center;background-size:contain;background-color:transparent;cursor:pointer;transition:transform 0.1s;outline:none;display:flex;align-items:center;justify-content:center;`;
+      btn.onpointerdown = () => {
+        btn.style.transform = "scale(0.9)";
+      };
+      btn.onpointerup = () => {
+        btn.style.transform = "scale(1)";
+      };
+      btn.onpointerleave = btn.onpointerup;
+      btn.addEventListener("click", () => {
+        audio.playFlip();
+        onClick();
+      });
+      return btn;
+    };
+
+    const btnHome = createBtn("/assest/iconbtn/Home_btn.png", () => {
+      overlay.remove();
+      this.switchState("MAIN_MENU");
     });
-    defeatText.anchor.set(0.5);
-    defeatText.position.set(180, 50);
-    overlay.addChild(defeatText);
 
-    const descText = new Text({
-      text: "Đã hết thời gian quy định.\nHãy thử sức lại nhé!",
-      style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 18,
-        fill: 0x7f8c8d,
-        align: "center",
-        lineHeight: 30,
-        fontWeight: "500",
-      }),
-    });
-    descText.anchor.set(0.5);
-    descText.position.set(180, 115);
-    overlay.addChild(descText);
-
-    // Home button (Left)
-    const btnHome = createCircularButton("🏠", () =>
-      this.switchState("MAIN_MENU"),
+    const btnRetry = createBtn(
+      "/assest/iconbtn/replay_btn.png",
+      async () => {
+        overlay.remove();
+        this.defeatCount = (this.defeatCount || 0) + 1;
+        if (this.defeatCount >= 3) {
+          this.defeatCount = 0;
+          await AdManager.showInterstitial();
+        }
+        this.initGame(this.currentLevelIndex);
+      },
+      "#ffca28",
+      "#ff8f00",
+      "#ffffff",
     );
-    btnHome.position.set(120, 190);
-    btnHome.updateStyle(32);
-    overlay.addChild(btnHome);
 
-    // Try again button (Right)
-    const btnRetry = createCircularButton("🔄", async () => {
-      this.defeatCount = (this.defeatCount || 0) + 1;
-      if (this.defeatCount >= 3) {
-        this.defeatCount = 0;
-        await AdManager.showInterstitial();
-      }
-      this.initGame(this.currentLevelIndex);
-    });
-    btnRetry.position.set(240, 190);
-    btnRetry.updateStyle(32);
-    overlay.addChild(btnRetry);
+    btnContainer.appendChild(btnHome);
+    btnContainer.appendChild(btnRetry);
 
-    // 2. Elastic Entrance for Defeat Modal
-    overlay.pivot.set(180, 120);
-    const overlayScale = Math.min(
-      1.5,
-      this.app.screen.width / 400,
-      this.app.screen.height / 650,
+    card.appendChild(ribbon);
+    card.appendChild(descText);
+    card.appendChild(btnContainer);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const handleResize = () => {
+      const cw = window.innerWidth;
+      const ch = window.innerHeight;
+      const scale = Math.min(1.0, cw / 400, ch / 400);
+      card.style.zoom = scale;
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    const originalRemove = overlay.remove.bind(overlay);
+    overlay.remove = () => {
+      window.removeEventListener("resize", handleResize);
+      originalRemove();
+    };
+
+    card.animate(
+      [
+        { transform: "scale(0.5)", opacity: 0 },
+        { transform: "scale(1.05)", opacity: 1 },
+        { transform: "scale(1)", opacity: 1 },
+      ],
+      { duration: 400, easing: "ease-out", fill: "forwards" },
     );
-    overlay.scale.set(0);
-    overlay.x = this.app.screen.width / 2;
-    overlay.y = this.app.screen.height / 2;
-
-    this.overlayContainer.addChild(overlay);
-
-    gsap.to(overlay.scale, {
-      x: overlayScale,
-      y: overlayScale,
-      duration: 0.75,
-      ease: "back.out(1.5)",
-    });
-
-    // 3. Staggered Button Entrance Animations
-    btnHome.scale.set(0);
-    btnRetry.scale.set(0);
-    gsap.to(btnHome.scale, {
-      x: 1,
-      y: 1,
-      duration: 0.35,
-      delay: 0.45,
-      ease: "back.out(1.7)",
-    });
-    gsap.to(btnRetry.scale, {
-      x: 1,
-      y: 1,
-      duration: 0.35,
-      delay: 0.7,
-      ease: "back.out(1.7)",
-    });
   }
 
   updateStatsUI() {
