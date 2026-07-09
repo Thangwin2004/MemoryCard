@@ -2314,6 +2314,24 @@ export class GameController extends Container {
     const appContainer = document.getElementById("app") || document.body;
     appContainer.appendChild(overlay);
 
+    const handleResize = () => {
+      const cw = window.innerWidth;
+      const ch = window.innerHeight;
+      const scale = Math.min(1.5, cw / 400, ch / 650);
+      card.style.zoom = scale;
+      leftLantern.style.left = "calc(50% - 210px * " + scale + ")";
+      leftLantern.style.top = "calc(50% - 250px * " + scale + ")";
+      rightLantern.style.left = "calc(50% + 210px * " + scale + ")";
+      rightLantern.style.top = "calc(50% - 250px * " + scale + ")";
+    };
+    window.addEventListener("resize", handleResize);
+
+    const originalRemove = overlay.remove.bind(overlay);
+    overlay.remove = () => {
+      window.removeEventListener("resize", handleResize);
+      originalRemove();
+    };
+
     // Number counting animation
     let curObj = { s: 0, m: 0, t: 0 };
     gsap.to(curObj, {
