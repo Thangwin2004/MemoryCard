@@ -2269,7 +2269,7 @@ export class GameController extends Container {
     const btnHome = createIconBtn(
       "/assest/iconbtn/Home_btn.png",
       () => {
-        audio.playClick();
+        audio.playFlip();
         if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
         overlay.remove();
         this.switchState("MAIN_MENU");
@@ -2283,7 +2283,7 @@ export class GameController extends Container {
       "/assest/iconbtn/x2_btn.png",
       async () => {
         if (hasDoubled) return;
-        audio.playClick();
+        audio.playFlip();
         const success = await AdManager.showRewardedVideo();
         if (success) {
           hasDoubled = true;
@@ -2304,7 +2304,7 @@ export class GameController extends Container {
     const btnNext = createIconBtn(
       nextIcon,
       () => {
-        audio.playClick();
+        audio.playFlip();
         if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
         overlay.remove();
         const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
@@ -2500,43 +2500,58 @@ export class GameController extends Container {
       },
     );
 
-    const overlay = new Graphics();
-    overlay
-      .roundRect(0, 0, 360, 220, 16)
-      .fill({ color: 0xfffae6 })
-      .stroke({ width: 5, color: 0xd32f2f })
-      .roundRect(5, 5, 360 - 10, 220 - 10, 12)
-      .stroke({ width: 1.5, color: 0xffea00 });
+    const overlay = new Container();
+
+    // Soft drop shadow
+    const shadow = new Graphics()
+      .roundRect(0, 8, 360, 240, 24)
+      .fill({ color: 0x000000, alpha: 0.15 });
+    overlay.addChild(shadow);
+
+    // Clean white card face
+    const cardFace = new Graphics()
+      .roundRect(0, 0, 360, 240, 24)
+      .fill({ color: 0xffffff });
+    overlay.addChild(cardFace);
 
     const defeatText = new Text({
       text: "HẾT GIỜ",
       style: new TextStyle({
         fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 24,
-        fill: 0xd32f2f,
-        fontWeight: "bold",
+        fontSize: 32,
+        fill: 0xe74c3c,
+        fontWeight: "900",
         letterSpacing: 2,
       }),
     });
     defeatText.anchor.set(0.5);
-    defeatText.position.set(180, 45);
+    defeatText.position.set(180, 50);
     overlay.addChild(defeatText);
 
     const descText = new Text({
       text: "Đã hết thời gian quy định.\nHãy thử sức lại nhé!",
       style: new TextStyle({
         fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 16,
-        fill: 0x5c0612,
+        fontSize: 18,
+        fill: 0x7f8c8d,
         align: "center",
-        lineHeight: 28,
+        lineHeight: 30,
+        fontWeight: "500",
       }),
     });
     descText.anchor.set(0.5);
-    descText.position.set(180, 105);
+    descText.position.set(180, 115);
     overlay.addChild(descText);
 
-    // Try again button (Right) - enlarged to updateStyle(30)
+    // Home button (Left)
+    const btnHome = createCircularButton("🏠", () =>
+      this.switchState("MAIN_MENU"),
+    );
+    btnHome.position.set(120, 190);
+    btnHome.updateStyle(32);
+    overlay.addChild(btnHome);
+
+    // Try again button (Right)
     const btnRetry = createCircularButton("🔄", async () => {
       this.defeatCount = (this.defeatCount || 0) + 1;
       if (this.defeatCount >= 3) {
@@ -2545,23 +2560,12 @@ export class GameController extends Container {
       }
       this.initGame(this.currentLevelIndex);
     });
-    btnRetry.position.set(220, 170); // Centered a bit more since continue is removed
-    btnRetry.updateStyle(30);
+    btnRetry.position.set(240, 190);
+    btnRetry.updateStyle(32);
     overlay.addChild(btnRetry);
 
-    // Remove the old continue button since it's now in the Revive Offer
-    // Continuing via the old button is no longer needed.
-
-    // Home button (Left) - enlarged to updateStyle(30)
-    const btnHome = createCircularButton("🏠", () =>
-      this.switchState("MAIN_MENU"),
-    );
-    btnHome.position.set(140, 170); // Centered a bit more
-    btnHome.updateStyle(30);
-    overlay.addChild(btnHome);
-
     // 2. Elastic Entrance for Defeat Modal
-    overlay.pivot.set(180, 110);
+    overlay.pivot.set(180, 120);
     const overlayScale = Math.min(
       1.5,
       this.app.screen.width / 400,
