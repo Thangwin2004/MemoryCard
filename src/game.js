@@ -2274,7 +2274,7 @@ export class GameController extends Container {
         overlay.remove();
         this.switchState("MAIN_MENU");
       },
-      "background-size: 100%; background-position: center 25%;",
+      "background-size: 85%; background-position: center 40%;",
     );
 
     // Double (x2)
@@ -2293,7 +2293,7 @@ export class GameController extends Container {
           btnDouble.style.pointerEvents = "none";
         }
       },
-      "background-size: 65%; background-position: center center;",
+      "background-size: 75%; background-position: center 50%;",
     );
 
     // Next / Replay
@@ -2311,7 +2311,7 @@ export class GameController extends Container {
         this.initGame(nextIdx);
         this.switchState("PLAYING");
       },
-      "background-size: 100%; background-position: center 75%;",
+      "background-size: 85%; background-position: center 60%;",
     );
 
     btnRow.appendChild(btnHome);
