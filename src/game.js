@@ -1,18 +1,16 @@
 import {
   Container,
   Graphics,
-  GraphicsContext,
   Text,
   TextStyle,
   FillGradient,
   Sprite,
   Assets,
-  BlurFilter,
 } from "pixi.js";
 import { Card } from "./card";
 import { ParticleSystem } from "./particles";
 import { audio } from "./audio";
-import { AVATAR_FILES, getAvatarPath } from "./symbols";
+import { AVATAR_FILES } from "./symbols";
 import { LacBirdFlock } from "./chimlac";
 import gsap from "gsap";
 
@@ -2252,7 +2250,7 @@ export class GameController extends Container {
         background-repeat: no-repeat;
         cursor: pointer;
         transition: transform 0.1s;
-        ${customBgStyle || 'background-size: contain; background-position: center;'}
+        ${customBgStyle || "background-size: contain; background-position: center;"}
       `;
       btn.addEventListener(
         "mousedown",
@@ -2268,41 +2266,53 @@ export class GameController extends Container {
     };
 
     // Home
-    const btnHome = createIconBtn("/assest/iconbtn/Home_btn.png", () => {
-      audio.playClick();
-      if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
-      overlay.remove();
-      this.switchState("MAIN_MENU");
-    }, "background-size: 88%; background-position: center 30%;");
+    const btnHome = createIconBtn(
+      "/assest/iconbtn/Home_btn.png",
+      () => {
+        audio.playClick();
+        if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
+        overlay.remove();
+        this.switchState("MAIN_MENU");
+      },
+      "background-size: 88%; background-position: center 30%;",
+    );
 
     // Double (x2)
     let hasDoubled = false;
-    const btnDouble = createIconBtn("/assest/iconbtn/x2_btn.png", async () => {
-      if (hasDoubled) return;
-      audio.playClick();
-      const success = await AdManager.showRewardedVideo();
-      if (success) {
-        hasDoubled = true;
-        this.score = this.score * 2;
-        document.getElementById("stat-score").innerText = this.score;
-        btnDouble.style.opacity = "0.5";
-        btnDouble.style.pointerEvents = "none";
-      }
-    }, "background-size: 78%; background-position: center center;");
+    const btnDouble = createIconBtn(
+      "/assest/iconbtn/x2_btn.png",
+      async () => {
+        if (hasDoubled) return;
+        audio.playClick();
+        const success = await AdManager.showRewardedVideo();
+        if (success) {
+          hasDoubled = true;
+          this.score = this.score * 2;
+          document.getElementById("stat-score").innerText = this.score;
+          btnDouble.style.opacity = "0.5";
+          btnDouble.style.pointerEvents = "none";
+        }
+      },
+      "background-size: 78%; background-position: center center;",
+    );
 
     // Next / Replay
     const nextIcon =
       this.currentLevelIndex < LEVELS.length - 1
         ? "/assest/iconbtn/next_btn.png"
         : "/assest/iconbtn/replay_btn.png";
-    const btnNext = createIconBtn(nextIcon, () => {
-      audio.playClick();
-      if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
-      overlay.remove();
-      const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
-      this.initGame(nextIdx);
-      this.switchState("PLAYING");
-    }, "background-size: 88%; background-position: center 70%;");
+    const btnNext = createIconBtn(
+      nextIcon,
+      () => {
+        audio.playClick();
+        if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
+        overlay.remove();
+        const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
+        this.initGame(nextIdx);
+        this.switchState("PLAYING");
+      },
+      "background-size: 88%; background-position: center 70%;",
+    );
 
     btnRow.appendChild(btnHome);
     btnRow.appendChild(btnDouble);
