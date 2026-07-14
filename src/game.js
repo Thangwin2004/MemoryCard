@@ -2223,7 +2223,7 @@ export class GameController extends Container {
       imgCont.style.cssText =
         "width:48px;height:48px;border-radius:50%;border:2px solid #FFCC80;background:#fff;display:flex;justify-content:center;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.2);overflow:hidden;flex-shrink:0;";
       const img = document.createElement("img");
-      img.src = `/assest/image/imagenobackgrd/${file}`;
+      img.src = `/assest/image/imagebldp/${file}`;
       img.style.cssText = "width:100%;height:100%;object-fit:cover;";
       img.onerror = () => {
         img.style.display = "none";
@@ -3359,11 +3359,11 @@ export class GameController extends Container {
         if (accountId === "laclac") {
           name = "Lạc Lạc (Bơ Lạc)";
           email = "laclac.bolac@gmail.com";
-          avatar = "/assest/image/imagenobackgrd/001_avatar_laclac.png";
+          avatar = "/assest/image/imagebldp/001_avatar_laclac.png";
         } else if (accountId === "dauphong") {
           name = "Đậu Phộng";
           email = "dauphong.bolac@gmail.com";
-          avatar = "/assest/image/imagenobackgrd/015_avatar_dauLan.png";
+          avatar = "/assest/image/imagebldp/015_avatar_dauLan.png";
         }
 
         // Set current user

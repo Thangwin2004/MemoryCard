@@ -49,7 +49,7 @@ export const AVATAR_FILES = [
 ];
 
 export const getAvatarPath = (filename) => {
-  return `/assest/image/imagenobackgrd/${filename}`;
+  return `/assest/image/imagebldp/${filename}`;
 };
 
 /**
