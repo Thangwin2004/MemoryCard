@@ -37,9 +37,9 @@ function gameAlert(message) {
           transition: opacity 0.25s ease;
         }
         .game-alert-card {
-          background: #fffae6;
-          border: 5px solid #d32f2f;
-          box-shadow: inset 0 0 0 2.5px #ffea00, 0 10px 25px rgba(0, 0, 0, 0.35);
+          background: #FFF3E0;
+          border: 5px solid #F57C00;
+          box-shadow: inset 0 0 0 2.5px #FFCC80, 0 10px 25px rgba(0, 0, 0, 0.35);
           border-radius: 20px;
           padding: 28px 24px;
           width: 85%;
@@ -50,7 +50,7 @@ function gameAlert(message) {
           font-family: 'Outfit', sans-serif;
         }
         .game-alert-text {
-          color: #5c0612;
+          color: #5D4037;
           font-size: 17px;
           line-height: 1.6;
           margin: 0 0 24px 0;
@@ -139,9 +139,9 @@ function gameConfirm(message) {
           transition: opacity 0.25s ease;
         }
         .game-confirm-card {
-          background: #fffae6;
-          border: 5px solid #d32f2f;
-          box-shadow: inset 0 0 0 2.5px #ffea00, 0 10px 25px rgba(0, 0, 0, 0.35);
+          background: #FFF3E0;
+          border: 5px solid #F57C00;
+          box-shadow: inset 0 0 0 2.5px #FFCC80, 0 10px 25px rgba(0, 0, 0, 0.35);
           border-radius: 20px;
           padding: 28px 24px;
           width: 85%; max-width: 340px;
@@ -151,7 +151,7 @@ function gameConfirm(message) {
           font-family: 'Be Vietnam Pro', sans-serif;
         }
         .game-confirm-text {
-          color: #5c0612;
+          color: #5D4037;
           font-size: 17px;
           line-height: 1.6;
           margin: 0 0 24px 0;
@@ -546,7 +546,7 @@ function createMenuButton(text, onClick) {
       .roundRect(-btn.w / 2, -btn.h / 2, btn.w, btn.h, 14)
       .fill({ color: btn.isRed ? 0x5c0612 : 0x1b0103, alpha: 0.95 })
       .stroke({ width: 2.5, color: 0xffea00 });
-    if (btn.label) btn.label.style.fill = "#ffea00";
+    if (btn.label) btn.label.style.fill = "#FFCC80";
   });
 
   btn.on("pointerout", () => {
@@ -1485,7 +1485,7 @@ export class GameController extends Container {
     const cellStyle = new TextStyle({
       fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
       fontSize: 12,
-      fill: "#5c0612",
+      fill: "#5D4037",
       fontWeight: "bold",
     });
 
@@ -1525,7 +1525,7 @@ export class GameController extends Container {
         style: new TextStyle({
           fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
           fontSize: 14,
-          fill: "#5c0612",
+          fill: "#5D4037",
           align: "center",
         }),
       });
@@ -2061,15 +2061,15 @@ export class GameController extends Container {
 
     const card = document.createElement("div");
     card.style.cssText = `
-      background:#fffae6;
-      border:5px solid #d32f2f;
+      background:#FFF3E0;
+      border:5px solid #F57C00;
       border-radius:20px;
       width:380px;
       height:540px;
       display:flex;
       flex-direction:column;
       align-items:center;
-      box-shadow:inset 0 0 0 4px #ffea00, 0 15px 30px rgba(0,0,0,0.5);
+      box-shadow:inset 0 0 0 4px #FFCC80, 0 15px 30px rgba(0,0,0,0.5);
       position:relative;
       zoom: ${overlayScale};
       transform: translateY(20px);
@@ -2085,19 +2085,19 @@ export class GameController extends Container {
     }).join(" ");
 
     const lacBirdPath = `
-      <path d="M 35 -4 L 10 -2 Q 12 -7 8 -8 Q -2 -16 -20 -14 Q -22 -13 -20 -12 Q -4 -10 4 -5 Q -4 2 -12 8 Q -25 14 -40 10 Q -55 15 -68 22 Q -54 11 -44 5 Q -58 12 -70 14 Q -48 5 -38 2 L -32 -3 Q -18 -4 -4 -3 L 10 -4.5 Z" fill="rgba(212,175,55,0.25)" stroke="#d4af37" stroke-width="1.5" />
-      <path d="M -22 0 C -15 -20 -5 -36 10 -45 C -2 -30 -8 -18 -12 -10 Q -16 -18 -20 0 Z" fill="rgba(212,175,55,0.3)" stroke="#d4af37" stroke-width="1.5" />
-      <path d="M 0 -20 L 4 -32 M -4 -16 L -1 -26 M -8 -12 L -5 -20 M -12 -8 L -9 -14" stroke="#d4af37" stroke-width="1.2" />
-      <path d="M -24 5 C -30 16 -36 26 -42 30 Q -32 18 -27 10 Q -29 12 -24 5 Z" fill="rgba(212,175,55,0.3)" stroke="#d4af37" stroke-width="1.2" />
-      <path d="M -28 12 L -34 21 M -26 9 L -31 16" stroke="#d4af37" stroke-width="1.0" />
-      <path d="M 11 -3.2 L 32 -4" stroke="rgba(212,175,55,0.7)" stroke-width="1.0" />
-      <circle cx="7" cy="-5" r="2.2" fill="#ffea00" stroke="#3e2723" stroke-width="0.8" />
+      <path d="M 35 -4 L 10 -2 Q 12 -7 8 -8 Q -2 -16 -20 -14 Q -22 -13 -20 -12 Q -4 -10 4 -5 Q -4 2 -12 8 Q -25 14 -40 10 Q -55 15 -68 22 Q -54 11 -44 5 Q -58 12 -70 14 Q -48 5 -38 2 L -32 -3 Q -18 -4 -4 -3 L 10 -4.5 Z" fill="rgba(255,183,77,0.25)" stroke="#FFB74D" stroke-width="1.5" />
+      <path d="M -22 0 C -15 -20 -5 -36 10 -45 C -2 -30 -8 -18 -12 -10 Q -16 -18 -20 0 Z" fill="rgba(255,183,77,0.3)" stroke="#FFB74D" stroke-width="1.5" />
+      <path d="M 0 -20 L 4 -32 M -4 -16 L -1 -26 M -8 -12 L -5 -20 M -12 -8 L -9 -14" stroke="#FFB74D" stroke-width="1.2" />
+      <path d="M -24 5 C -30 16 -36 26 -42 30 Q -32 18 -27 10 Q -29 12 -24 5 Z" fill="rgba(255,183,77,0.3)" stroke="#FFB74D" stroke-width="1.2" />
+      <path d="M -28 12 L -34 21 M -26 9 L -31 16" stroke="#FFB74D" stroke-width="1.0" />
+      <path d="M 11 -3.2 L 32 -4" stroke="rgba(255,183,77,0.7)" stroke-width="1.0" />
+      <circle cx="7" cy="-5" r="2.2" fill="#FFCC80" stroke="#3e2723" stroke-width="0.8" />
       <circle cx="7" cy="-5" r="0.8" fill="#000000" />
-      <circle cx="-18" cy="5" r="2.8" fill="none" stroke="#d4af37" stroke-width="1.0" />
-      <circle cx="-18" cy="5" r="1.2" fill="#ffea00" />
-      <circle cx="-28" cy="4" r="2.2" fill="none" stroke="#d4af37" stroke-width="1.0" />
-      <circle cx="-28" cy="4" r="0.8" fill="#ffea00" />
-      <path d="M -35 6 Q -48 15 -58 18 M -32 7 Q -45 17 -55 20" fill="none" stroke="#d4af37" stroke-width="1.2" />
+      <circle cx="-18" cy="5" r="2.8" fill="none" stroke="#FFB74D" stroke-width="1.0" />
+      <circle cx="-18" cy="5" r="1.2" fill="#FFCC80" />
+      <circle cx="-28" cy="4" r="2.2" fill="none" stroke="#FFB74D" stroke-width="1.0" />
+      <circle cx="-28" cy="4" r="0.8" fill="#FFCC80" />
+      <path d="M -35 6 Q -48 15 -58 18 M -32 7 Q -45 17 -55 20" fill="none" stroke="#FFB74D" stroke-width="1.2" />
     `;
 
     const svgBadge = `
@@ -2115,12 +2115,12 @@ export class GameController extends Container {
         <g transform="translate(85, 0) scale(1.4, 1.4)">${lacBirdPath}</g>
         <!-- Rotating Drum -->
         <g>
-          <circle cx="0" cy="0" r="55" fill="url(#drumGrad)" stroke="#ffea00" stroke-width="2.8"/>
-          <circle cx="0" cy="0" r="46" fill="none" stroke="rgba(212,175,55,0.6)" stroke-width="1.5"/>
-          <circle cx="0" cy="0" r="37" fill="none" stroke="rgba(212,175,55,0.5)" stroke-width="1.2"/>
-          <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(212,175,55,0.4)" stroke-width="1.0"/>
-          <circle cx="0" cy="0" r="18" fill="none" stroke="rgba(212,175,55,0.3)" stroke-width="0.8"/>
-          <polygon points="${starPoints}" fill="#ffea00" stroke="#b89326" stroke-width="1"/>
+          <circle cx="0" cy="0" r="55" fill="url(#drumGrad)" stroke="#FFCC80" stroke-width="2.8"/>
+          <circle cx="0" cy="0" r="46" fill="none" stroke="rgba(255,183,77,0.6)" stroke-width="1.5"/>
+          <circle cx="0" cy="0" r="37" fill="none" stroke="rgba(255,183,77,0.5)" stroke-width="1.2"/>
+          <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(255,183,77,0.4)" stroke-width="1.0"/>
+          <circle cx="0" cy="0" r="18" fill="none" stroke="rgba(255,183,77,0.3)" stroke-width="0.8"/>
+          <polygon points="${starPoints}" fill="#FFCC80" stroke="#b89326" stroke-width="1"/>
           <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="16s" repeatCount="indefinite"/>
         </g>
       </svg>
@@ -2135,7 +2135,7 @@ export class GameController extends Container {
       const ribbon = document.createElement("div");
       ribbon.innerText = "⭐ KỶ LỤC MỚI! ⭐";
       ribbon.style.cssText =
-        "background:#d32f2f;color:#fff;border:2px solid #ffea00;border-radius:10px;padding:4px 12px;font-size:10px;font-weight:bold;margin-top:-15px;z-index:2;position:relative;";
+        "background:#F57C00;color:#fff;border:2px solid #FFCC80;border-radius:10px;padding:4px 12px;font-size:10px;font-weight:bold;margin-top:-15px;z-index:2;position:relative;";
       card.appendChild(ribbon);
     } else {
       card.appendChild(document.createElement("div")).style.height = "10px";
@@ -2158,8 +2158,8 @@ export class GameController extends Container {
       return `
         <div style="display:flex;flex-direction:column;align-items:center;width:25%;">
           <div style="font-size:24px;">${icon}</div>
-          <div style="font-size:11px;font-weight:bold;color:#5c0612;margin-top:8px;">${label}</div>
-          <div id="${valueId}" style="font-size:22px;font-weight:900;color:#d32f2f;margin-top:4px;">0</div>
+          <div style="font-size:11px;font-weight:bold;color:#5D4037;margin-top:8px;">${label}</div>
+          <div id="${valueId}" style="font-size:22px;font-weight:900;color:#F57C00;margin-top:4px;">0</div>
         </div>
       `;
     };
@@ -2176,14 +2176,14 @@ export class GameController extends Container {
     const congratsLabel = document.createElement("div");
     congratsLabel.innerText = "Chúc mừng bạn đã chiến thắng!";
     congratsLabel.style.cssText =
-      "font-size:14px;color:#d32f2f;font-weight:bold;margin-top:15px;";
+      "font-size:14px;color:#F57C00;font-weight:bold;margin-top:15px;";
     card.appendChild(congratsLabel);
 
     // Tribe title
     const tribeTitle = document.createElement("div");
     tribeTitle.innerText = "— THÀNH VIÊN BỘ LẠC —";
     tribeTitle.style.cssText =
-      "font-size:12px;color:#d32f2f;font-weight:bold;letter-spacing:1px;margin-top:15px;";
+      "font-size:12px;color:#F57C00;font-weight:bold;letter-spacing:1px;margin-top:15px;";
     card.appendChild(tribeTitle);
 
     // Avatar Strip
@@ -2221,7 +2221,7 @@ export class GameController extends Container {
     repeatedAvatars.forEach((file) => {
       const imgCont = document.createElement("div");
       imgCont.style.cssText =
-        "width:48px;height:48px;border-radius:50%;border:2px solid #ffea00;background:#fff;display:flex;justify-content:center;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.2);overflow:hidden;flex-shrink:0;";
+        "width:48px;height:48px;border-radius:50%;border:2px solid #FFCC80;background:#fff;display:flex;justify-content:center;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.2);overflow:hidden;flex-shrink:0;";
       const img = document.createElement("img");
       img.src = `/assest/image/imagebldp/${file}`;
       img.style.cssText = "width:100%;height:100%;object-fit:cover;";
@@ -2254,7 +2254,7 @@ export class GameController extends Container {
       `;
       btn.addEventListener(
         "mousedown",
-        () => (btn.style.transform = "scale(0.9)"),
+        () => (btn.style.transform = "scale(0.92)"),
       );
       btn.addEventListener("mouseup", () => (btn.style.transform = "scale(1)"));
       btn.addEventListener(
@@ -2380,12 +2380,12 @@ export class GameController extends Container {
 
     const card = document.createElement("div");
     card.style.cssText =
-      "background:#fffae6;border:6px solid #d32f2f;border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #ffea00, 0 15px 30px rgba(0,0,0,0.5);";
+      "background:#FFF3E0;border:6px solid #F57C00;border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #FFCC80, 0 15px 30px rgba(0,0,0,0.5);";
 
     const title = document.createElement("div");
     title.innerText = "HỒI SINH";
     title.style.cssText =
-      "font-size:32px;font-weight:900;color:#d32f2f;text-shadow: 0 1px 0 rgba(255,255,255,0.8);margin-bottom:20px;font-family:'Outfit', 'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
+      "font-size:32px;font-weight:900;color:#F57C00;text-shadow: 0 1px 0 rgba(255,255,255,0.8);margin-bottom:20px;font-family:'Outfit', 'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
 
     const heartIcon = document.createElement("div");
     heartIcon.innerText = "💖";
@@ -2404,7 +2404,7 @@ export class GameController extends Container {
 
     const yesBtn = document.createElement("button");
     yesBtn.style.cssText =
-      "background:linear-gradient(to bottom, #7CD41E, #62A816);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #4C8210, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
+      "background:linear-gradient(to bottom, #FFCC80, #FFB74D);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #F57C00, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
 
     const tvIcon = document.createElement("img");
     tvIcon.src = "/assest/iconbtn/images.png";
@@ -2510,17 +2510,17 @@ export class GameController extends Container {
 
     const card = document.createElement("div");
     card.style.cssText =
-      "background:#fffae6;border:6px solid #b71c1c;border-radius:24px;width:340px;padding:50px 20px 40px 20px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #ffb300, 0 15px 30px rgba(0,0,0,0.5);position:relative;";
+      "background:#FFF3E0;border:6px solid #E65100;border-radius:24px;width:340px;padding:50px 20px 40px 20px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #FFB74D, 0 15px 30px rgba(0,0,0,0.5);position:relative;";
 
     const ribbon = document.createElement("div");
     ribbon.innerText = "HẾT GIỜ";
     ribbon.style.cssText =
-      "position:absolute;top:-25px;left:50%;transform:translateX(-50%);background:linear-gradient(to bottom, #fff59d, #ffb300);color:#b71c1c;font-family:'Baloo 2', 'Be Vietnam Pro', sans-serif;font-size:26px;font-weight:900;padding:5px 40px;border-radius:25px;border:3px solid #ffffff;box-shadow:0 6px 0 #b28900, 0 8px 10px rgba(0,0,0,0.3);white-space:nowrap;letter-spacing:2px;text-shadow:0 1px 2px rgba(255,255,255,0.8);";
+      "position:absolute;top:-25px;left:50%;transform:translateX(-50%);background:linear-gradient(to bottom, #fff59d, #FFB74D);color:#E65100;font-family:'Baloo 2', 'Be Vietnam Pro', sans-serif;font-size:26px;font-weight:900;padding:5px 40px;border-radius:25px;border:3px solid #ffffff;box-shadow:0 6px 0 #F57C00, 0 8px 10px rgba(0,0,0,0.3);white-space:nowrap;letter-spacing:2px;text-shadow:0 1px 2px rgba(255,255,255,0.8);";
 
     const descText = document.createElement("div");
     descText.innerText = "Hãy thử sức lại nhé!";
     descText.style.cssText =
-      "font-family:'Baloo 2', 'Outfit', 'Nunito', sans-serif;font-size:24px;color:#5c0612;text-align:center;line-height:1.6;font-weight:bold;margin-top:10px;margin-bottom:40px;white-space:pre-line;";
+      "font-family:'Baloo 2', 'Outfit', 'Nunito', sans-serif;font-size:24px;color:#5D4037;text-align:center;line-height:1.6;font-weight:bold;margin-top:10px;margin-bottom:40px;white-space:pre-line;";
 
     const btnContainer = document.createElement("div");
     btnContainer.style.cssText =
@@ -2530,7 +2530,7 @@ export class GameController extends Container {
       const btn = document.createElement("button");
       btn.style.cssText = `width:72px;height:72px;border:none;background:url('${iconUrl}') no-repeat center center;background-size:contain;background-color:transparent;cursor:pointer;transition:transform 0.1s;outline:none;display:flex;align-items:center;justify-content:center;`;
       btn.onpointerdown = () => {
-        btn.style.transform = "scale(0.9)";
+        btn.style.transform = "scale(0.92)";
       };
       btn.onpointerup = () => {
         btn.style.transform = "scale(1)";
@@ -3481,9 +3481,9 @@ export class GameController extends Container {
           box-sizing: border-box;
         }
         .game-popup-card {
-          background: #fffae6;
-          border: 5px solid #d32f2f;
-          box-shadow: inset 0 0 0 2.5px #ffea00, 0 6px 0 #8a0000, 0 12px 25px rgba(0, 0, 0, 0.35);
+          background: #FFF3E0;
+          border: 5px solid #F57C00;
+          box-shadow: inset 0 0 0 2.5px #FFCC80, 0 6px 0 #8a0000, 0 12px 25px rgba(0, 0, 0, 0.35);
           border-radius: 20px;
           padding: 36px 24px 20px 24px;
           width: 90%; max-width: 380px;
@@ -3503,7 +3503,7 @@ export class GameController extends Container {
           top: -25px;
           left: 50%;
           transform: translateX(-50%);
-          background: linear-gradient(180deg, #ff6b6b 0%, #d32f2f 100%);
+          background: linear-gradient(180deg, #ff6b6b 0%, #F57C00 100%);
           border: 2.5px solid #fff8b3;
           border-radius: 12px;
           box-shadow: 0 4px 0 #8a0000;
@@ -3534,7 +3534,7 @@ export class GameController extends Container {
           transform: scale(1.1);
         }
         .game-popup-close-btn:active {
-          transform: scale(0.9);
+          transform: scale(0.92);
         }
         .game-settings-row-container {
           margin-top: 18px;
@@ -3558,7 +3558,7 @@ export class GameController extends Container {
           font-family: 'Be Vietnam Pro', sans-serif;
           font-size: 18px;
           font-weight: 700;
-          color: #5c0612;
+          color: #5D4037;
           display: flex;
           align-items: center;
           gap: 8px;
@@ -3581,7 +3581,7 @@ export class GameController extends Container {
           transform: scale(0.95);
         }
         .game-settings-reset-btn {
-          background: linear-gradient(180deg, #ff6b6b 0%, #d32f2f 100%);
+          background: linear-gradient(180deg, #ff6b6b 0%, #F57C00 100%);
           border: none;
           box-shadow: 0 4px 0 #8a0000;
           border-radius: 12px;
@@ -3636,7 +3636,7 @@ export class GameController extends Container {
           transform: scale(1.1);
         }
         .game-paused-btn:active {
-          transform: scale(0.9);
+          transform: scale(0.92);
         }
 
         /* Achievements popup */
@@ -3644,12 +3644,12 @@ export class GameController extends Container {
           font-family: 'Be Vietnam Pro', sans-serif;
           font-size: 13px;
           font-weight: 700;
-          color: #5c0612;
+          color: #5D4037;
           margin: 10px 0;
           text-align: center;
         }
         .game-achievements-user-text.logged-in {
-          color: #d32f2f;
+          color: #F57C00;
         }
         .game-achievements-level-selector {
           display: flex;
@@ -3662,7 +3662,7 @@ export class GameController extends Container {
           background: none;
           border: none;
           font-size: 22px;
-          color: #d32f2f;
+          color: #F57C00;
           cursor: pointer;
           transition: transform 0.1s ease;
         }
@@ -3686,23 +3686,23 @@ export class GameController extends Container {
         .game-achievements-table th {
           position: sticky;
           top: 0;
-          background: #fffae6;
+          background: #FFF3E0;
           z-index: 10;
           font-size: 12px;
           font-weight: 800;
-          color: #5c0612;
+          color: #5D4037;
           padding: 8px 4px;
           border-bottom: 2px solid #ffccbc;
         }
         .game-achievements-table td {
           font-size: 12px;
           font-weight: 700;
-          color: #5c0612;
+          color: #5D4037;
           padding: 8px 4px;
           text-align: center;
         }
         .game-achievements-table tr.highlighted td {
-          color: #d32f2f;
+          color: #F57C00;
           font-weight: 900;
         }
         .game-achievements-table tr.rank-0 td {
@@ -3744,7 +3744,7 @@ export class GameController extends Container {
         .game-achievements-footer {
           margin-top: 14px;
           background: #fff3cd;
-          border: 2px solid #ffea00;
+          border: 2px solid #FFCC80;
           border-radius: 12px;
           padding: 10px 14px;
           display: flex;
@@ -3757,7 +3757,7 @@ export class GameController extends Container {
         .game-achievements-footer-item {
           font-size: 13px;
           font-weight: 900;
-          color: #d32f2f;
+          color: #F57C00;
           width: 33%;
           text-align: center;
         }
