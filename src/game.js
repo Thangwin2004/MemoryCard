@@ -2104,9 +2104,9 @@ export class GameController extends Container {
       <svg width="240" height="120" viewBox="-120 -60 240 120" style="margin-top:20px;">
         <defs>
           <radialGradient id="drumGrad" cx="0.5" cy="0.5" r="0.5" fx="0.2" fy="0.2">
-            <stop offset="0%" stop-color="#aa7c11" />
-            <stop offset="50%" stop-color="#8a6d20" />
-            <stop offset="100%" stop-color="#4a3b10" />
+            <stop offset="0%" stop-color="#FFCC80" />
+            <stop offset="50%" stop-color="#FFB74D" />
+            <stop offset="100%" stop-color="#F57C00" />
           </radialGradient>
         </defs>
         <!-- Left Bird -->
@@ -2120,7 +2120,7 @@ export class GameController extends Container {
           <circle cx="0" cy="0" r="37" fill="none" stroke="rgba(255,183,77,0.5)" stroke-width="1.2"/>
           <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(255,183,77,0.4)" stroke-width="1.0"/>
           <circle cx="0" cy="0" r="18" fill="none" stroke="rgba(255,183,77,0.3)" stroke-width="0.8"/>
-          <polygon points="${starPoints}" fill="#FFCC80" stroke="#b89326" stroke-width="1"/>
+          <polygon points="${starPoints}" fill="#FFCC80" stroke="#FFB74D" stroke-width="1"/>
           <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="16s" repeatCount="indefinite"/>
         </g>
       </svg>
@@ -2510,12 +2510,12 @@ export class GameController extends Container {
 
     const card = document.createElement("div");
     card.style.cssText =
-      "background:#FFF3E0;border:6px solid #E65100;border-radius:24px;width:340px;padding:50px 20px 40px 20px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #FFB74D, 0 15px 30px rgba(0,0,0,0.5);position:relative;";
+      "background:#FFF3E0;border:6px solid #F57C00;border-radius:24px;width:340px;padding:50px 20px 40px 20px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #FFB74D, 0 15px 30px rgba(0,0,0,0.5);position:relative;";
 
     const ribbon = document.createElement("div");
     ribbon.innerText = "HẾT GIỜ";
     ribbon.style.cssText =
-      "position:absolute;top:-25px;left:50%;transform:translateX(-50%);background:linear-gradient(to bottom, #fff59d, #FFB74D);color:#E65100;font-family:'Baloo 2', 'Be Vietnam Pro', sans-serif;font-size:26px;font-weight:900;padding:5px 40px;border-radius:25px;border:3px solid #ffffff;box-shadow:0 6px 0 #F57C00, 0 8px 10px rgba(0,0,0,0.3);white-space:nowrap;letter-spacing:2px;text-shadow:0 1px 2px rgba(255,255,255,0.8);";
+      "position:absolute;top:-25px;left:50%;transform:translateX(-50%);background:linear-gradient(to bottom, #FFF9C4, #FFB74D);color:#F57C00;font-family:'Baloo 2', 'Be Vietnam Pro', sans-serif;font-size:26px;font-weight:900;padding:5px 40px;border-radius:25px;border:3px solid #ffffff;box-shadow:0 6px 0 #F57C00, 0 8px 10px rgba(0,0,0,0.3);white-space:nowrap;letter-spacing:2px;text-shadow:0 1px 2px rgba(255,255,255,0.8);";
 
     const descText = document.createElement("div");
     descText.innerText = "Hãy thử sức lại nhé!";
