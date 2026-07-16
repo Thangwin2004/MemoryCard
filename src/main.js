@@ -32,9 +32,31 @@ import { GameController } from "./game";
     document.body.appendChild(app.canvas);
   }
 
-  // 3.5 Hide splash screen smoothly
+  // 3.5 Hide splash screen smoothly with fake progress
   const splashScreen = document.getElementById("splash-screen");
-  if (splashScreen) {
+  const splashProgress = document.getElementById("splash-progress");
+  const splashText = document.getElementById("splash-text");
+  if (splashScreen && splashProgress && splashText) {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 15) + 5;
+      if (progress > 90) progress = 90;
+      splashProgress.style.width = progress + "%";
+      splashText.innerText = `Loading ${progress}%`;
+    }, 50);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      splashProgress.style.width = "100%";
+      splashText.innerText = `Loading 100%`;
+      setTimeout(() => {
+        splashScreen.style.opacity = "0";
+        setTimeout(() => {
+          splashScreen.style.display = "none";
+        }, 500);
+      }, 200);
+    }, 600);
+  } else if (splashScreen) {
     splashScreen.style.opacity = "0";
     setTimeout(() => {
       splashScreen.style.display = "none";
