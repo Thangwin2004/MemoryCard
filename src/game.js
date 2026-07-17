@@ -12,6 +12,7 @@ import { ParticleSystem } from "./particles";
 import { audio } from "./audio";
 import { AVATAR_FILES } from "./symbols";
 import { LacBirdFlock } from "./chimlac";
+import { Button, IconBtn } from "./ui/Button";
 import gsap from "gsap";
 
 function gameAlert(message) {
@@ -303,529 +304,180 @@ function saveStats(stats) {
   }
 }
 
-// Reusable helper to map text emojis/keys to high-quality PNG button icons
-function getIconForEmoji(emojiOrText) {
-  if (
-    emojiOrText.includes("↩️") ||
-    emojiOrText.includes("back_btn") ||
-    emojiOrText.includes("QUAY LẠI")
-  )
-    return "/assest/iconbtn/back_btn.png";
-  if (
-    emojiOrText.includes("🏠") ||
-    emojiOrText.includes("Home_btn") ||
-    emojiOrText.includes("TRANG CHỦ")
-  )
-    return "/assest/iconbtn/Home_btn.png";
-  if (
-    emojiOrText.includes("🔄") ||
-    emojiOrText.includes("replay_btn") ||
-    emojiOrText.includes("CHƠI LẠI")
-  )
-    return "/assest/iconbtn/replay_btn.png";
-  if (
-    emojiOrText.includes("▶️") ||
-    emojiOrText.includes("next_btn") ||
-    emojiOrText.includes("CHƠI TIẾP") ||
-    emojiOrText.includes("TIẾP TỤC")
-  )
-    return "/assest/iconbtn/next_btn.png";
-  if (emojiOrText.includes("⏯️") || emojiOrText.includes("continue_btn"))
-    return "/assest/iconbtn/continue_btn.png";
-  if (
-    emojiOrText.includes("🗑️") ||
-    emojiOrText.includes("delete_btn") ||
-    emojiOrText.includes("XÓA DỮ LIỆU")
-  )
-    return "/assest/iconbtn/delete_btn.png";
-  if (
-    emojiOrText.includes("📺") ||
-    emojiOrText.includes("x2_btn") ||
-    emojiOrText.includes("x2 ĐIỂM")
-  )
-    return "/assest/iconbtn/x2_btn.png";
-  return null;
+// Reusable menu button builder
+
+// Helper function to generate pixel-perfect PixiJS style vibrant icons for DOM overlays
+function getIconBtnDataUrl(iconName, theme) {
+    const w = 120;
+    const h = 120;
+    const texH = h + h * 0.15 + 4;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = texH;
+    const ctx = canvas.getContext("2d");
+
+    let colorTop, colorBot, colorShadow;
+    if (theme === 'green') {
+        colorTop = '#66BB6A'; colorBot = '#43A047'; colorShadow = 0x2E7D32;
+    } else if (theme === 'orange') {
+        colorTop = '#FFB74D'; colorBot = '#F57C00'; colorShadow = 0xE65100;
+    } else if (theme === 'blue') {
+        colorTop = '#29B6F6'; colorBot = '#0288D1'; colorShadow = 0x01579B;
+    } else if (theme === 'purple') {
+        colorTop = '#AB47BC'; colorBot = '#7B1FA2'; colorShadow = 0x4A148C;
+    } else { // yellow
+        colorTop = '#FFCA28'; colorBot = '#FF8F00'; colorShadow = 0xFF6F00;
+    }
+
+    const shadowHex = '#' + colorShadow.toString(16).padStart(6, '0');
+    const radius = w / 2;
+
+    ctx.fillStyle = shadowHex;
+    ctx.beginPath();
+    ctx.arc(radius, radius + radius * 0.15, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, w);
+    gradient.addColorStop(0, colorTop);
+    gradient.addColorStop(1, colorBot);
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(radius, radius, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = Math.max(3, radius * 0.15);
+    ctx.stroke();
+
+    const ICONS = {
+        'home': 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
+        'gear': 'M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z',
+        'trophy': 'M19,5h-2V3H7v2H5C3.9,5,3,5.9,3,7v1c0,2.55,1.92,4.63,4.39,4.94c0.63,1.5,1.98,2.63,3.61,2.96V19H7v2h10v-2h-4v-3.1 c1.63-0.33,2.98-1.46,3.61-2.96C19.08,12.63,21,10.55,21,8V7C21,5.9,20.1,5,19,5z M5,8V7h2v3.82C5.84,10.4,5,9.3,5,8z M19,8 c0,1.3-0.84,2.4-2,2.82V7h2V8z',
+        'replay': 'M17.65,6.35C16.2,4.9,14.21,4,12,4c-4.42,0-7.99,3.58-7.99,8s3.57,8,7.99,8c3.73,0,6.84-2.55,7.73-6h-2.08 c-0.82,2.33-3.04,4-5.65,4c-3.31,0-6-2.69-6-6s2.69-6,6-6c1.66,0,3.14,0.69,4.22,1.78L13,11h7V4L17.65,6.35z',
+        'next': 'M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z',
+        'play': 'M8 5v14l11-7z'
+    };
+
+    if (ICONS[iconName]) {
+        const p = new Path2D(ICONS[iconName]);
+        ctx.save();
+        ctx.translate(radius, radius);
+        const iconScale = (w * 0.6) / 24; 
+        ctx.scale(iconScale, iconScale);
+        ctx.translate(-12, -12); // viewBox center
+        ctx.fillStyle = '#ffffff';
+        ctx.fill(p);
+        ctx.restore();
+    } else if (iconName === 'x2') {
+        ctx.font = '900 ' + (radius * 1.2) + 'px "Outfit", "Nunito", "Arial", sans-serif';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#000000';
+        ctx.lineJoin = "round";
+        ctx.strokeText("x2", radius, radius);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText("x2", radius, radius);
+    } else {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(radius, radius, radius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    return canvas.toDataURL();
 }
 
-// Reusable menu button builder
 function createMenuButton(text, onClick) {
-  const btn = new Container();
-  btn.eventMode = "static";
-  btn.cursor = "pointer";
-
-  const bg = new Graphics();
-  btn.addChild(bg);
-
-  const iconPath = getIconForEmoji(text);
-
-  if (iconPath) {
-    // Parse text to strip emoji/icon keywords
-    let textStr = text;
-    if (text.includes(" ")) {
-      const spaceIdx = text.indexOf(" ");
-      textStr = text.substring(spaceIdx + 1);
-    }
-
-    const icon = new Sprite();
-    btn.addChild(icon);
-    btn.icon = icon;
-
-    const label = new Text({
-      text: textStr,
-      style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 14,
-        fill: "#ffffff",
-        fontWeight: "bold",
-        letterSpacing: 0.5,
-      }),
-    });
-    label.anchor.set(0.5);
-    btn.addChild(label);
-    btn.label = label;
-
-    Assets.load(iconPath)
-      .then((texture) => {
-        icon.texture = texture;
-        icon.anchor.set(0.5);
-        icon.width = 24;
-        icon.height = 24;
-
-        // Position icon and label horizontally centered
-        const gap = 10;
-        const totalW = icon.width + gap + label.width;
-        icon.x = -totalW / 2 + icon.width / 2;
-        label.x = totalW / 2 - label.width / 2;
-      })
-      .catch((err) => {
-        console.error("Failed to load icon:", iconPath, err);
-      });
+  let cleanText = text;
+  if (text.includes(" ")) {
+    cleanText = text.substring(text.indexOf(" ") + 1);
+  }
+  if (text.startsWith("GOOGLE_ICON:")) {
+    cleanText = text.substring(12);
   } else if (text.startsWith("GOOGLE_ICON")) {
-    const displayText = text.includes(":") ? text.split(":")[1] : "ĐĂNG NHẬP";
-
-    const label = new Text({
-      text: displayText,
-      style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 14,
-        fill: "#ffffff",
-        fontWeight: "bold",
-        letterSpacing: 0.5,
-      }),
-    });
-    label.anchor.set(0.5);
-    btn.addChild(label);
-    btn.label = label;
-
-    const icon = new Sprite();
-    btn.addChild(icon);
-    btn.icon = icon;
-    Assets.load("/google_logo.png")
-      .then((texture) => {
-        icon.texture = texture;
-        icon.anchor.set(0.5);
-        icon.width = 24;
-        icon.height = 24;
-
-        // Position icon and label horizontally centered
-        const gap = 12;
-        const totalW = icon.width + gap + label.width;
-        icon.x = -totalW / 2 + icon.width / 2;
-        label.x = totalW / 2 - label.width / 2;
-      })
-      .catch((err) => {
-        console.error("Failed to load google_logo.png:", err);
-      });
-  } else {
-    const spaceIdx = text.indexOf(" ");
-    if (spaceIdx !== -1 && text.charCodeAt(0) > 127) {
-      const emoji = text.substring(0, spaceIdx);
-      const textStr = text.substring(spaceIdx + 1);
-
-      const emojiText = new Text({
-        text: emoji,
-        style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-          fontSize: 26,
-          fill: "#ffffff",
-        }),
-      });
-      emojiText.anchor.set(0.5);
-      btn.addChild(emojiText);
-      btn.emojiText = emojiText;
-
-      const label = new Text({
-        text: textStr,
-        style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-          fontSize: 14,
-          fill: "#ffffff",
-          fontWeight: "bold",
-          letterSpacing: 0.5,
-        }),
-      });
-      label.anchor.set(0.5);
-      btn.addChild(label);
-      btn.label = label;
-
-      // Align emoji and text horizontally
-      const gap = 12;
-      const totalW = emojiText.width + gap + label.width;
-      emojiText.x = -totalW / 2 + emojiText.width / 2;
-      label.x = totalW / 2 - label.width / 2;
-    } else {
-      const label = new Text({
-        text: text,
-        style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-          fontSize: 14,
-          fill: "#ffffff",
-          fontWeight: "bold",
-          letterSpacing: 0.5,
-        }),
-      });
-      label.anchor.set(0.5);
-      btn.addChild(label);
-      btn.label = label;
-    }
+    cleanText = "ĐĂNG NHẬP";
   }
 
-  btn.bg = bg;
-  btn.w = 120;
-  btn.h = 32;
-  btn.isRed = true;
-
-  btn.updateStyle = (w, h, isRed = true) => {
-    btn.w = w;
-    btn.h = h;
-    btn.isRed = isRed;
-    bg.clear()
-      .roundRect(-w / 2, -h / 2, w, h, 14)
-      .fill({ color: isRed ? 0x5c0612 : 0x1b0103, alpha: 0.9 })
-      .stroke({ width: 1.5, color: 0xd4af37 });
-
-    if (btn.label) {
-      if (w < 150) {
-        btn.label.style.fontSize = 11;
-        if (btn.emojiText) {
-          btn.emojiText.style.fontSize = 16;
-        }
-      } else {
-        btn.label.style.fontSize = 14;
-        if (btn.emojiText) {
-          btn.emojiText.style.fontSize = 26;
-        }
-      }
-
-      if (btn.icon) {
-        const gap = w < 150 ? 6 : 10;
-        const iconSize = w < 150 ? 18 : 24;
-        btn.icon.width = iconSize;
-        btn.icon.height = iconSize;
-
-        const totalW = btn.icon.width + gap + btn.label.width;
-        btn.icon.x = -totalW / 2 + btn.icon.width / 2;
-        btn.label.x = totalW / 2 - btn.label.width / 2;
-      } else if (btn.emojiText) {
-        const gap = w < 150 ? 6 : 12;
-        const totalW = btn.emojiText.width + gap + btn.label.width;
-        btn.emojiText.x = -totalW / 2 + btn.emojiText.width / 2;
-        btn.label.x = totalW / 2 - btn.label.width / 2;
-      }
-    }
+  const btn = new Button(cleanText, onClick, 24);
+  btn.updateStyle = (w, h) => {
+    const scale = Math.min(1.2, h / (24 * 2));
+    btn.scale.set(scale);
   };
-
-  btn.on("pointertap", () => {
-    audio.playFlip();
-    onClick();
-  });
-
-  btn.on("pointerover", () => {
-    btn.scale.set(1.05);
-    bg.clear()
-      .roundRect(-btn.w / 2, -btn.h / 2, btn.w, btn.h, 14)
-      .fill({ color: btn.isRed ? 0x5c0612 : 0x1b0103, alpha: 0.95 })
-      .stroke({ width: 2.5, color: 0xffea00 });
-    if (btn.label) btn.label.style.fill = "#FFCC80";
-  });
-
-  btn.on("pointerout", () => {
-    btn.scale.set(1.0);
-    bg.clear()
-      .roundRect(-btn.w / 2, -btn.h / 2, btn.w, btn.h, 14)
-      .fill({ color: btn.isRed ? 0x5c0612 : 0x1b0103, alpha: 0.9 })
-      .stroke({ width: 1.5, color: 0xd4af37 });
-    if (btn.label) btn.label.style.fill = "#ffffff";
-  });
-
   return btn;
 }
 
 // New builders for modern styled UI
 function createPlayButton(text, onClick) {
-  const btn = new Container();
-  btn.eventMode = "static";
-  btn.cursor = "pointer";
-
-  const shadow = new Graphics();
-  const bg = new Graphics();
-  const highlight = new Graphics();
-  const icon = new Graphics();
-
-  btn.addChild(shadow);
-  btn.addChild(bg);
-  btn.addChild(highlight);
-  btn.addChild(icon);
-
-  btn.w = 76;
-  btn.h = 76;
-
+  // Giảm fontSize từ 45 xuống 32 để nút không bị quá dài ngang
+  const btn = new Button(text, onClick, 32);
   btn.updateStyle = (w, h) => {
-    // Force square shape based on height to match the cartoon play icon
-    const size = Math.round(h * 1.35);
-    btn.w = size;
-    btn.h = size;
-
-    // 1. Soft 3D drop shadow (translucent black)
-    shadow
-      .clear()
-      .roundRect(-size / 2, -size / 2 + 6, size, size, 16)
-      .fill({ color: 0x000000, alpha: 0.45 });
-
-    // 2. 3D Extrusion base (bright dark red shadow base)
-    bg.clear()
-      .roundRect(-size / 2, -size / 2 + 4, size, size, 16)
-      .fill({ color: 0x800a12 })
-      .stroke({ width: 1, color: 0x4a000a });
-
-    // 3. Main button body - premium smooth gradient (light vibrant coral to bright red)
-    const btnGrad = new FillGradient({
-      start: { x: 0, y: -size / 2 },
-      end: { x: 0, y: size / 2 },
-      colorStops: [
-        { offset: 0, color: 0xff6b8b }, // Vibrant light coral red
-        { offset: 0.35, color: 0xff1a40 }, // Bright popping crimson red
-        { offset: 1, color: 0xd32f2f }, // Solid standard bright red
-      ],
-    });
-
-    const goldGrad = new FillGradient({
-      start: { x: -size / 2, y: -size / 2 },
-      end: { x: size / 2, y: size / 2 },
-      colorStops: [
-        { offset: 0, color: 0xffea00 },
-        { offset: 0.5, color: 0xffa200 },
-        { offset: 1, color: 0xffea00 },
-      ],
-    });
-
-    bg.roundRect(-size / 2, -size / 2, size, size, 16)
-      .fill(btnGrad)
-      .stroke({ width: 2, fill: goldGrad });
-
-    // 4. Glossy highlight sheen on top (more prominent white highlight sheen)
-    highlight
-      .clear()
-      .roundRect(-size / 2 + 4, -size / 2 + 3, size - 8, size * 0.35, 12)
-      .fill({ color: 0xffffff, alpha: 0.28 });
-
-    // 5. Play icon (triangle pointing right in yellow/gold with a 3D drop shadow)
-    const triW = size * 0.35;
-    const triH = size * 0.38;
-    icon
-      .clear()
-      // Shadow of the triangle
-      .poly([
-        -triW * 0.4 + 1,
-        -triH / 2 + 1.5,
-        triW * 0.6 + 1,
-        1.5,
-        -triW * 0.4 + 1,
-        triH / 2 + 1.5,
-      ])
-      .fill({ color: 0x000000, alpha: 0.5 })
-      // Main triangle in gold
-      .poly([-triW * 0.4, -triH / 2, triW * 0.6, 0, -triW * 0.4, triH / 2])
-      .fill(goldGrad)
-      .stroke({ width: 1.2, color: 0x6e0912 });
+    // Chỉ scale nhẹ dựa vào height thực tế của màn hình
+    const scale = Math.min(1.0, h / 100);
+    btn.scale.set(scale);
   };
-
-  btn.updateStyle(btn.w, btn.h);
-
-  btn.on("pointertap", () => {
-    audio.playFlip();
-    onClick();
-  });
-
-  btn.on("pointerover", () => {
-    gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
-  });
-
-  btn.on("pointerout", () => {
-    gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-  });
-
   return btn;
 }
 
 function createCircularButton(emojiText, onClick) {
-  const btn = new Container();
-  btn.eventMode = "static";
-  btn.cursor = "pointer";
-
-  let useImage = false;
-  let imagePath = "";
+  let iconName = "";
+  let theme = "yellow";
 
   if (emojiText === "🏆") {
-    useImage = true;
-    imagePath = "/assest/iconbtn/trophy_btn.png";
+    iconName = "trophy";
+    theme = "yellow";
   } else if (emojiText === "⚙️") {
-    useImage = true;
-    imagePath = "/assest/iconbtn/setting_btn.png";
-  } else if (emojiText === "💡") {
-    useImage = true;
-    imagePath = "/assest/iconbtn/hint_btn.png";
-  } else if (emojiText === "⏱️") {
-    useImage = true;
-    imagePath = "/assest/iconbtn/revive_btn.png";
+    iconName = "gear";
+    theme = "blue";
   } else if (emojiText === "🏠") {
-    useImage = true;
-    imagePath = "/assest/iconbtn/Home_btn.png";
+    iconName = "home";
+    theme = "blue";
   } else if (emojiText === "🔄") {
-    useImage = true;
-    imagePath = "/assest/iconbtn/replay_btn.png";
+    iconName = "replay";
+    theme = "yellow";
+  } else if (emojiText === "💡") {
+    iconName = "💡";
+    theme = "orange";
+  } else if (emojiText === "⏱️") {
+    iconName = "⏱️";
+    theme = "red";
   } else if (
     emojiText === "📺" ||
     emojiText === "x2" ||
     emojiText === "x2 ĐIỂM"
   ) {
-    useImage = true;
-    imagePath = "/assest/iconbtn/x2_btn.png";
+    iconName = "x2";
+    theme = "green";
   } else if (
     emojiText === "▶️" ||
     emojiText === "next_btn" ||
     emojiText === "CHƠI TIẾP" ||
     emojiText === "TIẾP TỤC"
   ) {
-    useImage = true;
-    imagePath = "/assest/iconbtn/next_btn.png";
+    iconName = "▶";
+    theme = "green";
   } else if (emojiText === "⏯️" || emojiText === "continue_btn") {
-    useImage = true;
-    imagePath = "/assest/iconbtn/continue_btn.png";
+    iconName = "▶";
+    theme = "orange";
   } else if (emojiText === "back_btn" || emojiText === "QUAY LẠI") {
-    useImage = true;
-    imagePath = "/assest/iconbtn/back_btn.png";
-  }
-
-  const shadow = new Graphics();
-  const bg = new Graphics();
-  const highlight = new Graphics();
-  let label = null;
-  let sprite = null;
-
-  if (useImage) {
-    sprite = new Sprite();
-    sprite.anchor.set(0.5);
-    btn.addChild(sprite);
-    btn.sprite = sprite;
-
-    Assets.load(imagePath)
-      .then((texture) => {
-        sprite.texture = texture;
-        if (btn.r) {
-          sprite.width = btn.r * 2;
-          sprite.height = btn.r * 2;
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load circular icon:", imagePath, err);
-      });
+    iconName = "↩";
+    theme = "red";
+  } else if (emojiText === "◀") {
+    iconName = "◀";
+    theme = "yellow";
+  } else if (emojiText === "▶") {
+    iconName = "▶";
+    theme = "yellow";
   } else {
-    btn.addChild(shadow);
-    btn.addChild(bg);
-    btn.addChild(highlight);
-
-    label = new Text({
-      text: emojiText,
-      style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
-        fontSize: 22,
-        fill: "#ffffff",
-      }),
-    });
-    label.anchor.set(0.5);
-    btn.addChild(label);
+    iconName = emojiText;
+    theme = "orange";
   }
 
-  btn.r = 26;
-
+  const btn = new IconBtn(iconName, onClick, 32, "", theme);
   btn.updateStyle = (r) => {
-    btn.r = r;
-    if (useImage) {
-      if (sprite && sprite.texture) {
-        sprite.width = r * 2;
-        sprite.height = r * 2;
-      }
-    } else {
-      // 1. Soft 3D drop shadow (translucent black)
-      shadow.clear().circle(0, 4, r).fill({ color: 0x000000, alpha: 0.45 });
-
-      // 2. 3D Extrusion base (deep luxurious lacquer burgundy)
-      bg.clear()
-        .circle(0, 3, r)
-        .fill({ color: 0x4a000a })
-        .stroke({ width: 1, color: 0x240003 });
-
-      // 3. Main button body - premium smooth gradient (light crimson to deep crimson lacquer)
-      const btnGrad = new FillGradient({
-        start: { x: 0, y: -r },
-        end: { x: 0, y: r },
-        colorStops: [
-          { offset: 0, color: 0xff3b4e }, // Vibrant crimson highlight
-          { offset: 0.4, color: 0xd32f2f }, // Standard lacquer red
-          { offset: 1, color: 0x6e0912 }, // Deep rich lacquer burgundy
-        ],
-      });
-
-      const goldGrad = new FillGradient({
-        start: { x: -r, y: -r },
-        end: { x: r, y: r },
-        colorStops: [
-          { offset: 0, color: 0xffea00 },
-          { offset: 0.5, color: 0xb89326 },
-          { offset: 1, color: 0xffea00 },
-        ],
-      });
-
-      bg.circle(0, 0, r).fill(btnGrad).stroke({ width: 2, fill: goldGrad });
-
-      // 4. Glossy highlight sheen on top
-      highlight
-        .clear()
-        .ellipse(0, -r * 0.4, r * 0.7, r * 0.35)
-        .fill({ color: 0xffffff, alpha: 0.18 });
-
-      if (label) {
-        label.style.fontSize = Math.round(r * 0.95);
-      }
-    }
+    const scale = Math.min(1.2, r / 32);
+    btn.scale.set(scale);
   };
-
-  btn.updateStyle(btn.r);
-
-  btn.on("pointertap", () => {
-    audio.playFlip();
-    onClick();
-  });
-
-  btn.on("pointerover", () => {
-    gsap.to(btn.scale, { x: 1.08, y: 1.08, duration: 0.15 });
-  });
-
-  btn.on("pointerout", () => {
-    gsap.to(btn.scale, { x: 1.0, y: 1.0, duration: 0.15 });
-  });
-
   return btn;
 }
 
@@ -1744,51 +1396,7 @@ export class GameController extends Container {
 
     card.appendChild(rowContainer);
 
-    // Reset high score button (only if not ingame)
-    if (!isIngame) {
-      const resetBtn = document.createElement("button");
-      resetBtn.className = "game-settings-reset-btn";
-      resetBtn.innerHTML = `<img src="/assest/iconbtn/delete_btn.png" class="game-settings-reset-icon" alt="" /> XÓA LỊCH SỬ`;
-      resetBtn.addEventListener("click", async () => {
-        audio.playFlip();
-        const confirmReset = await gameConfirm(
-          "Bạn có chắc chắn muốn xóa toàn bộ dữ liệu kỷ lục không?",
-        );
-        if (confirmReset) {
-          saveStats({
-            totalWins: 0,
-            records: {
-              0: {
-                highScore: 0,
-                bestTime: 9999,
-                fewestMoves: 999,
-                history: [],
-              },
-              1: {
-                highScore: 0,
-                bestTime: 9999,
-                fewestMoves: 999,
-                history: [],
-              },
-              2: {
-                highScore: 0,
-                bestTime: 9999,
-                fewestMoves: 999,
-                history: [],
-              },
-            },
-          });
-          this.updateAchievementsDisplay();
-          await gameAlert("Đã xóa toàn bộ dữ liệu thành công!");
-          overlay.style.opacity = "0";
-          card.style.transform = "scale(0.85)";
-          setTimeout(() => {
-            overlay.remove();
-          }, 250);
-        }
-      });
-      card.appendChild(resetBtn);
-    }
+
 
     // In-game buttons (Home, Replay, Continue)
     if (isIngame) {
@@ -1798,7 +1406,7 @@ export class GameController extends Container {
       // Home
       const homeBtn = document.createElement("button");
       homeBtn.className = "game-paused-btn";
-      homeBtn.style.backgroundImage = "url(/assest/iconbtn/Home_btn.png)";
+      homeBtn.style.backgroundImage = `url(${getIconBtnDataUrl("home", "blue")})`;
       homeBtn.addEventListener("click", () => {
         audio.playFlip();
         overlay.remove();
@@ -1811,7 +1419,7 @@ export class GameController extends Container {
       // Replay
       const replayBtn = document.createElement("button");
       replayBtn.className = "game-paused-btn";
-      replayBtn.style.backgroundImage = "url(/assest/iconbtn/replay_btn.png)";
+      replayBtn.style.backgroundImage = `url(${getIconBtnDataUrl("replay", "yellow")})`;
       replayBtn.addEventListener("click", () => {
         audio.playFlip();
         overlay.remove();
@@ -1824,7 +1432,7 @@ export class GameController extends Container {
       // Resume
       const resumeBtn = document.createElement("button");
       resumeBtn.className = "game-paused-btn";
-      resumeBtn.style.backgroundImage = "url(/assest/iconbtn/continue_btn.png)";
+      resumeBtn.style.backgroundImage = `url(${getIconBtnDataUrl("play", "green")})`;
       resumeBtn.addEventListener("click", () => {
         audio.playFlip();
         overlay.remove();
@@ -2286,20 +1894,20 @@ export class GameController extends Container {
 
     // Home
     const btnHome = createIconBtn(
-      "/assest/iconbtn/Home_btn.png",
+      getIconBtnDataUrl("home", "blue"),
       () => {
         audio.playFlip();
         if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
         overlay.remove();
         this.switchState("MAIN_MENU");
       },
-      "background-size: 85%; background-position: center 40%;",
+      
     );
 
     // Double (x2)
     let hasDoubled = false;
     const btnDouble = createIconBtn(
-      "/assest/iconbtn/x2_btn.png",
+      getIconBtnDataUrl("x2", "green"),
       async () => {
         if (hasDoubled) return;
         audio.playFlip();
@@ -2312,14 +1920,14 @@ export class GameController extends Container {
           btnDouble.style.pointerEvents = "none";
         }
       },
-      "background-size: 75%; background-position: center 50%;",
+      
     );
 
     // Next / Replay
     const nextIcon =
       this.currentLevelIndex < LEVELS.length - 1
-        ? "/assest/iconbtn/next_btn.png"
-        : "/assest/iconbtn/replay_btn.png";
+        ? getIconBtnDataUrl("next", "blue")
+        : getIconBtnDataUrl("replay", "yellow");
     const btnNext = createIconBtn(
       nextIcon,
       () => {
@@ -2330,7 +1938,7 @@ export class GameController extends Container {
         this.initGame(nextIdx);
         this.switchState("PLAYING");
       },
-      "background-size: 85%; background-position: center 60%;",
+      
     );
 
     btnRow.appendChild(btnHome);
@@ -2562,13 +2170,13 @@ export class GameController extends Container {
       return btn;
     };
 
-    const btnHome = createBtn("/assest/iconbtn/Home_btn.png", () => {
+    const btnHome = createBtn(getIconBtnDataUrl("home", "blue"), () => {
       overlay.remove();
       this.switchState("MAIN_MENU");
     });
 
     const btnRetry = createBtn(
-      "/assest/iconbtn/replay_btn.png",
+      getIconBtnDataUrl("replay", "yellow"),
       async () => {
         overlay.remove();
         this.defeatCount = (this.defeatCount || 0) + 1;
@@ -2949,9 +2557,9 @@ export class GameController extends Container {
 
       // Horizontal row of circular buttons below it (Achievements left, Settings right)
       // Push them to the bottom to fill empty space, but keep safe distance from Play button
-      const circY = Math.max(playY + 110 * scale, sh * 0.8);
+      const circY = Math.max(playY + 160 * scale, sh * 0.82);
       const circR = Math.max(22, Math.min(28, 28 * scale));
-      const circGap = 28 * scale;
+      const circGap = 50 * scale;
 
       if (this.achievementsBtn) {
         this.achievementsBtn.position.set(
