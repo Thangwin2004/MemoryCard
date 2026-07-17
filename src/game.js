@@ -15,6 +15,9 @@ import { LacBirdFlock } from "./chimlac";
 import { Button, IconBtn } from "./ui/Button";
 import gsap from "gsap";
 
+/* global Path2D */
+/* eslint-disable no-unused-vars */
+
 function gameAlert(message) {
   return new Promise((resolve) => {
     if (!document.getElementById("game-alert-styles")) {
@@ -308,84 +311,98 @@ function saveStats(stats) {
 
 // Helper function to generate pixel-perfect PixiJS style vibrant icons for DOM overlays
 function getIconBtnDataUrl(iconName, theme) {
-    const w = 120;
-    const h = 120;
-    const texH = h + h * 0.15 + 4;
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = texH;
-    const ctx = canvas.getContext("2d");
+  const w = 120;
+  const h = 120;
+  const texH = h + h * 0.15 + 4;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = texH;
+  const ctx = canvas.getContext("2d");
 
-    let colorTop, colorBot, colorShadow;
-    if (theme === 'green') {
-        colorTop = '#66BB6A'; colorBot = '#43A047'; colorShadow = 0x2E7D32;
-    } else if (theme === 'orange') {
-        colorTop = '#FFB74D'; colorBot = '#F57C00'; colorShadow = 0xE65100;
-    } else if (theme === 'blue') {
-        colorTop = '#29B6F6'; colorBot = '#0288D1'; colorShadow = 0x01579B;
-    } else if (theme === 'purple') {
-        colorTop = '#AB47BC'; colorBot = '#7B1FA2'; colorShadow = 0x4A148C;
-    } else { // yellow
-        colorTop = '#FFCA28'; colorBot = '#FF8F00'; colorShadow = 0xFF6F00;
-    }
+  let colorTop, colorBot, colorShadow;
+  if (theme === "green") {
+    colorTop = "#66BB6A";
+    colorBot = "#43A047";
+    colorShadow = 0x2e7d32;
+  } else if (theme === "orange") {
+    colorTop = "#FFB74D";
+    colorBot = "#F57C00";
+    colorShadow = 0xe65100;
+  } else if (theme === "blue") {
+    colorTop = "#29B6F6";
+    colorBot = "#0288D1";
+    colorShadow = 0x01579b;
+  } else if (theme === "purple") {
+    colorTop = "#AB47BC";
+    colorBot = "#7B1FA2";
+    colorShadow = 0x4a148c;
+  } else {
+    // yellow
+    colorTop = "#FFCA28";
+    colorBot = "#FF8F00";
+    colorShadow = 0xff6f00;
+  }
 
-    const shadowHex = '#' + colorShadow.toString(16).padStart(6, '0');
-    const radius = w / 2;
+  const shadowHex = "#" + colorShadow.toString(16).padStart(6, "0");
+  const radius = w / 2;
 
-    ctx.fillStyle = shadowHex;
+  ctx.fillStyle = shadowHex;
+  ctx.beginPath();
+  ctx.arc(radius, radius + radius * 0.15, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, w);
+  gradient.addColorStop(0, colorTop);
+  gradient.addColorStop(1, colorBot);
+
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(radius, radius, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = Math.max(3, radius * 0.15);
+  ctx.stroke();
+
+  const ICONS = {
+    home: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z",
+    gear: "M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z",
+    trophy:
+      "M19,5h-2V3H7v2H5C3.9,5,3,5.9,3,7v1c0,2.55,1.92,4.63,4.39,4.94c0.63,1.5,1.98,2.63,3.61,2.96V19H7v2h10v-2h-4v-3.1 c1.63-0.33,2.98-1.46,3.61-2.96C19.08,12.63,21,10.55,21,8V7C21,5.9,20.1,5,19,5z M5,8V7h2v3.82C5.84,10.4,5,9.3,5,8z M19,8 c0,1.3-0.84,2.4-2,2.82V7h2V8z",
+    replay:
+      "M17.65,6.35C16.2,4.9,14.21,4,12,4c-4.42,0-7.99,3.58-7.99,8s3.57,8,7.99,8c3.73,0,6.84-2.55,7.73-6h-2.08 c-0.82,2.33-3.04,4-5.65,4c-3.31,0-6-2.69-6-6s2.69-6,6-6c1.66,0,3.14,0.69,4.22,1.78L13,11h7V4L17.65,6.35z",
+    next: "M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z",
+    play: "M8 5v14l11-7z",
+  };
+
+  if (ICONS[iconName]) {
+    const p = new Path2D(ICONS[iconName]);
+    ctx.save();
+    ctx.translate(radius, radius);
+    const iconScale = (w * 0.6) / 24;
+    ctx.scale(iconScale, iconScale);
+    ctx.translate(-12, -12); // viewBox center
+    ctx.fillStyle = "#ffffff";
+    ctx.fill(p);
+    ctx.restore();
+  } else if (iconName === "x2") {
+    ctx.font =
+      "900 " + radius * 1.2 + 'px "Outfit", "Nunito", "Arial", sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#000000";
+    ctx.lineJoin = "round";
+    ctx.strokeText("x2", radius, radius);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("x2", radius, radius);
+  } else {
+    ctx.fillStyle = "#ffffff";
     ctx.beginPath();
-    ctx.arc(radius, radius + radius * 0.15, radius, 0, Math.PI * 2);
+    ctx.arc(radius, radius, radius * 0.3, 0, Math.PI * 2);
     ctx.fill();
-
-    const gradient = ctx.createLinearGradient(0, 0, 0, w);
-    gradient.addColorStop(0, colorTop);
-    gradient.addColorStop(1, colorBot);
-    
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(radius, radius, radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = Math.max(3, radius * 0.15);
-    ctx.stroke();
-
-    const ICONS = {
-        'home': 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
-        'gear': 'M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z',
-        'trophy': 'M19,5h-2V3H7v2H5C3.9,5,3,5.9,3,7v1c0,2.55,1.92,4.63,4.39,4.94c0.63,1.5,1.98,2.63,3.61,2.96V19H7v2h10v-2h-4v-3.1 c1.63-0.33,2.98-1.46,3.61-2.96C19.08,12.63,21,10.55,21,8V7C21,5.9,20.1,5,19,5z M5,8V7h2v3.82C5.84,10.4,5,9.3,5,8z M19,8 c0,1.3-0.84,2.4-2,2.82V7h2V8z',
-        'replay': 'M17.65,6.35C16.2,4.9,14.21,4,12,4c-4.42,0-7.99,3.58-7.99,8s3.57,8,7.99,8c3.73,0,6.84-2.55,7.73-6h-2.08 c-0.82,2.33-3.04,4-5.65,4c-3.31,0-6-2.69-6-6s2.69-6,6-6c1.66,0,3.14,0.69,4.22,1.78L13,11h7V4L17.65,6.35z',
-        'next': 'M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z',
-        'play': 'M8 5v14l11-7z'
-    };
-
-    if (ICONS[iconName]) {
-        const p = new Path2D(ICONS[iconName]);
-        ctx.save();
-        ctx.translate(radius, radius);
-        const iconScale = (w * 0.6) / 24; 
-        ctx.scale(iconScale, iconScale);
-        ctx.translate(-12, -12); // viewBox center
-        ctx.fillStyle = '#ffffff';
-        ctx.fill(p);
-        ctx.restore();
-    } else if (iconName === 'x2') {
-        ctx.font = '900 ' + (radius * 1.2) + 'px "Outfit", "Nunito", "Arial", sans-serif';
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = '#000000';
-        ctx.lineJoin = "round";
-        ctx.strokeText("x2", radius, radius);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText("x2", radius, radius);
-    } else {
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(radius, radius, radius * 0.3, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    return canvas.toDataURL();
+  }
+  return canvas.toDataURL();
 }
 
 function createMenuButton(text, onClick) {
@@ -1396,8 +1413,6 @@ export class GameController extends Container {
 
     card.appendChild(rowContainer);
 
-
-
     // In-game buttons (Home, Replay, Continue)
     if (isIngame) {
       const actionContainer = document.createElement("div");
@@ -1893,16 +1908,12 @@ export class GameController extends Container {
     };
 
     // Home
-    const btnHome = createIconBtn(
-      getIconBtnDataUrl("home", "blue"),
-      () => {
-        audio.playFlip();
-        if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
-        overlay.remove();
-        this.switchState("MAIN_MENU");
-      },
-      
-    );
+    const btnHome = createIconBtn(getIconBtnDataUrl("home", "blue"), () => {
+      audio.playFlip();
+      if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
+      overlay.remove();
+      this.switchState("MAIN_MENU");
+    });
 
     // Double (x2)
     let hasDoubled = false;
@@ -1920,7 +1931,6 @@ export class GameController extends Container {
           btnDouble.style.pointerEvents = "none";
         }
       },
-      
     );
 
     // Next / Replay
@@ -1928,18 +1938,14 @@ export class GameController extends Container {
       this.currentLevelIndex < LEVELS.length - 1
         ? getIconBtnDataUrl("next", "blue")
         : getIconBtnDataUrl("replay", "yellow");
-    const btnNext = createIconBtn(
-      nextIcon,
-      () => {
-        audio.playFlip();
-        if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
-        overlay.remove();
-        const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
-        this.initGame(nextIdx);
-        this.switchState("PLAYING");
-      },
-      
-    );
+    const btnNext = createIconBtn(nextIcon, () => {
+      audio.playFlip();
+      if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
+      overlay.remove();
+      const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
+      this.initGame(nextIdx);
+      this.switchState("PLAYING");
+    });
 
     btnRow.appendChild(btnHome);
     btnRow.appendChild(btnDouble);
