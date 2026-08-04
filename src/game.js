@@ -13,6 +13,7 @@ import { audio } from "./audio";
 import { AVATAR_FILES } from "./symbols";
 import { LacBirdFlock } from "./chimlac";
 import { Button, IconBtn } from "./ui/Button";
+import { winkGame } from "./integrations/wink/wink-adapter.js";
 import gsap from "gsap";
 
 /* global Path2D */
@@ -1483,6 +1484,9 @@ export class GameController extends Container {
     this.isHintActive = false;
     this.isPaused = false;
 
+    // ── Wink: start a new round ──
+    this._winkRound = winkGame.startRound();
+
     if (this.victoryIntervalId) {
       clearInterval(this.victoryIntervalId);
       this.victoryIntervalId = null;
@@ -1594,6 +1598,24 @@ export class GameController extends Container {
   triggerVictory() {
     this.isGameOver = true;
     audio.playVictory();
+
+    // ── Wink: complete round + submit score ──
+    if (this._winkRound) {
+      winkGame.completeRound(this._winkRound, {
+        metadata: { outcome: "victory", score: this.score },
+      });
+      if (winkGame.canSubmitScore) {
+        winkGame
+          .submitFinalScore({
+            score: this.score,
+            playTime: Math.round(
+              (Date.now() - this._winkRound.startedAtMs) / 1000,
+            ),
+            gameMode: "classic",
+          })
+          .catch(() => {});
+      }
+    }
 
     // Check for localStorage record updates
     const stats = getStats();
@@ -2116,6 +2138,24 @@ export class GameController extends Container {
   }
 
   showDefeatScreen() {
+    // ── Wink: complete round + submit score (even on defeat, the partial score might count) ──
+    if (this._winkRound) {
+      winkGame.completeRound(this._winkRound, {
+        metadata: { outcome: "defeat", score: this.score },
+      });
+      if (winkGame.canSubmitScore) {
+        winkGame
+          .submitFinalScore({
+            score: this.score,
+            playTime: Math.round(
+              (Date.now() - this._winkRound.startedAtMs) / 1000,
+            ),
+            gameMode: "classic",
+          })
+          .catch(() => {});
+      }
+    }
+
     // 1. Board shake on defeat to make it feel dramatic
     const originalGridX = this.gridContainer.x;
     gsap.fromTo(

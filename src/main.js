@@ -1,5 +1,6 @@
 import { Application, Assets } from "pixi.js";
 import { GameController } from "./game";
+import { winkGame } from "./integrations/wink/wink-adapter.js";
 
 (async () => {
   // 1. Create a new Application instance
@@ -89,6 +90,20 @@ import { GameController } from "./game";
     });
     resizeObserver.observe(container);
   }
+
+  // ── Wink Bridge lifecycle binding ──
+  winkGame.bindLifecycle({
+    onPause: () => {
+      if (app.ticker) app.ticker.stop();
+    },
+    onResume: () => {
+      if (app.ticker) app.ticker.start();
+    },
+  });
+
+  winkGame.observe((state) => {
+    console.log("[WinkBridge] phase:", state.phase);
+  });
 
   // Run initial resize to align everything correctly
   handleResize();
