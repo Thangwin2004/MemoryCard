@@ -1,6 +1,8 @@
 {
+  "slug": "bo-lac-ky-uc",
   "gameId": "e72a6bc7-f5e4-4e72-a833-7391705abdc5",
   "environment": "prod",
+  "domain": "bo-lac-ky-uc.papastudio.net",
   "protocolVersion": 1,
   "bridgeVersion": "9.0.1",
   "allowedParentOrigins": [
