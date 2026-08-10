@@ -1950,7 +1950,10 @@ export class GameController extends Container {
         "mouseleave",
         () => (btn.style.transform = "scale(1)"),
       );
-      btn.addEventListener("click", onClick);
+      btn.addEventListener("click", (e) => {
+        audio.playFlip();
+        if (onClick) onClick(e);
+      });
       return btn;
     };
 

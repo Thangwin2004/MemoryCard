@@ -1,4 +1,5 @@
 import { Container, Graphics, Text, FillGradient } from "pixi.js";
+import { audio } from "../audio";
 
 export class Button extends Container {
   constructor(text, onClick, currentR = 30) {
@@ -57,6 +58,7 @@ export class Button extends Container {
     this.cursor = "pointer";
 
     this.on("pointerdown", () => {
+      audio.playFlip();
       this.content.scale.set(0.95);
       this.content.y = currentR * 0.15;
     });
@@ -182,6 +184,7 @@ export class IconBtn extends Container {
     this.cursor = "pointer";
 
     this.on("pointerdown", () => {
+      audio.playFlip();
       this.content.scale.set(0.95);
       this.content.y = currentR * 0.1;
     });
