@@ -266,12 +266,37 @@ const LEVELS = [
 const LOCAL_STORAGE_KEY = "bolacdauphong_memory_stats";
 let currentUser = null; // Profile of the currently signed-in Google user
 
+function getEffectiveUser() {
+  if (currentUser) return currentUser;
+  try {
+    const savedUser = window.localStorage.getItem("google_user");
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      if (parsed && parsed.name) {
+        currentUser = parsed;
+        return currentUser;
+      }
+    }
+  } catch (err) {
+    console.warn(err);
+  }
+
+  if (winkGame && winkGame.isAuthenticated) {
+    return {
+      id: "wink_user",
+      name: "Thành viên",
+      avatar: "/assest/image/imagenobackgrd/001_avatar_laclac.png",
+    };
+  }
+
+  return null;
+}
+
 // Read records from localStorage
 function getStats() {
   try {
-    const key = currentUser
-      ? `${LOCAL_STORAGE_KEY}_${currentUser.id}`
-      : LOCAL_STORAGE_KEY;
+    const user = getEffectiveUser();
+    const key = user ? `${LOCAL_STORAGE_KEY}_${user.id}` : LOCAL_STORAGE_KEY;
     const data = window.localStorage.getItem(key);
     if (data) {
       return JSON.parse(data);
@@ -292,12 +317,11 @@ function getStats() {
 // Save records to localStorage
 function saveStats(stats) {
   try {
-    const key = currentUser
-      ? `${LOCAL_STORAGE_KEY}_${currentUser.id}`
-      : LOCAL_STORAGE_KEY;
-    if (currentUser) {
-      stats.userName = currentUser.name;
-      stats.userId = currentUser.id;
+    const user = getEffectiveUser();
+    const key = user ? `${LOCAL_STORAGE_KEY}_${user.id}` : LOCAL_STORAGE_KEY;
+    if (user) {
+      stats.userName = user.name;
+      stats.userId = user.id;
     } else {
       stats.userName = "Khách";
       stats.userId = "guest";
@@ -1082,9 +1106,10 @@ export class GameController extends Container {
       this.achievementsPersonalRankRow = null;
     }
 
+    const effUser = getEffectiveUser();
     if (this.achievementsUserText) {
-      if (currentUser) {
-        this.achievementsUserText.text = `Tài khoản: ${currentUser.name} (Đã đăng nhập)`;
+      if (effUser) {
+        this.achievementsUserText.text = `Tài khoản: ${effUser.name} (Đã đăng nhập)`;
         this.achievementsUserText.style.fill = 0xd32f2f;
       } else {
         this.achievementsUserText.text = `Tài khoản: Khách (Điểm lưu thiết bị)`;
@@ -1925,7 +1950,10 @@ export class GameController extends Container {
         "mouseleave",
         () => (btn.style.transform = "scale(1)"),
       );
-      btn.addEventListener("click", onClick);
+      btn.addEventListener("click", (e) => {
+        audio.playFlip();
+        if (onClick) onClick(e);
+      });
       return btn;
     };
 
@@ -3482,10 +3510,11 @@ export class GameController extends Container {
     card.appendChild(closeBtn);
 
     // User profile status
+    const effUser = getEffectiveUser();
     const userText = document.createElement("div");
-    userText.className = `game-achievements-user-text${currentUser ? " logged-in" : ""}`;
-    if (currentUser) {
-      userText.innerText = `Tài khoản: ${currentUser.name} (Đã đăng nhập)`;
+    userText.className = `game-achievements-user-text${effUser ? " logged-in" : ""}`;
+    if (effUser) {
+      userText.innerText = `Tài khoản: ${effUser.name} (Đã đăng nhập)`;
     } else {
       userText.innerText = `Tài khoản: Khách (Điểm lưu thiết bị)`;
     }

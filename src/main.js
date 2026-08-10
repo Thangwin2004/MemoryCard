@@ -3,6 +3,13 @@ import { GameController } from "./game";
 import { winkGame } from "./integrations/wink/wink-adapter.js";
 
 (async () => {
+  // 0. Force-load Google Fonts with Vietnamese text before PixiJS renders any Text
+  await Promise.allSettled([
+    document.fonts.load("700 1em Outfit", "Bộ Lạc Đậu Phộng"),
+    document.fonts.load("700 1em Fredoka", "Bộ Lạc Đậu Phộng"),
+  ]);
+  await document.fonts.ready;
+
   // 1. Create a new Application instance
   const app = new Application();
 
