@@ -18,11 +18,11 @@ import { winkGame } from "./integrations/wink/wink-adapter.js";
   // 2. Initialize the application asynchronously (Vite safe IIFE pattern)
   Assets.add({
     alias: "continue_btn",
-    src: "/assest/iconbtn/continue_btn.png",
+    src: "/assest/iconbtn/continue_btn.webp",
   });
   Assets.add({
     alias: "next_btn",
-    src: "/assest/iconbtn/next_btn.png",
+    src: "/assest/iconbtn/next_btn.webp",
   });
   await app.init({
     background: "#0a0b1e",
