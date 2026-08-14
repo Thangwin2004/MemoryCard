@@ -97,7 +97,7 @@ function gameAlert(message) {
 
     const button = document.createElement("img");
     button.className = "game-alert-img-btn";
-    button.src = "/assest/iconbtn/yes_btn.png";
+    button.src = "/assest/iconbtn/yes_btn.webp";
     button.alt = "ĐỒNG Ý";
 
     card.appendChild(text);
@@ -202,12 +202,12 @@ function gameConfirm(message) {
 
     const btnYes = document.createElement("img");
     btnYes.className = "game-confirm-img-btn";
-    btnYes.src = "/assest/iconbtn/yes_btn.png";
+    btnYes.src = "/assest/iconbtn/yes_btn.webp";
     btnYes.alt = "ĐỒNG Ý";
 
     const btnNo = document.createElement("img");
     btnNo.className = "game-confirm-img-btn";
-    btnNo.src = "/assest/iconbtn/close_btn.png";
+    btnNo.src = "/assest/iconbtn/close_btn.webp";
     btnNo.alt = "KHÔNG";
 
     actions.appendChild(btnYes);
@@ -285,7 +285,7 @@ function getEffectiveUser() {
     return {
       id: "wink_user",
       name: "Thành viên",
-      avatar: "/assest/image/imagenobackgrd/001_avatar_laclac.png",
+      avatar: "/assest/image/imagenobackgrd/001_avatar_laclac.webp",
     };
   }
 
@@ -635,7 +635,7 @@ export class GameController extends Container {
 
   async loadLogo() {
     try {
-      const texture = await Assets.load("/logo.png");
+      const texture = await Assets.load("/logo.webp");
       if (this.destroyed) return;
       this.menuLogoSprite = new Sprite(texture);
       this.menuLogoSprite.anchor.set(0.5);
@@ -661,7 +661,7 @@ export class GameController extends Container {
         ease: "sine.inOut",
       });
     } catch (e) {
-      console.error("Error loading logo.png:", e);
+      console.error("Error loading logo.webp:", e);
     }
   }
 
@@ -2090,7 +2090,7 @@ export class GameController extends Container {
       "background:linear-gradient(to bottom, #FFCC80, #FFB74D);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #F57C00, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
 
     const tvIcon = document.createElement("img");
-    tvIcon.src = "/assest/iconbtn/images.png";
+    tvIcon.src = "/assest/iconbtn/images.webp";
     tvIcon.style.cssText = "height:30px;width:auto;margin-right:15px;";
 
     const yesText = document.createElement("span");
@@ -3060,11 +3060,11 @@ export class GameController extends Container {
         if (accountId === "laclac") {
           name = "Lạc Lạc (Bơ Lạc)";
           email = "laclac.bolac@gmail.com";
-          avatar = "/assest/image/imagebldp/001_avatar_laclac.png";
+          avatar = "/assest/image/imagebldp/001_avatar_laclac.webp";
         } else if (accountId === "dauphong") {
           name = "Đậu Phộng";
           email = "dauphong.bolac@gmail.com";
-          avatar = "/assest/image/imagebldp/015_avatar_dauLan.png";
+          avatar = "/assest/image/imagebldp/015_avatar_dauLan.webp";
         }
 
         // Set current user
@@ -3225,7 +3225,7 @@ export class GameController extends Container {
           width: 40px;
           height: 40px;
           border: none;
-          background: url(/assest/iconbtn/close_btn.png) no-repeat center center;
+          background: url(/assest/iconbtn/close_btn.webp) no-repeat center center;
           background-size: contain;
           cursor: pointer;
           transition: transform 0.15s ease;
