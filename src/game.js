@@ -411,8 +411,7 @@ function getIconBtnDataUrl(iconName, theme) {
     ctx.fill(p);
     ctx.restore();
   } else if (iconName === "x2") {
-    ctx.font =
-      "900 " + radius * 1.2 + 'px "Be Vietnam Pro", sans-serif';
+    ctx.font = "900 " + radius * 1.2 + 'px "Be Vietnam Pro", sans-serif';
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.lineWidth = 4;

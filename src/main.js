@@ -1,8 +1,8 @@
 import { Application, Assets } from "pixi.js";
 import { GameController } from "./game";
+import { audio } from "./audio";
 import { winkGame } from "./integrations/wink/wink-adapter.js";
 import { waitForGameFonts } from "./utils/fontLoader.js";
-import { audio } from "./audio";
 import { installFocusPause } from "./utils/focusPause.js";
 
 (async () => {
@@ -117,6 +117,8 @@ import { installFocusPause } from "./utils/focusPause.js";
   winkGame.bindLifecycle({
     onPause: focusPause.pauseFromHost,
     onResume: focusPause.resumeFromHost,
+    onMute: () => audio.setHostMuted(true),
+    onUnmute: () => audio.setHostMuted(false),
   });
 
   winkGame.observe((state) => {
