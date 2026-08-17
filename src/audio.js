@@ -6,6 +6,11 @@ class AudioManager {
     this.bgm = null;
     this.musicMuted = false;
     this.sfxMuted = false;
+    // Set by the Wink feed when this frame is not the one being played. Kept
+    // separate from musicMuted/sfxMuted on purpose: coming back to a game must
+    // not undo a player who turned the sound off themselves, and a player
+    // turning the sound on must not make a frozen frame audible.
+    this.hostMuted = false;
     this.initialized = false;
 
     // Global mobile audio unlocker
@@ -14,7 +19,7 @@ class AudioManager {
       if (this.ctx && this.ctx.state === "suspended") {
         this.ctx.resume();
       }
-      if (this.bgm && this.bgm.paused && !this.musicMuted) {
+      if (this.bgm && this.bgm.paused && !this.musicMuted && !this.hostMuted) {
         this.bgm
           .play()
           .then(() => {
@@ -45,8 +50,8 @@ class AudioManager {
         this.sfxGain.connect(this.ctx.destination);
 
         // Mute states
-        this.bgmGain.gain.value = this.musicMuted ? 0 : 1;
-        this.sfxGain.gain.value = this.sfxMuted ? 0 : 1;
+        this.bgmGain.gain.value = this.musicMuted || this.hostMuted ? 0 : 1;
+        this.sfxGain.gain.value = this.sfxMuted || this.hostMuted ? 0 : 1;
       }
 
       this.bgm = new Audio("/assest/music/music.mp3");
@@ -61,24 +66,37 @@ class AudioManager {
         this.bgm.volume = 0.05;
       }
 
-      if (this.bgm && this.ctx) {
-        this.ctx.resume().then(() => {
+      // A frame the feed froze before the player ever reached it has no
+      // reason to start its BGM: syncMuteState begins playback on the way back.
+      if (!this.hostMuted) {
+        if (this.bgm && this.ctx) {
+          this.ctx.resume().then(() => {
+            this.bgm.play().catch((e) => console.log("BGM play deferred:", e));
+          });
+        } else if (this.bgm) {
           this.bgm.play().catch((e) => console.log("BGM play deferred:", e));
-        });
-      } else if (this.bgm) {
-        this.bgm.play().catch((e) => console.log("BGM play deferred:", e));
+        }
       }
     } catch (e) {
       console.warn("Audio initialization deferred/failed:", e);
     }
   }
 
+  /** Called by the Wink adapter when the feed mutes or unmutes this frame. */
+  setHostMuted(state) {
+    this.hostMuted = Boolean(state);
+    this.syncMuteState();
+  }
+
   syncMuteState() {
+    const musicSilent = this.musicMuted || this.hostMuted;
+    const sfxSilent = this.sfxMuted || this.hostMuted;
     if (this.ctx) {
-      this.bgmGain.gain.value = this.musicMuted ? 0 : 1;
+      this.bgmGain.gain.value = musicSilent ? 0 : 1;
+      this.sfxGain.gain.value = sfxSilent ? 0 : 1;
     }
 
-    if (this.bgm && !this.musicMuted) {
+    if (this.bgm && !musicSilent) {
       if (this.ctx && this.ctx.state === "suspended") {
         this.ctx.resume();
       }
@@ -95,7 +113,7 @@ class AudioManager {
   toggleSfxMute() {
     this.sfxMuted = !this.sfxMuted;
     if (this.ctx) {
-      this.sfxGain.gain.value = this.sfxMuted ? 0 : 1;
+      this.sfxGain.gain.value = this.sfxMuted || this.hostMuted ? 0 : 1;
     }
     return this.sfxMuted;
   }
