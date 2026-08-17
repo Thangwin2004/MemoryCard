@@ -1,5 +1,6 @@
 import { Application, Assets } from "pixi.js";
 import { GameController } from "./game";
+import { audio } from "./audio";
 import { winkGame } from "./integrations/wink/wink-adapter.js";
 
 (async () => {
@@ -106,6 +107,11 @@ import { winkGame } from "./integrations/wink/wink-adapter.js";
     onResume: () => {
       if (app.ticker) app.ticker.start();
     },
+    // Stopping the ticker silences nothing: the BGM is an <audio> element and
+    // the SFX are Web Audio nodes, both of which keep playing through a frozen
+    // frame. Without these the feed's mute was accepted and then ignored.
+    onMute: () => audio.setHostMuted(true),
+    onUnmute: () => audio.setHostMuted(false),
   });
 
   winkGame.observe((state) => {
