@@ -1,14 +1,19 @@
 import { Application, Assets } from "pixi.js";
 import { GameController } from "./game";
 import { winkGame } from "./integrations/wink/wink-adapter.js";
+import { waitForGameFonts } from "./utils/fontLoader.js";
 
 (async () => {
-  // 0. Force-load Google Fonts with Vietnamese text before PixiJS renders any Text
-  await Promise.allSettled([
-    document.fonts.load("700 1em Outfit", "Bộ Lạc Đậu Phộng"),
-    document.fonts.load("700 1em Fredoka", "Bộ Lạc Đậu Phộng"),
+  await waitForGameFonts([
+    "400 1em 'Be Vietnam Pro'",
+    "500 1em 'Be Vietnam Pro'",
+    "600 1em 'Be Vietnam Pro'",
+    "700 1em 'Be Vietnam Pro'",
+    "800 1em 'Be Vietnam Pro'",
+    "900 1em 'Be Vietnam Pro'",
+    "700 1em 'Baloo 2'",
+    "800 1em 'Baloo 2'",
   ]);
-  await document.fonts.ready;
 
   // 1. Create a new Application instance
   const app = new Application();

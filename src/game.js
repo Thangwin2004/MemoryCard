@@ -52,7 +52,7 @@ function gameAlert(message) {
           text-align: center;
           transform: scale(0.85);
           transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          font-family: 'Outfit', sans-serif;
+          font-family:Be Vietnam Pro, sans-serif;
         }
         .game-alert-text {
           color: #5D4037;
@@ -153,7 +153,7 @@ function gameConfirm(message) {
           text-align: center;
           transform: scale(0.85);
           transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          font-family: 'Be Vietnam Pro', sans-serif;
+          font-family:Be Vietnam Pro, sans-serif;
         }
         .game-confirm-text {
           color: #5D4037;
@@ -412,7 +412,7 @@ function getIconBtnDataUrl(iconName, theme) {
     ctx.restore();
   } else if (iconName === "x2") {
     ctx.font =
-      "900 " + radius * 1.2 + 'px "Outfit", "Nunito", "Arial", sans-serif';
+      "900 " + radius * 1.2 + 'px "Be Vietnam Pro", sans-serif';
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.lineWidth = 4;
@@ -602,7 +602,7 @@ export class GameController extends Container {
 
     // Styling constants
     this.titleStyle = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+      fontFamily: '"Be Vietnam Pro", sans-serif',
       fontSize: 32,
       fill: 0xffea00,
 
@@ -610,14 +610,14 @@ export class GameController extends Container {
     });
 
     this.infoStyle = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+      fontFamily: '"Be Vietnam Pro", sans-serif',
       fontSize: 15,
       fill: 0xffecb3,
       fontWeight: "600",
     });
 
     this.valueStyle = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+      fontFamily: '"Be Vietnam Pro", sans-serif',
       fontSize: 20,
       fill: 0xffea00,
       fontWeight: "bold",
@@ -670,7 +670,7 @@ export class GameController extends Container {
     this.menuTitleText = new Text({
       text: "BỘ LẠC KÝ ỨC",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Baloo 2", "Be Vietnam Pro", sans-serif',
         fontSize: 38,
         fill: new FillGradient({
           end: { x: 0, y: 1 },
@@ -691,7 +691,7 @@ export class GameController extends Container {
     this.menuSubtitleText = new Text({
       text: "TRÒ CHƠI TRÍ NHỚ KÝ THÚ",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 14,
         fill: 0xffecb3,
         fontWeight: "600",
@@ -728,7 +728,7 @@ export class GameController extends Container {
     this.levelSelectTitle = new Text({
       text: "CHỌN CẤP ĐỘ",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 28,
         fill: new FillGradient({
           end: { x: 0, y: 1 },
@@ -765,7 +765,7 @@ export class GameController extends Container {
     this.achievementsTitle = new Text({
       text: "BẢNG VÀNG THÀNH TÍCH",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 28,
         fill: new FillGradient({
           end: { x: 0, y: 1 },
@@ -785,7 +785,7 @@ export class GameController extends Container {
     this.achievementsUserText = new Text({
       text: "",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 13,
         fill: 0xffea00,
         fontWeight: "bold",
@@ -819,7 +819,7 @@ export class GameController extends Container {
     this.achievementsLevelLabel = new Text({
       text: "",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 22,
         fill: 0xffea00,
         fontWeight: "bold",
@@ -830,7 +830,7 @@ export class GameController extends Container {
 
     // Leaderboard Column Headers
     const headerStyle = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+      fontFamily: '"Be Vietnam Pro", sans-serif',
       fontSize: 12,
       fill: 0x5c0612,
       fontWeight: "bold",
@@ -954,7 +954,7 @@ export class GameController extends Container {
     this.gameTitleText = new Text({
       text: "BỘ LẠC KÝ ỨC",
       style: new TextStyle({
-        fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+        fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
         fill: new FillGradient({
           end: { x: 0, y: 1 },
@@ -1178,14 +1178,14 @@ export class GameController extends Container {
     const levelBestRun = currentHistory.length > 0 ? currentHistory[0] : null;
 
     const cellStyle = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+      fontFamily: '"Be Vietnam Pro", sans-serif',
       fontSize: 12,
       fill: "#5D4037",
       fontWeight: "bold",
     });
 
     const highlightedStyle = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+      fontFamily: '"Be Vietnam Pro", sans-serif',
       fontSize: 12,
       fill: 0xd32f2f,
       fontWeight: "900",
@@ -1193,21 +1193,21 @@ export class GameController extends Container {
 
     // Gold, Silver, Bronze styles for top 3
     const top1Style = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+      fontFamily: '"Be Vietnam Pro", sans-serif',
       fontSize: 12,
       fill: 0x8a6d20, // Gold
       fontWeight: "900",
     });
 
     const top2Style = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+      fontFamily: '"Be Vietnam Pro", sans-serif',
       fontSize: 12,
       fill: 0x5a5a5a, // Silver
       fontWeight: "900",
     });
 
     const top3Style = new TextStyle({
-      fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+      fontFamily: '"Be Vietnam Pro", sans-serif',
       fontSize: 12,
       fill: 0x8c5a3c, // Bronze
       fontWeight: "900",
@@ -1218,7 +1218,7 @@ export class GameController extends Container {
       emptyRow.emptyText = new Text({
         text: "Chưa có thành tích kỷ lục.",
         style: new TextStyle({
-          fontFamily: '"Outfit", "Nunito", "Arial", sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 14,
           fill: "#5D4037",
           align: "center",
@@ -1385,7 +1385,7 @@ export class GameController extends Container {
       row.style.cssText = `width:100%; height:70px; border-radius:12px; background:#fbfaf5; border:3px solid #fff; display:flex; justify-content:space-between; align-items:center; padding:0 20px; box-sizing:border-box; margin-bottom: 15px;`;
 
       const text = document.createElement("span");
-      text.style.cssText = `font-family:'Fredoka', 'Baloo 2', 'Be Vietnam Pro', sans-serif; font-size:18px; font-weight:bold; color:#47363B; letter-spacing:0.8px; white-space:nowrap;`;
+      text.style.cssText = `font-family:Be Vietnam Pro, sans-serif; font-size:18px; font-weight:bold; color:#47363B; letter-spacing:0.8px; white-space:nowrap;`;
       text.innerText = label;
 
       const toggle = document.createElement("div");
@@ -1394,7 +1394,7 @@ export class GameController extends Container {
 
       const statusText = document.createElement("span");
       statusText.innerText = isMuted ? "OFF" : "ON";
-      statusText.style.cssText = `color:#fff; font-family:'Impact', 'Arial Black', sans-serif; font-size:18px; position:absolute; width:100%; text-align:center; padding-right:${isMuted ? "0" : "32px"}; padding-left:${isMuted ? "32px" : "0"}; box-sizing:border-box; transition: padding 0.25s; text-shadow: 0 2px 3px rgba(0,0,0,0.4); pointer-events:none;`;
+      statusText.style.cssText = `color:#fff; font-family:Be Vietnam Pro, sans-serif; font-size:18px; position:absolute; width:100%; text-align:center; padding-right:${isMuted ? "0" : "32px"}; padding-left:${isMuted ? "32px" : "0"}; box-sizing:border-box; transition: padding 0.25s; text-shadow: 0 2px 3px rgba(0,0,0,0.4); pointer-events:none;`;
 
       const knob = document.createElement("div");
       knob.style.cssText = `width:36px; height:36px; border-radius:50%; background:#fff; position:absolute; top:2px; left:${isMuted ? "3px" : "51px"}; transition: left 0.25s cubic-bezier(0.3, 1.2, 0.5, 1); box-shadow: 0 3px 6px rgba(0,0,0,0.4); pointer-events:none;`;
@@ -1727,7 +1727,7 @@ export class GameController extends Container {
     const overlay = document.createElement("div");
     overlay.id = "game-victory-overlay-id";
     overlay.style.cssText =
-      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Outfit', 'Nunito', Arial, sans-serif;overflow:hidden;";
+      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:Be Vietnam Pro, sans-serif;overflow:hidden;";
 
     // Dynamic scaling based on screen size (mimicking Canvas overlayScale)
     const cw = window.innerWidth;
@@ -2068,7 +2068,7 @@ export class GameController extends Container {
     const title = document.createElement("div");
     title.innerText = "HỒI SINH";
     title.style.cssText =
-      "font-size:32px;font-weight:900;color:#F57C00;text-shadow: 0 1px 0 rgba(255,255,255,0.8);margin-bottom:20px;font-family:'Outfit', 'Nunito', 'Segoe UI', Arial, sans-serif;text-align:center;text-transform:uppercase;";
+      "font-size:32px;font-weight:900;color:#F57C00;text-shadow: 0 1px 0 rgba(255,255,255,0.8);margin-bottom:20px;font-family:Be Vietnam Pro, sans-serif;text-align:center;text-transform:uppercase;";
 
     const heartIcon = document.createElement("div");
     heartIcon.innerText = "💖";
@@ -2087,7 +2087,7 @@ export class GameController extends Container {
 
     const yesBtn = document.createElement("button");
     yesBtn.style.cssText =
-      "background:linear-gradient(to bottom, #FFCC80, #FFB74D);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:'Nunito', 'Segoe UI', Arial, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #F57C00, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
+      "background:linear-gradient(to bottom, #FFCC80, #FFB74D);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:Be Vietnam Pro, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #F57C00, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
 
     const tvIcon = document.createElement("img");
     tvIcon.src = "/assest/iconbtn/images.webp";
@@ -2103,7 +2103,7 @@ export class GameController extends Container {
     const skipText = document.createElement("div");
     skipText.innerText = "Không, cảm ơn";
     skipText.style.cssText =
-      "margin-top:15px;font-family:sans-serif;font-size:16px;color:#888;text-decoration:underline;cursor:pointer;font-weight:bold;";
+      "margin-top:15px;font-family:Be Vietnam Pro, sans-serif;font-size:16px;color:#888;text-decoration:underline;cursor:pointer;font-weight:bold;";
 
     card.appendChild(title);
     card.appendChild(heartIcon);
@@ -2216,12 +2216,12 @@ export class GameController extends Container {
     const ribbon = document.createElement("div");
     ribbon.innerText = "HẾT GIỜ";
     ribbon.style.cssText =
-      "position:absolute;top:-25px;left:50%;transform:translateX(-50%);background:linear-gradient(to bottom, #FFF9C4, #FFB74D);color:#F57C00;font-family:'Baloo 2', 'Be Vietnam Pro', sans-serif;font-size:26px;font-weight:900;padding:5px 40px;border-radius:25px;border:3px solid #ffffff;box-shadow:0 6px 0 #F57C00, 0 8px 10px rgba(0,0,0,0.3);white-space:nowrap;letter-spacing:2px;text-shadow:0 1px 2px rgba(255,255,255,0.8);";
+      "position:absolute;top:-25px;left:50%;transform:translateX(-50%);background:linear-gradient(to bottom, #FFF9C4, #FFB74D);color:#F57C00;font-family:Be Vietnam Pro, sans-serif;font-size:26px;font-weight:900;padding:5px 40px;border-radius:25px;border:3px solid #ffffff;box-shadow:0 6px 0 #F57C00, 0 8px 10px rgba(0,0,0,0.3);white-space:nowrap;letter-spacing:2px;text-shadow:0 1px 2px rgba(255,255,255,0.8);";
 
     const descText = document.createElement("div");
     descText.innerText = "Hãy thử sức lại nhé!";
     descText.style.cssText =
-      "font-family:'Baloo 2', 'Outfit', 'Nunito', sans-serif;font-size:24px;color:#5D4037;text-align:center;line-height:1.6;font-weight:bold;margin-top:10px;margin-bottom:40px;white-space:pre-line;";
+      "font-family:Be Vietnam Pro, sans-serif;font-size:24px;color:#5D4037;text-align:center;line-height:1.6;font-weight:bold;margin-top:10px;margin-bottom:40px;white-space:pre-line;";
 
     const btnContainer = document.createElement("div");
     btnContainer.style.cssText =
@@ -3192,7 +3192,7 @@ export class GameController extends Container {
           position: relative;
           transform: scale(0.85);
           transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
-          font-family: 'Be Vietnam Pro', sans-serif;
+          font-family:Be Vietnam Pro, sans-serif;
           box-sizing: border-box;
           opacity: 0;
         }
@@ -3209,7 +3209,7 @@ export class GameController extends Container {
           border-radius: 12px;
           box-shadow: 0 4px 0 #8a0000;
           color: #ffffff;
-          font-family: 'Be Vietnam Pro', sans-serif;
+          font-family:Be Vietnam Pro, sans-serif;
           font-size: 20px;
           font-weight: 800;
           letter-spacing: 1.5px;
@@ -3256,7 +3256,7 @@ export class GameController extends Container {
           height: 62px;
         }
         .game-settings-label {
-          font-family: 'Be Vietnam Pro', sans-serif;
+          font-family:Be Vietnam Pro, sans-serif;
           font-size: 18px;
           font-weight: 700;
           color: #5D4037;
@@ -3287,7 +3287,7 @@ export class GameController extends Container {
           box-shadow: 0 4px 0 #8a0000;
           border-radius: 12px;
           color: #ffffff;
-          font-family: 'Be Vietnam Pro', sans-serif;
+          font-family:Be Vietnam Pro, sans-serif;
           font-size: 14px;
           font-weight: 800;
           padding: 10px 20px;
@@ -3342,7 +3342,7 @@ export class GameController extends Container {
 
         /* Achievements popup */
         .game-achievements-user-text {
-          font-family: 'Be Vietnam Pro', sans-serif;
+          font-family:Be Vietnam Pro, sans-serif;
           font-size: 13px;
           font-weight: 700;
           color: #5D4037;
@@ -3371,7 +3371,7 @@ export class GameController extends Container {
           transform: scale(1.2);
         }
         .game-achievements-level-name {
-          font-family: 'Be Vietnam Pro', sans-serif;
+          font-family:Be Vietnam Pro, sans-serif;
           font-size: 22px;
           font-weight: 800;
           color: #e53935;
@@ -3382,7 +3382,7 @@ export class GameController extends Container {
           width: 100%;
           margin-top: 16px;
           border-collapse: collapse;
-          font-family: 'Be Vietnam Pro', sans-serif;
+          font-family:Be Vietnam Pro, sans-serif;
         }
         .game-achievements-table th {
           position: sticky;
@@ -3453,7 +3453,7 @@ export class GameController extends Container {
           justify-content: space-between;
           height: 48px;
           box-sizing: border-box;
-          font-family: 'Be Vietnam Pro', sans-serif;
+          font-family:Be Vietnam Pro, sans-serif;
         }
         .game-achievements-footer-item {
           font-size: 13px;
