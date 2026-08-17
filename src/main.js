@@ -2,6 +2,8 @@ import { Application, Assets } from "pixi.js";
 import { GameController } from "./game";
 import { winkGame } from "./integrations/wink/wink-adapter.js";
 import { waitForGameFonts } from "./utils/fontLoader.js";
+import { audio } from "./audio";
+import { installFocusPause } from "./utils/focusPause.js";
 
 (async () => {
   await waitForGameFonts([
@@ -86,6 +88,14 @@ import { waitForGameFonts } from "./utils/fontLoader.js";
     game.update(ticker);
   });
 
+  const focusPause = installFocusPause({
+    isRunning: () => Boolean(app.ticker.started),
+    pause: () => app.ticker.stop(),
+    resume: () => app.ticker.start(),
+    pauseAudio: () => audio.pauseForFocus(),
+    resumeAudio: () => audio.resumeFromFocus(),
+  });
+
   // 6. Robust resize function that reads container size
   const handleResize = () => {
     const w = container.clientWidth || window.innerWidth;
@@ -105,12 +115,8 @@ import { waitForGameFonts } from "./utils/fontLoader.js";
 
   // ── Wink Bridge lifecycle binding ──
   winkGame.bindLifecycle({
-    onPause: () => {
-      if (app.ticker) app.ticker.stop();
-    },
-    onResume: () => {
-      if (app.ticker) app.ticker.start();
-    },
+    onPause: focusPause.pauseFromHost,
+    onResume: focusPause.resumeFromHost,
   });
 
   winkGame.observe((state) => {

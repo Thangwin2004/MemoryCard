@@ -7,6 +7,8 @@ class AudioManager {
     this.musicMuted = false;
     this.sfxMuted = false;
     this.initialized = false;
+    this.wasContextRunningBeforeFocus = false;
+    this.wasBgmPlayingBeforeFocus = false;
 
     // Global mobile audio unlocker
     const unlockAudio = () => {
@@ -256,6 +258,22 @@ class AudioManager {
     playTone(783.99, 0.4, 0.8, "sine", 0.08); // G5
     playTone(1046.5, 0.5, 1.2, "sine", 0.1); // High C6
     playTone(1318.51, 0.6, 1.0, "sine", 0.06); // E6
+  }
+
+  async pauseForFocus() {
+    this.wasContextRunningBeforeFocus = this.ctx?.state === "running";
+    this.wasBgmPlayingBeforeFocus = Boolean(this.bgm && !this.bgm.paused);
+    if (this.wasBgmPlayingBeforeFocus) this.bgm.pause();
+    if (this.wasContextRunningBeforeFocus) await this.ctx.suspend();
+  }
+
+  async resumeFromFocus() {
+    if (this.wasContextRunningBeforeFocus && this.ctx) await this.ctx.resume();
+    this.wasContextRunningBeforeFocus = false;
+    if (this.wasBgmPlayingBeforeFocus && this.bgm && !this.musicMuted) {
+      await this.bgm.play().catch(() => {});
+    }
+    this.wasBgmPlayingBeforeFocus = false;
   }
 }
 
