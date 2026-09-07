@@ -196,14 +196,6 @@ function readUrlLanguage() {
   }
 }
 
-function readBrowserLanguage() {
-  const candidates = [
-    ...(globalThis.navigator?.languages || []),
-    globalThis.navigator?.language,
-  ];
-  return candidates.map(normalizeLanguage).find(Boolean) || "vi";
-}
-
 function readWinkLanguage(state) {
   return normalizeLanguage(
     state?.locale ||
@@ -218,11 +210,7 @@ function readWinkLanguage(state) {
 export class I18nManager {
   constructor() {
     this.hasLocalOverride = Boolean(readStoredLanguage());
-    this.language =
-      readStoredLanguage() ||
-      readUrlLanguage() ||
-      readBrowserLanguage() ||
-      "vi";
+    this.language = readStoredLanguage() || readUrlLanguage() || "en";
     this.listeners = new Set();
     this.applyDocumentLanguage();
   }
@@ -242,7 +230,7 @@ export class I18nManager {
   }
 
   setLanguage(language, { persist = true } = {}) {
-    const normalized = normalizeLanguage(language) || "vi";
+    const normalized = normalizeLanguage(language) || "en";
     if (persist) {
       try {
         if (typeof window !== "undefined" && window.localStorage) {
@@ -274,8 +262,8 @@ export class I18nManager {
   }
 
   t(key, variables = {}) {
-    const dict = messages[this.language] || messages.vi;
-    const template = dict[key] ?? messages.vi[key] ?? messages.en[key] ?? key;
+    const dict = messages[this.language] || messages.en;
+    const template = dict[key] ?? messages.en[key] ?? messages.vi[key] ?? key;
     return String(template).replace(/\{(\w+)\}/g, (_, name) =>
       variables[name] === undefined || variables[name] === null
         ? `{${name}}`
