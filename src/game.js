@@ -1670,11 +1670,6 @@ export class GameController extends Container {
         sfxRow.labelElement.innerText = "🔊 " + i18n.t("settings.sfx");
         label.innerText = i18n.t("settings.language");
         select.setAttribute("aria-label", i18n.t("settings.language"));
-        select.innerHTML = `
-          <option value="en">${i18n.t("settings.english")}</option>
-          <option value="vi">${i18n.t("settings.vietnamese")}</option>
-        `;
-        select.value = i18n.language;
         if (versionText) versionText.innerText = i18n.t("settings.version");
         if (homeBtn) homeBtn.setAttribute("aria-label", i18n.t("pause.home"));
         if (replayBtn)
@@ -2007,7 +2002,9 @@ export class GameController extends Container {
       score: this.score,
       moves: this.moves,
       time: Math.floor(elapsedTime),
-      date: new Date().toLocaleDateString("vi-VN"),
+      date: new Date().toLocaleDateString(
+        i18n.language === "vi" ? "vi-VN" : "en-US",
+      ),
     };
     prevRecord.history.push(newRun);
 
@@ -4531,7 +4528,7 @@ export class GameController extends Container {
 
         tr.innerHTML = `
           <td>${rankDisplay}</td>
-          <td>${run.playerName || run.displayName || (i18n.currentLang === "en" ? "Member" : "Thành viên")}</td>
+          <td>${run.playerName || run.displayName || (i18n.language === "en" ? "Member" : "Thành viên")}</td>
           <td>${run.score}</td>
           <td>${detailStr}</td>
         `;
@@ -4622,9 +4619,9 @@ export class GameController extends Container {
       else if (rankNum === 2) rankText = "🥈";
       else if (rankNum === 3) rankText = "🥉";
 
-      const rankPrefix = i18n.currentLang === "en" ? "PB: Rank" : "PB: Hạng";
-      const scorePrefix = i18n.currentLang === "en" ? "Score" : "Điểm";
-      const timePrefix = i18n.currentLang === "en" ? "Time" : "Thời gian";
+      const rankPrefix = i18n.language === "en" ? "PB: Rank" : "PB: Hạng";
+      const scorePrefix = i18n.language === "en" ? "Score" : "Điểm";
+      const timePrefix = i18n.language === "en" ? "Time" : "Thời gian";
 
       rankItem.innerText = `${rankPrefix} ${rankText}`;
       scoreItem.innerText = `${scorePrefix}: ${pScore}`;

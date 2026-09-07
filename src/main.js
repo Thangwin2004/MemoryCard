@@ -6,8 +6,19 @@ import { winkGame } from "./integrations/wink/wink-adapter.js";
 import { waitForGameFonts } from "./utils/fontLoader.js";
 import { installFocusPause } from "./utils/focusPause.js";
 import { installInteractionGuard } from "./utils/interactionGuard.js";
+import { i18n, t } from "./system/I18nManager.js";
 
 installInteractionGuard();
+
+function localizeSplash() {
+  const splashText = document.getElementById("splash-text");
+  if (splashText) {
+    splashText.innerText = t("loading.progress", { progress: 0 });
+  }
+}
+
+localizeSplash();
+i18n.subscribe(localizeSplash);
 
 (async () => {
   await waitForGameFonts([
@@ -61,13 +72,13 @@ installInteractionGuard();
       progress += Math.floor(Math.random() * 15) + 5;
       if (progress > 90) progress = 90;
       splashProgress.style.width = progress + "%";
-      splashText.innerText = `Loading ${progress}%`;
+      splashText.innerText = t("loading.progress", { progress });
     }, 50);
 
     setTimeout(() => {
       clearInterval(interval);
       splashProgress.style.width = "100%";
-      splashText.innerText = `Loading 100%`;
+      splashText.innerText = t("loading.progress", { progress: 100 });
       setTimeout(() => {
         splashScreen.style.opacity = "0";
         setTimeout(() => {
@@ -127,7 +138,9 @@ installInteractionGuard();
 
   winkGame.observe((state) => {
     console.log("[WinkBridge] phase:", state.phase);
+    i18n.syncFromWink(state);
   });
+  i18n.syncFromWink(winkGame.state);
 
   // Run initial resize to align everything correctly
   handleResize();
