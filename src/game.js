@@ -1608,6 +1608,7 @@ export class GameController extends Container {
 
       row.appendChild(text);
       row.appendChild(toggle);
+      row.labelElement = text;
       return row;
     };
 
@@ -1635,45 +1636,66 @@ export class GameController extends Container {
     );
     rowContainer.appendChild(sfxRow);
 
-    // Language row
-    const langRow = document.createElement("div");
-    langRow.style.cssText =
-      "width:100%; height:70px; border-radius:12px; background:#fbfaf5; border:3px solid #fff; display:flex; justify-content:space-between; align-items:center; padding:0 20px; box-sizing:border-box; margin-bottom: 15px;";
+    let homeBtn = null;
+    let replayBtn = null;
+    let resumeBtn = null;
+    let versionText = null;
 
-    const langText = document.createElement("span");
-    langText.style.cssText =
-      "font-family:Be Vietnam Pro, sans-serif; font-size:18px; font-weight:bold; color:#47363B; letter-spacing:0.8px; white-space:nowrap;";
-    langText.innerText = "🌐 " + i18n.t("settings.language");
+    // Language row (marth3 style)
+    const createLanguageRow = () => {
+      const row = document.createElement("div");
+      row.className = "game-settings-language-row";
 
-    const langSelect = document.createElement("select");
-    langSelect.style.cssText =
-      "font-family: 'Be Vietnam Pro', sans-serif; font-size: 15px; font-weight: 800; color: #5D4037; background: #FFF3E0; border: 2.5px solid #FF9800; border-radius: 12px; padding: 6px 14px; outline: none; cursor: pointer; box-shadow: 0 3px 0 #E65100; transition: transform 0.1s ease;";
+      const label = document.createElement("span");
+      label.className = "game-settings-label";
+      label.innerText = i18n.t("settings.language");
 
-    const optVi = document.createElement("option");
-    optVi.value = "vi";
-    optVi.innerText = "🇻🇳 " + i18n.t("settings.vietnamese");
+      const select = document.createElement("select");
+      select.className = "game-settings-language-select";
+      select.setAttribute("aria-label", i18n.t("settings.language"));
+      select.innerHTML = `
+        <option value="en">${i18n.t("settings.english")}</option>
+        <option value="vi">${i18n.t("settings.vietnamese")}</option>
+      `;
+      select.value = i18n.language;
 
-    const optEn = document.createElement("option");
-    optEn.value = "en";
-    optEn.innerText = "🇬🇧 " + i18n.t("settings.english");
+      select.addEventListener("change", () => {
+        audio.playFlip();
+        i18n.setLanguage(select.value);
+        this.syncLanguage();
+        title.innerText = isIngame
+          ? i18n.t("pause.title")
+          : i18n.t("settings.title");
+        musicRow.labelElement.innerText = "🎵 " + i18n.t("settings.music");
+        sfxRow.labelElement.innerText = "🔊 " + i18n.t("settings.sfx");
+        label.innerText = i18n.t("settings.language");
+        select.setAttribute("aria-label", i18n.t("settings.language"));
+        select.innerHTML = `
+          <option value="en">${i18n.t("settings.english")}</option>
+          <option value="vi">${i18n.t("settings.vietnamese")}</option>
+        `;
+        select.value = i18n.language;
+        if (versionText) versionText.innerText = i18n.t("settings.version");
+        if (homeBtn) homeBtn.setAttribute("aria-label", i18n.t("pause.home"));
+        if (replayBtn)
+          replayBtn.setAttribute("aria-label", i18n.t("pause.replay"));
+        if (resumeBtn)
+          resumeBtn.setAttribute("aria-label", i18n.t("pause.resume"));
+      });
 
-    langSelect.appendChild(optVi);
-    langSelect.appendChild(optEn);
-    langSelect.value = i18n.currentLanguage;
-
-    langSelect.addEventListener("change", (e) => {
-      audio.playFlip();
-      i18n.setLanguage(e.target.value);
-      this.syncLanguage();
-      overlay.remove();
-      this.showSettingsModal(isIngame);
-    });
-
-    langRow.appendChild(langText);
-    langRow.appendChild(langSelect);
-    rowContainer.appendChild(langRow);
+      row.append(label, select);
+      return row;
+    };
+    rowContainer.appendChild(createLanguageRow());
 
     card.appendChild(rowContainer);
+
+    if (!isIngame) {
+      versionText = document.createElement("div");
+      versionText.className = "game-settings-version";
+      versionText.innerText = i18n.t("settings.version");
+      card.appendChild(versionText);
+    }
 
     // In-game buttons (Home, Replay, Continue)
     if (isIngame) {
@@ -1681,7 +1703,7 @@ export class GameController extends Container {
       actionContainer.className = "game-paused-action-container";
 
       // Home
-      const homeBtn = document.createElement("button");
+      homeBtn = document.createElement("button");
       homeBtn.className = "game-paused-btn";
       homeBtn.setAttribute("aria-label", i18n.t("pause.home"));
       homeBtn.style.backgroundImage = `url(${getIconBtnDataUrl("home", "blue")})`;
@@ -1695,7 +1717,7 @@ export class GameController extends Container {
       actionContainer.appendChild(homeBtn);
 
       // Replay
-      const replayBtn = document.createElement("button");
+      replayBtn = document.createElement("button");
       replayBtn.className = "game-paused-btn";
       replayBtn.setAttribute("aria-label", i18n.t("pause.replay"));
       replayBtn.style.backgroundImage = `url(${getIconBtnDataUrl("replay", "yellow")})`;
@@ -1709,7 +1731,7 @@ export class GameController extends Container {
       actionContainer.appendChild(replayBtn);
 
       // Resume
-      const resumeBtn = document.createElement("button");
+      resumeBtn = document.createElement("button");
       resumeBtn.className = "game-paused-btn";
       resumeBtn.setAttribute("aria-label", i18n.t("pause.resume"));
       resumeBtn.style.backgroundImage = `url(${getIconBtnDataUrl("play", "green")})`;
@@ -4071,6 +4093,77 @@ export class GameController extends Container {
           display: flex;
           align-items: center;
           gap: 8px;
+        }
+        .game-settings-language-row {
+          width: 100%;
+          height: 64px;
+          padding: 0 16px;
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          border: 3px solid #fff;
+          border-radius: 12px;
+          background: #fbfaf5;
+          margin-bottom: 12px;
+        }
+        .game-settings-language-row .game-settings-label,
+        .game-settings-language-row span {
+          color: #47363b;
+          font-size: 17px;
+          letter-spacing: 0.8px;
+          font-weight: bold;
+        }
+        .game-settings-language-select {
+          width: 136px;
+          height: 42px;
+          flex: 0 0 136px;
+          padding: 0 32px 0 16px;
+          appearance: none;
+          -webkit-appearance: none;
+          border: 2px solid #72d58f;
+          border-radius: 21px;
+          color: #1b365d;
+          background-color: #fbfaf5;
+          background-image:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M2 2l5 5 5-5' fill='none' stroke='%2325a653' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+            linear-gradient(180deg, #fffef9 0%, #edf7ef 100%);
+          background-repeat: no-repeat;
+          background-position:
+            right 12px center,
+            center;
+          background-size:
+            14px 9px,
+            100% 100%;
+          font-family: 'Be Vietnam Pro', sans-serif;
+          font-size: 14px;
+          font-weight: 800;
+          text-shadow: none;
+          cursor: pointer;
+          outline: none;
+          box-shadow:
+            inset 0 2px 0 rgba(255, 255, 255, 0.9),
+            0 3px 0 #2b9b50,
+            0 6px 10px rgba(36, 24, 42, 0.14);
+          transition:
+            filter 0.12s ease,
+            border-color 0.12s ease,
+            box-shadow 0.1s ease;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .game-settings-language-select option {
+          color: #1b365d;
+          background: #fbfaf5;
+          font-weight: 700;
+          text-shadow: none;
+        }
+        .game-settings-version {
+          font-family: 'Be Vietnam Pro', sans-serif;
+          font-size: 12px;
+          color: #5D4037;
+          margin-top: 14px;
+          font-weight: 600;
         }
         .game-settings-toggle-btn {
           width: 68px;

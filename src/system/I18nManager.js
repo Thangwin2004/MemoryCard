@@ -26,9 +26,11 @@ const messages = {
     "hud.combo": "COMBO",
 
     "settings.title": "SETTINGS",
+    "settings.pauseTitle": "PAUSED",
     "settings.music": "MUSIC",
     "settings.sfx": "SOUND FX",
     "settings.language": "LANGUAGE",
+    "settings.version": "Version: 1.0.0",
     "settings.english": "English",
     "settings.vietnamese": "Tiếng Việt",
 
@@ -106,10 +108,12 @@ const messages = {
     "hud.time": "THỜI GIAN",
     "hud.combo": "COMBO",
 
-    "settings.title": "CÀI ĐẶT GAME",
+    "settings.title": "CÀI ĐẶT",
+    "settings.pauseTitle": "TẠM DỪNG",
     "settings.music": "ÂM NHẠC",
     "settings.sfx": "HIỆU ỨNG",
     "settings.language": "NGÔN NGỮ",
+    "settings.version": "Phiên bản: 1.0.0",
     "settings.english": "English",
     "settings.vietnamese": "Tiếng Việt",
 
@@ -193,76 +197,103 @@ function readUrlLanguage() {
 }
 
 function readBrowserLanguage() {
-  if (typeof window === "undefined" || !window.navigator) return null;
   const candidates = [
-    window.navigator.language,
-    ...(window.navigator.languages || []),
+    ...(globalThis.navigator?.languages || []),
+    globalThis.navigator?.language,
   ];
-  for (const item of candidates) {
-    const norm = normalizeLanguage(item);
-    if (norm) return norm;
-  }
-  return null;
+  return candidates.map(normalizeLanguage).find(Boolean) || "vi";
+}
+
+function readWinkLanguage(state) {
+  return normalizeLanguage(
+    state?.locale ||
+      state?.language ||
+      state?.user?.locale ||
+      state?.context?.locale ||
+      state?.preferences?.language ||
+      state?.preferences?.locale,
+  );
 }
 
 export class I18nManager {
   constructor() {
-    this.currentLanguage =
-      readUrlLanguage() ||
+    this.hasLocalOverride = Boolean(readStoredLanguage());
+    this.language =
       readStoredLanguage() ||
+      readUrlLanguage() ||
       readBrowserLanguage() ||
       "vi";
     this.listeners = new Set();
+    this.applyDocumentLanguage();
   }
 
-  get language() {
-    return this.currentLanguage;
+  get currentLanguage() {
+    return this.language;
   }
 
-  t(key, params = {}) {
-    const dict = messages[this.currentLanguage] || messages.vi;
-    const template = dict[key] || messages.vi[key] || messages.en[key] || key;
-    return template.replace(/\{(\w+)\}/g, (_, name) =>
-      params[name] !== undefined ? params[name] : `{${name}}`,
-    );
-  }
-
-  setLanguage(nextLang) {
-    const normalized = normalizeLanguage(nextLang);
-    if (!normalized || normalized === this.currentLanguage) return;
-    this.currentLanguage = normalized;
-    try {
-      if (typeof window !== "undefined" && window.localStorage) {
-        window.localStorage.setItem(STORAGE_KEY, normalized);
+  applyDocumentLanguage() {
+    if (globalThis.document?.documentElement) {
+      document.documentElement.lang = this.language;
+      const title = this.t("game.documentTitle");
+      if (title && title !== "game.documentTitle") {
+        document.title = title;
       }
-    } catch {
-      // Storage unavailable
     }
-    this.listeners.forEach((fn) => {
+  }
+
+  setLanguage(language, { persist = true } = {}) {
+    const normalized = normalizeLanguage(language) || "vi";
+    if (persist) {
       try {
-        fn(this.currentLanguage);
+        if (typeof window !== "undefined" && window.localStorage) {
+          window.localStorage.setItem(STORAGE_KEY, normalized);
+          this.hasLocalOverride = true;
+        }
+      } catch {
+        // The selected language still applies for this session.
+      }
+    }
+    if (normalized === this.language) return false;
+    this.language = normalized;
+    this.applyDocumentLanguage();
+    for (const listener of this.listeners) {
+      try {
+        listener(normalized);
       } catch (err) {
         console.error("i18n listener failed:", err);
       }
-    });
+    }
+    return true;
+  }
+
+  syncFromWink(state) {
+    if (this.hasLocalOverride) return false;
+    const platformLanguage = readWinkLanguage(state) || readUrlLanguage();
+    if (!platformLanguage) return false;
+    return this.setLanguage(platformLanguage, { persist: false });
+  }
+
+  t(key, variables = {}) {
+    const dict = messages[this.language] || messages.vi;
+    const template = dict[key] ?? messages.vi[key] ?? messages.en[key] ?? key;
+    return String(template).replace(/\{(\w+)\}/g, (_, name) =>
+      variables[name] === undefined || variables[name] === null
+        ? `{${name}}`
+        : String(variables[name]),
+    );
+  }
+
+  formatNumber(value) {
+    const locale = this.language === "vi" ? "vi-VN" : "en-US";
+    return Number(value || 0).toLocaleString(locale);
   }
 
   subscribe(listener) {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
-
-  syncFromWink(state) {
-    const winkLocale =
-      state?.user?.locale ||
-      state?.context?.locale ||
-      state?.locale ||
-      state?.language;
-    const normalized = normalizeLanguage(winkLocale);
-    if (normalized && normalized !== this.currentLanguage) {
-      this.setLanguage(normalized);
-    }
-  }
 }
 
 export const i18n = new I18nManager();
+export const t = (key, variables) => i18n.t(key, variables);
+export { SUPPORTED_LANGUAGES };
