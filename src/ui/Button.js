@@ -91,6 +91,16 @@ export class Button extends Container {
     });
   }
 
+  setLabelText(newText) {
+    this.label.text = newText;
+    const width = Math.max(
+      this.label.width + this.currentR * 3,
+      this.currentR * 5,
+    );
+    const height = this.currentR * 2;
+    this.updateStyle(width, height);
+  }
+
   updateStyle(width, height) {
     if (!width || !height) return;
     const currentR = this.currentR;
@@ -505,6 +515,15 @@ export class VibrantCapsuleBtn extends Container {
         yoyo: true,
         ease: "sine.inOut",
       });
+    }
+  }
+
+  setLabelText(newText, newSubText = null) {
+    if (this.title) {
+      this.title.text = newText;
+    }
+    if (newSubText !== null && this.sub) {
+      this.sub.text = newSubText;
     }
   }
 

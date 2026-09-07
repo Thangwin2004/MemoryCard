@@ -14,6 +14,7 @@ import { AVATAR_FILES } from "./symbols";
 import { LacBirdFlock } from "./chimlac";
 import { Button, IconBtn, VibrantCapsuleBtn } from "./ui/Button";
 import { winkGame } from "./integrations/wink/wink-adapter.js";
+import { i18n } from "./system/I18nManager.js";
 import gsap from "gsap";
 
 /* global Path2D */
@@ -635,8 +636,59 @@ export class GameController extends Container {
     // Initialize HTML overlays (Google sign-in and Fullscreen)
     this.initDOMOverlays();
 
+    // Subscribe to language changes
+    i18n.subscribe(() => this.syncLanguage());
+    this.syncLanguage();
+
     // Start in MAIN_MENU state
     this.switchState("MAIN_MENU");
+  }
+
+  syncLanguage() {
+    if (this.menuTitleText) {
+      this.menuTitleText.text = i18n.t("game.title");
+    }
+    if (this.menuSubtitleText) {
+      this.menuSubtitleText.text = i18n.t("game.subtitle");
+    }
+    if (this.playBtn && typeof this.playBtn.setLabelText === "function") {
+      this.playBtn.setLabelText(i18n.t("menu.play"));
+    }
+    if (this.levelSelectTitle) {
+      this.levelSelectTitle.text = i18n.t("level.title");
+    }
+    if (this.levelButtons && this.levelButtons.length >= 3) {
+      this.levelButtons[0]?.setLabelText(
+        i18n.t("level.easy"),
+        i18n.t("level.easySub"),
+      );
+      this.levelButtons[1]?.setLabelText(
+        i18n.t("level.medium"),
+        i18n.t("level.mediumSub"),
+      );
+      this.levelButtons[2]?.setLabelText(
+        i18n.t("level.hard"),
+        i18n.t("level.hardSub"),
+      );
+    }
+    if (this.gameTitleText) {
+      this.gameTitleText.text = i18n.t("game.title");
+    }
+    if (this.scoreLabel) {
+      this.scoreLabel.text = i18n.t("hud.score");
+    }
+    if (this.movesLabel) {
+      this.movesLabel.text = i18n.t("hud.moves");
+    }
+    if (this.timeLabel) {
+      this.timeLabel.text = i18n.t("hud.time");
+    }
+    if (
+      this.achievementsBackBtn &&
+      typeof this.achievementsBackBtn.setLabelText === "function"
+    ) {
+      this.achievementsBackBtn.setLabelText("↩️ " + i18n.t("actions.back"));
+    }
   }
 
   async loadLogo() {
@@ -734,7 +786,7 @@ export class GameController extends Container {
   setupUI() {
     // --- 1. MAIN MENU SCREEN ---
     this.menuTitleText = new Text({
-      text: "BỘ LẠC KÝ ỨC",
+      text: i18n.t("game.title"),
       style: new TextStyle({
         fontFamily: '"Baloo 2", "Be Vietnam Pro", sans-serif',
         fontSize: 38,
@@ -754,7 +806,7 @@ export class GameController extends Container {
     this.mainMenuContainer.addChild(this.menuTitleText);
 
     this.menuSubtitleText = new Text({
-      text: "TRÒ CHƠI TRÍ NHỚ KỲ THÚ",
+      text: i18n.t("game.subtitle"),
       style: new TextStyle({
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 14,
@@ -771,7 +823,7 @@ export class GameController extends Container {
 
     // Vibrant Hero Play Button
     this.playBtn = new VibrantCapsuleBtn({
-      text: "CHƠI NGAY",
+      text: i18n.t("menu.play"),
       theme: "orange",
       iconName: "play",
       pulse: true,
@@ -822,7 +874,7 @@ export class GameController extends Container {
 
     // --- 2. LEVEL SELECT SCREEN ---
     this.levelSelectTitle = new Text({
-      text: "CHỌN CẤP ĐỘ",
+      text: i18n.t("level.title"),
       style: new TextStyle({
         fontFamily: '"Baloo 2", "Be Vietnam Pro", sans-serif',
         fontSize: 32,
@@ -843,18 +895,18 @@ export class GameController extends Container {
     this.levelButtons = [];
     const levelConfigs = [
       {
-        name: "TẬP SỰ",
-        sub: "⏱️ 60s • 8 Cặp (4x4)",
+        name: i18n.t("level.easy"),
+        sub: i18n.t("level.easySub"),
         theme: "green",
       },
       {
-        name: "THỬ THÁCH",
-        sub: "⏱️ 90s • 10 Cặp (4x5)",
+        name: i18n.t("level.medium"),
+        sub: i18n.t("level.mediumSub"),
         theme: "amber",
       },
       {
-        name: "CAO THỦ",
-        sub: "⏱️ 150s • 18 Cặp (6x6)",
+        name: i18n.t("level.hard"),
+        sub: i18n.t("level.hardSub"),
         theme: "red",
       },
     ];
@@ -1072,14 +1124,17 @@ export class GameController extends Container {
     };
     window.addEventListener("wheel", this._onWheelScroll, { passive: true });
 
-    this.achievementsBackBtn = createMenuButton("↩️ QUAY LẠI", () => {
-      this.switchState("MAIN_MENU");
-    });
+    this.achievementsBackBtn = createMenuButton(
+      "↩️ " + i18n.t("actions.back"),
+      () => {
+        this.switchState("MAIN_MENU");
+      },
+    );
     this.achievementsContainer.addChild(this.achievementsBackBtn);
 
     // --- 4. GAMEPLAY SCREEN ---
     this.gameTitleText = new Text({
-      text: "BỘ LẠC KÝ ỨC",
+      text: i18n.t("game.title"),
       style: new TextStyle({
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 24,
@@ -1103,7 +1158,10 @@ export class GameController extends Container {
     this.gamePlayContainer.addChild(this.statsPanel);
 
     // Score label and value
-    this.scoreLabel = new Text({ text: "ĐIỂM", style: this.infoStyle });
+    this.scoreLabel = new Text({
+      text: i18n.t("hud.score"),
+      style: this.infoStyle,
+    });
     this.scoreVal = new Text({ text: "0000", style: this.valueStyle });
     this.scoreLabel.anchor.set(0.5);
     this.scoreVal.anchor.set(0.5);
@@ -1111,7 +1169,10 @@ export class GameController extends Container {
     this.gamePlayContainer.addChild(this.scoreVal);
 
     // Moves label and value
-    this.movesLabel = new Text({ text: "LƯỢT ĐI", style: this.infoStyle });
+    this.movesLabel = new Text({
+      text: i18n.t("hud.moves"),
+      style: this.infoStyle,
+    });
     this.movesVal = new Text({ text: "0", style: this.valueStyle });
     this.movesLabel.anchor.set(0.5);
     this.movesVal.anchor.set(0.5);
@@ -1119,7 +1180,10 @@ export class GameController extends Container {
     this.gamePlayContainer.addChild(this.movesVal);
 
     // Time label and value
-    this.timeLabel = new Text({ text: "THỜI GIAN", style: this.infoStyle });
+    this.timeLabel = new Text({
+      text: i18n.t("hud.time"),
+      style: this.infoStyle,
+    });
     this.timeVal = new Text({ text: "00:00", style: this.valueStyle });
     this.timeLabel.anchor.set(0.5);
     this.timeVal.anchor.set(0.5);
@@ -1482,13 +1546,16 @@ export class GameController extends Container {
     // Title
     const title = document.createElement("div");
     title.className = "game-popup-title";
-    title.innerText = "CÀI ĐẶT GAME";
+    title.innerText = isIngame
+      ? i18n.t("pause.title")
+      : i18n.t("settings.title");
     card.appendChild(title);
 
     // Close button (only visible if not ingame pause, or let close button resume)
     if (!isIngame) {
       const closeBtn = document.createElement("button");
       closeBtn.className = "game-popup-close-btn";
+      closeBtn.setAttribute("aria-label", "Close");
       closeBtn.addEventListener("click", () => {
         audio.playFlip();
         overlay.style.opacity = "0";
@@ -1545,20 +1612,66 @@ export class GameController extends Container {
     };
 
     // Music row
-    const musicRow = createToggleRow("ÂM NHẠC", !audio.musicMuted, () => {
-      audio.playFlip();
-      audio.toggleMusicMute();
-      return !audio.musicMuted;
-    });
+    const musicRow = createToggleRow(
+      "🎵 " + i18n.t("settings.music"),
+      !audio.musicMuted,
+      () => {
+        audio.playFlip();
+        audio.toggleMusicMute();
+        return !audio.musicMuted;
+      },
+    );
     rowContainer.appendChild(musicRow);
 
     // SFX row
-    const sfxRow = createToggleRow("HIỆU ỨNG", !audio.sfxMuted, () => {
-      audio.playFlip();
-      audio.toggleSfxMute();
-      return !audio.sfxMuted;
-    });
+    const sfxRow = createToggleRow(
+      "🔊 " + i18n.t("settings.sfx"),
+      !audio.sfxMuted,
+      () => {
+        audio.playFlip();
+        audio.toggleSfxMute();
+        return !audio.sfxMuted;
+      },
+    );
     rowContainer.appendChild(sfxRow);
+
+    // Language row
+    const langRow = document.createElement("div");
+    langRow.style.cssText =
+      "width:100%; height:70px; border-radius:12px; background:#fbfaf5; border:3px solid #fff; display:flex; justify-content:space-between; align-items:center; padding:0 20px; box-sizing:border-box; margin-bottom: 15px;";
+
+    const langText = document.createElement("span");
+    langText.style.cssText =
+      "font-family:Be Vietnam Pro, sans-serif; font-size:18px; font-weight:bold; color:#47363B; letter-spacing:0.8px; white-space:nowrap;";
+    langText.innerText = "🌐 " + i18n.t("settings.language");
+
+    const langSelect = document.createElement("select");
+    langSelect.style.cssText =
+      "font-family: 'Be Vietnam Pro', sans-serif; font-size: 15px; font-weight: 800; color: #5D4037; background: #FFF3E0; border: 2.5px solid #FF9800; border-radius: 12px; padding: 6px 14px; outline: none; cursor: pointer; box-shadow: 0 3px 0 #E65100; transition: transform 0.1s ease;";
+
+    const optVi = document.createElement("option");
+    optVi.value = "vi";
+    optVi.innerText = "🇻🇳 " + i18n.t("settings.vietnamese");
+
+    const optEn = document.createElement("option");
+    optEn.value = "en";
+    optEn.innerText = "🇬🇧 " + i18n.t("settings.english");
+
+    langSelect.appendChild(optVi);
+    langSelect.appendChild(optEn);
+    langSelect.value = i18n.currentLanguage;
+
+    langSelect.addEventListener("change", (e) => {
+      audio.playFlip();
+      i18n.setLanguage(e.target.value);
+      this.syncLanguage();
+      overlay.remove();
+      this.showSettingsModal(isIngame);
+    });
+
+    langRow.appendChild(langText);
+    langRow.appendChild(langSelect);
+    rowContainer.appendChild(langRow);
 
     card.appendChild(rowContainer);
 
@@ -1570,6 +1683,7 @@ export class GameController extends Container {
       // Home
       const homeBtn = document.createElement("button");
       homeBtn.className = "game-paused-btn";
+      homeBtn.setAttribute("aria-label", i18n.t("pause.home"));
       homeBtn.style.backgroundImage = `url(${getIconBtnDataUrl("home", "blue")})`;
       homeBtn.addEventListener("click", () => {
         audio.playFlip();
@@ -1583,6 +1697,7 @@ export class GameController extends Container {
       // Replay
       const replayBtn = document.createElement("button");
       replayBtn.className = "game-paused-btn";
+      replayBtn.setAttribute("aria-label", i18n.t("pause.replay"));
       replayBtn.style.backgroundImage = `url(${getIconBtnDataUrl("replay", "yellow")})`;
       replayBtn.addEventListener("click", () => {
         audio.playFlip();
@@ -1596,6 +1711,7 @@ export class GameController extends Container {
       // Resume
       const resumeBtn = document.createElement("button");
       resumeBtn.className = "game-paused-btn";
+      resumeBtn.setAttribute("aria-label", i18n.t("pause.resume"));
       resumeBtn.style.backgroundImage = `url(${getIconBtnDataUrl("play", "green")})`;
       resumeBtn.addEventListener("click", () => {
         audio.playFlip();
@@ -2016,7 +2132,7 @@ export class GameController extends Container {
     // New Record Ribbon
     if (isNewScore || isNewMoves || isNewTime) {
       const ribbon = document.createElement("div");
-      ribbon.innerText = "⭐ KỶ LỤC MỚI! ⭐";
+      ribbon.innerText = i18n.t("victory.newRecord");
       ribbon.style.cssText =
         "background:#F57C00;color:#fff;border:2px solid #FFCC80;border-radius:10px;padding:4px 12px;font-size:10px;font-weight:bold;margin-top:-15px;z-index:2;position:relative;";
       card.appendChild(ribbon);
@@ -2048,23 +2164,23 @@ export class GameController extends Container {
     };
 
     statsGrid.innerHTML =
-      createStatCol("🏆", "ĐIỂM", "stat-score") +
-      createStatCol("🏃", "LƯỢT ĐI", "stat-moves") +
-      createStatCol("⏱️", "THỜI GIAN", "stat-time") +
-      createStatCol("🎯", "ĐỘ CHÍNH XÁC", "stat-accuracy");
+      createStatCol("🏆", i18n.t("victory.score"), "stat-score") +
+      createStatCol("🏃", i18n.t("victory.moves"), "stat-moves") +
+      createStatCol("⏱️", i18n.t("victory.time"), "stat-time") +
+      createStatCol("🎯", i18n.t("victory.accuracy"), "stat-accuracy");
 
     card.appendChild(statsGrid);
 
     // Sub congrats text
     const congratsLabel = document.createElement("div");
-    congratsLabel.innerText = "Chúc mừng bạn đã chiến thắng!";
+    congratsLabel.innerText = i18n.t("victory.congrats");
     congratsLabel.style.cssText =
       "font-size:14px;color:#F57C00;font-weight:bold;margin-top:15px;";
     card.appendChild(congratsLabel);
 
     // Tribe title
     const tribeTitle = document.createElement("div");
-    tribeTitle.innerText = "— THÀNH VIÊN BỘ LẠC —";
+    tribeTitle.innerText = i18n.t("victory.tribeTitle");
     tribeTitle.style.cssText =
       "font-size:12px;color:#F57C00;font-weight:bold;letter-spacing:1px;margin-top:15px;";
     card.appendChild(tribeTitle);
@@ -2158,6 +2274,7 @@ export class GameController extends Container {
       overlay.remove();
       this.switchState("MAIN_MENU");
     });
+    btnHome.setAttribute("aria-label", i18n.t("actions.home"));
 
     // Double (x2)
     let hasDoubled = false;
@@ -2176,6 +2293,7 @@ export class GameController extends Container {
         }
       },
     );
+    btnDouble.setAttribute("aria-label", i18n.t("actions.double"));
 
     // Next / Replay
     const nextIcon =
@@ -2190,6 +2308,12 @@ export class GameController extends Container {
       this.initGame(nextIdx);
       this.switchState("PLAYING");
     });
+    btnNext.setAttribute(
+      "aria-label",
+      this.currentLevelIndex < LEVELS.length - 1
+        ? i18n.t("actions.next")
+        : i18n.t("actions.replay"),
+    );
 
     btnRow.appendChild(btnHome);
     btnRow.appendChild(btnDouble);
@@ -2290,9 +2414,9 @@ export class GameController extends Container {
     yesBtn.appendChild(tvIcon);
     yesBtn.appendChild(yesText);
 
-    // Subtle "Không, cảm ơn" skip text underneath
+    // Subtle skip text underneath
     const skipBtn = document.createElement("button");
-    skipBtn.innerText = "Không, cảm ơn";
+    skipBtn.innerText = i18n.t("revive.skip");
     skipBtn.style.cssText = `
       margin-top: 14px;
       background: none;
@@ -2332,7 +2456,7 @@ export class GameController extends Container {
     const cleanup = () => {
       overlay.style.opacity = "0";
       card.style.transform = "scale(0.85)";
-      overlay.remove();
+      setTimeout(() => overlay.remove(), 250);
     };
 
     let isHandlingClick = false;
@@ -2352,37 +2476,12 @@ export class GameController extends Container {
 
     requestAnimationFrame(() => {
       overlay.style.opacity = "1";
+      card.style.opacity = "1";
       card.style.transform = "scale(1)";
     });
   }
 
   triggerDefeat() {
-    this.isGameOver = true;
-    audio.playFail();
-
-    if (!this.hasRevivedThisRun) {
-      this.showReviveOffer(
-        async () => {
-          const success = await AdManager.showRewardedVideo();
-          if (success) {
-            this.hasRevivedThisRun = true;
-            this.timeRemaining += 30;
-            this.isGameOver = false;
-            this.switchState("PLAYING");
-          } else {
-            this.showDefeatScreen();
-          }
-        },
-        () => {
-          this.showDefeatScreen();
-        },
-      );
-    } else {
-      this.showDefeatScreen();
-    }
-  }
-
-  showDefeatScreen() {
     // ── Wink: complete round + submit score (even on defeat, the partial score might count) ──
     if (this._winkRound) {
       winkGame.completeRound(this._winkRound, {
@@ -2395,13 +2494,17 @@ export class GameController extends Container {
             playTime: Math.round(
               (Date.now() - this._winkRound.startedAtMs) / 1000,
             ),
-            gameMode: "classic",
+            gameMode: `level_${this.currentLevelIndex + 1}`,
           })
           .catch(() => {});
       }
     }
 
-    // 1. Board shake on defeat to make it feel dramatic
+    this.isGameOver = true;
+    this.isPaused = false;
+    this.overlayContainer.removeChildren();
+
+    // Camera shake effect on defeat
     const originalGridX = this.gridContainer.x;
     gsap.fromTo(
       this.gridContainer,
@@ -2409,9 +2512,9 @@ export class GameController extends Container {
       {
         x: originalGridX + 10,
         duration: 0.05,
-        repeat: 10,
+        repeat: 7,
         yoyo: true,
-        ease: "sine.inOut",
+        ease: "rough",
         onComplete: () => {
           this.gridContainer.x = originalGridX;
         },
@@ -2456,7 +2559,7 @@ export class GameController extends Container {
       <div class="game-defeat-ribbon-wing wing-right"></div>
       <div class="game-defeat-ribbon-body" style="white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 24px;">
         <span class="ribbon-clock-ico" style="font-size: 24px; line-height: 1;">⏱️</span>
-        <span class="game-defeat-ribbon-title" style="white-space: nowrap; font-family: 'Baloo 2', 'Be Vietnam Pro', sans-serif; font-size: 20px; font-weight: 900; line-height: 1; color: #FFFDF5; letter-spacing: 1.5px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(78, 18, 0, 0.7); user-select: none;">HẾT GIỜ!</span>
+        <span class="game-defeat-ribbon-title" style="white-space: nowrap; font-family: 'Baloo 2', 'Be Vietnam Pro', sans-serif; font-size: 20px; font-weight: 900; line-height: 1; color: #FFFDF5; letter-spacing: 1.5px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(78, 18, 0, 0.7); user-select: none;">${i18n.t("defeat.title")}</span>
       </div>
     `;
 
@@ -2570,7 +2673,7 @@ export class GameController extends Container {
 
     const btnHome = document.createElement("button");
     btnHome.className = "defeat-btn defeat-btn-home";
-    btnHome.setAttribute("aria-label", "Home");
+    btnHome.setAttribute("aria-label", i18n.t("pause.home"));
     btnHome.style.cssText = `
       width: 68px; height: 68px; min-width: 68px; min-height: 68px; max-width: 68px; max-height: 68px;
       border-radius: 50%; border: 3.5px solid #FFFFFF; box-sizing: border-box;
@@ -2607,7 +2710,7 @@ export class GameController extends Container {
 
     const btnRetry = document.createElement("button");
     btnRetry.className = "defeat-btn defeat-btn-replay";
-    btnRetry.setAttribute("aria-label", "Replay");
+    btnRetry.setAttribute("aria-label", i18n.t("pause.replay"));
     btnRetry.style.cssText = `
       width: 68px; height: 68px; min-width: 68px; min-height: 68px; max-width: 68px; max-height: 68px;
       border-radius: 50%; border: 3.5px solid #FFFFFF; box-sizing: border-box;
@@ -2699,34 +2802,13 @@ export class GameController extends Container {
 
     const ribbon = document.createElement("div");
     ribbon.className = "game-tutorial-ribbon";
-    ribbon.innerText = "HƯỚNG DẪN CHƠI";
+    ribbon.innerText = i18n.t("tutorial.title");
     card.appendChild(ribbon);
 
-    // Top-Right Close Button (X)
+    // Top-Right Close Button
     const closeBtn = document.createElement("button");
     closeBtn.className = "game-popup-close-btn";
-    closeBtn.innerText = "✕";
-    closeBtn.style.cssText = `
-      position: absolute;
-      top: -14px; right: -14px;
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: linear-gradient(180deg, #ff5252 0%, #c62828 100%);
-      border: 3.5px solid #ffffff;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-      color: #ffffff;
-      font-size: 20px;
-      font-weight: 900;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 0.15s ease;
-      outline: none;
-      user-select: none;
-      -webkit-user-select: none;
-      z-index: 20;
-    `;
-    closeBtn.onpointerdown = () => (closeBtn.style.transform = "scale(0.9)");
-    closeBtn.onpointerup = () => (closeBtn.style.transform = "scale(1)");
+    closeBtn.setAttribute("aria-label", i18n.t("settings.close") || "Close");
     closeBtn.onclick = () => {
       audio.playClick();
       overlay.style.opacity = "0";
@@ -2741,23 +2823,23 @@ export class GameController extends Container {
     const steps = [
       {
         icon: "🃏",
-        title: "1. LẬT MỞ THẺ BÀI",
-        desc: "Chạm 2 thẻ bài bất kỳ để khám phá hình ảnh các bạn Bộ Lạc Đậu Phộng.",
+        title: i18n.t("tutorial.step1Title"),
+        desc: i18n.t("tutorial.step1Desc"),
       },
       {
         icon: "✨",
-        title: "2. GHÉP CẶP & COMBO",
-        desc: "Hai thẻ giống nhau sẽ mở vĩnh viễn và nhận điểm thưởng Combo liên tiếp!",
+        title: i18n.t("tutorial.step2Title"),
+        desc: i18n.t("tutorial.step2Desc"),
       },
       {
         icon: "🧠",
-        title: "3. TẬP TRUNG GHI NHỚ",
-        desc: "Nếu thẻ khác nhau, bài sẽ tự úp lại sau 1 giây. Hãy ghi nhớ vị trí nhé!",
+        title: i18n.t("tutorial.step3Title"),
+        desc: i18n.t("tutorial.step3Desc"),
       },
       {
         icon: "💡",
-        title: "4. TRỢ GIÚP THÔNG MINH",
-        desc: "Bấm nút bóng đèn 💡 để hé mở toàn bộ bài trong 2 giây khi bế tắc.",
+        title: i18n.t("tutorial.step4Title"),
+        desc: i18n.t("tutorial.step4Desc"),
       },
     ];
 
@@ -2777,8 +2859,8 @@ export class GameController extends Container {
 
     const okBtn = document.createElement("button");
     okBtn.className = "game-tutorial-understood-btn";
-    okBtn.setAttribute("aria-label", "Understood");
-    okBtn.innerHTML = `<span style="font-size: 22px; line-height: 1;">✓</span> <span>ĐÃ HIỂU</span>`;
+    okBtn.setAttribute("aria-label", i18n.t("tutorial.understood"));
+    okBtn.innerHTML = `<span style="font-size: 22px; line-height: 1;">✓</span> <span>${i18n.t("tutorial.understood")}</span>`;
     okBtn.onclick = () => {
       audio.playClick();
       overlay.style.opacity = "0";
@@ -4243,12 +4325,13 @@ export class GameController extends Container {
     // Ribbon Title
     const title = document.createElement("div");
     title.className = "game-popup-title";
-    title.innerText = "BẢNG VÀNG";
+    title.innerText = i18n.t("leaderboard.title");
     card.appendChild(title);
 
     // Close button
     const closeBtn = document.createElement("button");
     closeBtn.className = "game-popup-close-btn";
+    closeBtn.setAttribute("aria-label", i18n.t("settings.close") || "Close");
     closeBtn.addEventListener("click", () => {
       audio.playFlip();
       this.hideHTMLAchievements();
@@ -4261,10 +4344,10 @@ export class GameController extends Container {
     const userText = document.createElement("div");
     userText.className = `game-achievements-user-text${effUser ? " logged-in" : ""}`;
     userText.innerText = effUser
-      ? `Tài khoản: ${effUser.name} (Đã đăng nhập)`
+      ? i18n.t("leaderboard.accountSignedIn", { name: effUser.name })
       : winkGame?.isAuthenticated
-        ? "Tài khoản: Thành viên (Đã đăng nhập)"
-        : "Tài khoản: Khách (Điểm lưu thiết bị)";
+        ? i18n.t("leaderboard.memberSignedIn")
+        : i18n.t("leaderboard.guest");
     card.appendChild(userText);
 
     // Level Selector
@@ -4310,10 +4393,10 @@ export class GameController extends Container {
     const thead = document.createElement("thead");
     thead.innerHTML = `
       <tr>
-        <th>HẠNG</th>
-        <th>TÊN</th>
-        <th>ĐIỂM</th>
-        <th>LƯỢT VÀ T.GIAN</th>
+        <th>${i18n.t("leaderboard.rankHeader")}</th>
+        <th>${i18n.t("leaderboard.playerHeader")}</th>
+        <th>${i18n.t("leaderboard.scoreHeader")}</th>
+        <th>${i18n.t("leaderboard.detailsHeader")}</th>
       </tr>
     `;
     table.appendChild(thead);
@@ -4327,7 +4410,7 @@ export class GameController extends Container {
       tbody.innerHTML = "";
       if (!rows || rows.length === 0) {
         const emptyRow = document.createElement("tr");
-        emptyRow.innerHTML = `<td colspan="4" style="padding: 20px; font-style: italic;">Chưa có thành tích kỷ lục.</td>`;
+        emptyRow.innerHTML = `<td colspan="4" style="padding: 20px; font-style: italic;">${i18n.t("leaderboard.empty")}</td>`;
         tbody.appendChild(emptyRow);
         return;
       }
@@ -4348,14 +4431,14 @@ export class GameController extends Container {
 
         const detailStr =
           run.moves && run.time
-            ? `${run.moves} lượt (${run.time}s)`
+            ? `${run.moves} ${i18n.t("leaderboard.turns")} (${run.time}s)`
             : run.playTime
               ? `${run.playTime}s`
-              : "Hoàn thành";
+              : "OK";
 
         tr.innerHTML = `
           <td>${rankDisplay}</td>
-          <td>${run.playerName || run.displayName || "Thành viên"}</td>
+          <td>${run.playerName || run.displayName || (i18n.currentLang === "en" ? "Member" : "Thành viên")}</td>
           <td>${run.score}</td>
           <td>${detailStr}</td>
         `;
@@ -4431,10 +4514,10 @@ export class GameController extends Container {
     const updateFooter = (pb) => {
       const activeUser = getEffectiveUser();
       userText.innerText = activeUser
-        ? `Tài khoản: ${activeUser.name} (Đã đăng nhập)`
+        ? i18n.t("leaderboard.accountSignedIn", { name: activeUser.name })
         : winkGame?.isAuthenticated
-          ? "Tài khoản: Thành viên (Đã đăng nhập)"
-          : "Tài khoản: Khách (Điểm lưu thiết bị)";
+          ? i18n.t("leaderboard.memberSignedIn")
+          : i18n.t("leaderboard.guest");
 
       const pScore =
         pb?.score !== undefined && pb?.score !== null
@@ -4446,13 +4529,17 @@ export class GameController extends Container {
       else if (rankNum === 2) rankText = "🥈";
       else if (rankNum === 3) rankText = "🥉";
 
-      rankItem.innerText = `PB: Hạng ${rankText}`;
-      scoreItem.innerText = `Điểm: ${pScore}`;
+      const rankPrefix = i18n.currentLang === "en" ? "PB: Rank" : "PB: Hạng";
+      const scorePrefix = i18n.currentLang === "en" ? "Score" : "Điểm";
+      const timePrefix = i18n.currentLang === "en" ? "Time" : "Thời gian";
+
+      rankItem.innerText = `${rankPrefix} ${rankText}`;
+      scoreItem.innerText = `${scorePrefix}: ${pScore}`;
       timeItem.innerText = pb?.playTime
-        ? `Thời gian: ${pb.playTime}s`
+        ? `${timePrefix}: ${pb.playTime}s`
         : levelBestRun
-          ? `Thời gian: ${levelBestRun.time}s`
-          : "Thời gian: —";
+          ? `${timePrefix}: ${levelBestRun.time}s`
+          : `${timePrefix}: —`;
     };
 
     // Initial render
