@@ -12,7 +12,7 @@ import { ParticleSystem } from "./particles";
 import { audio } from "./audio";
 import { AVATAR_FILES } from "./symbols";
 import { LacBirdFlock } from "./chimlac";
-import { Button, IconBtn } from "./ui/Button";
+import { Button, IconBtn, VibrantCapsuleBtn } from "./ui/Button";
 import { winkGame } from "./integrations/wink/wink-adapter.js";
 import gsap from "gsap";
 
@@ -31,9 +31,9 @@ function gameAlert(message) {
           left: 0;
           width: 100dvw;
           height: 100dvh;
-          background: rgba(0, 0, 0, 0.65);
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
+          background: rgba(12, 5, 4, 0.75);
+          backdrop-filter: blur(10px) saturate(120%) brightness(0.85);
+          -webkit-backdrop-filter: blur(10px) saturate(120%) brightness(0.85);
           display: flex;
           justify-content: center;
           align-items: center;
@@ -135,9 +135,9 @@ function gameConfirm(message) {
           position: fixed;
           top: 0; left: 0;
           width: 100dvw; height: 100dvh;
-          background: rgba(0, 0, 0, 0.65);
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
+          background: rgba(12, 5, 4, 0.75);
+          backdrop-filter: blur(10px) saturate(120%) brightness(0.85);
+          -webkit-backdrop-filter: blur(10px) saturate(120%) brightness(0.85);
           display: flex; justify-content: center; align-items: center;
           z-index: 110000;
           opacity: 0;
@@ -268,6 +268,13 @@ let currentUser = null; // Profile of the currently signed-in Google user
 
 function getEffectiveUser() {
   if (currentUser) return currentUser;
+  if (winkGame && winkGame.personalBest?.displayName) {
+    return {
+      id: winkGame.personalBest.userId || "wink_user",
+      name: winkGame.personalBest.displayName,
+      avatar: "/assest/image/imagenobackgrd/001_avatar_laclac.webp",
+    };
+  }
   try {
     const savedUser = window.localStorage.getItem("google_user");
     if (savedUser) {
@@ -664,6 +671,66 @@ export class GameController extends Container {
     }
   }
 
+  setupAvatarParade() {
+    this.avatarParadeContainer = new Container();
+    this.mainMenuContainer.addChild(this.avatarParadeContainer);
+
+    this.avatarParadeBg = new Graphics();
+    this.avatarParadeContainer.addChild(this.avatarParadeBg);
+
+    this.avatarParadeTrack = new Container();
+    this.avatarParadeContainer.addChild(this.avatarParadeTrack);
+
+    this.avatarParadeMask = new Graphics();
+    this.avatarParadeContainer.addChild(this.avatarParadeMask);
+    this.avatarParadeTrack.mask = this.avatarParadeMask;
+
+    // Use avatars from AVATAR_FILES, repeating 3 times to allow seamless infinite scrolling across negative and positive x
+    const paradeList = AVATAR_FILES.slice(0, 16);
+    const fullList = [...paradeList, ...paradeList, ...paradeList];
+    const itemSize = 44;
+    const itemGap = 10;
+    this.avatarParadeItemStep = itemSize + itemGap;
+    this.avatarParadeLoopWidth = paradeList.length * this.avatarParadeItemStep;
+
+    fullList.forEach((file, index) => {
+      const itemContainer = new Container();
+      itemContainer.x =
+        -this.avatarParadeLoopWidth +
+        index * this.avatarParadeItemStep +
+        itemSize / 2;
+      itemContainer.y = 0;
+
+      // Golden circular frame
+      const frame = new Graphics()
+        .circle(0, 0, itemSize / 2 + 2.5)
+        .fill({ color: 0x220306, alpha: 0.9 })
+        .stroke({ width: 2, color: 0xd4af37 });
+      itemContainer.addChild(frame);
+
+      // Avatar Sprite
+      Assets.load(`/assest/image/imagebldp/${file}`)
+        .then((tex) => {
+          if (this.destroyed || itemContainer.destroyed) return;
+          const sprite = new Sprite(tex);
+          sprite.anchor.set(0.5);
+          sprite.width = itemSize;
+          sprite.height = itemSize;
+
+          const spriteMask = new Graphics()
+            .circle(0, 0, itemSize / 2)
+            .fill(0xffffff);
+          itemContainer.addChild(spriteMask);
+          sprite.mask = spriteMask;
+
+          itemContainer.addChild(sprite);
+        })
+        .catch(() => {});
+
+      this.avatarParadeTrack.addChild(itemContainer);
+    });
+  }
+
   setupUI() {
     // --- 1. MAIN MENU SCREEN ---
     this.menuTitleText = new Text({
@@ -679,7 +746,6 @@ export class GameController extends Container {
             { color: 0xaa7c11, offset: 1 },
           ],
         }),
-
         fontWeight: "bold",
         letterSpacing: 2,
       }),
@@ -688,7 +754,7 @@ export class GameController extends Container {
     this.mainMenuContainer.addChild(this.menuTitleText);
 
     this.menuSubtitleText = new Text({
-      text: "TRÒ CHƠI TRÍ NHỚ KÝ THÚ",
+      text: "TRÒ CHƠI TRÍ NHỚ KỲ THÚ",
       style: new TextStyle({
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 14,
@@ -700,35 +766,66 @@ export class GameController extends Container {
     this.menuSubtitleText.anchor.set(0.5);
     this.mainMenuContainer.addChild(this.menuSubtitleText);
 
-    this.playBtn = createPlayButton("Chơi Game", () => {
-      this.switchState("LEVEL_SELECT");
+    // Avatar Parade Scrolling Strip
+    this.setupAvatarParade();
+
+    // Vibrant Hero Play Button
+    this.playBtn = new VibrantCapsuleBtn({
+      text: "CHƠI NGAY",
+      theme: "orange",
+      iconName: "play",
+      pulse: true,
+      width: 240,
+      height: 64,
+      onClick: () => {
+        this.switchState("LEVEL_SELECT");
+      },
     });
     this.mainMenuContainer.addChild(this.playBtn);
 
-    this.achievementsBtn = createCircularButton(
-      "🏆",
+    // Bottom 3-button dock (Icon-only)
+    this.achievementsBtn = new IconBtn(
+      "trophy",
       () => {
         this.switchState("ACHIEVEMENTS");
       },
-      "red",
+      28,
+      "",
+      "yellow",
     );
-    this.mainMenuContainer.addChild(this.achievementsBtn);
 
-    this.settingsBtn = createCircularButton(
-      "⚙️",
+    this.tutorialBtn = new IconBtn(
+      "help",
+      () => {
+        this.showTutorialModal();
+      },
+      28,
+      "",
+      "purple",
+    );
+
+    this.settingsBtn = new IconBtn(
+      "gear",
       () => {
         this.showSettingsModal(false);
       },
-      "red",
+      28,
+      "",
+      "blue",
     );
-    this.mainMenuContainer.addChild(this.settingsBtn);
+
+    this.mainMenuContainer.addChild(
+      this.achievementsBtn,
+      this.tutorialBtn,
+      this.settingsBtn,
+    );
 
     // --- 2. LEVEL SELECT SCREEN ---
     this.levelSelectTitle = new Text({
       text: "CHỌN CẤP ĐỘ",
       style: new TextStyle({
-        fontFamily: '"Be Vietnam Pro", sans-serif',
-        fontSize: 28,
+        fontFamily: '"Baloo 2", "Be Vietnam Pro", sans-serif',
+        fontSize: 32,
         fill: new FillGradient({
           end: { x: 0, y: 1 },
           colorStops: [
@@ -736,28 +833,59 @@ export class GameController extends Container {
             { color: 0xd4af37, offset: 0.5 },
           ],
         }),
-
         fontWeight: "bold",
-        letterSpacing: 1.5,
+        letterSpacing: 2,
       }),
     });
     this.levelSelectTitle.anchor.set(0.5);
     this.levelSelectContainer.addChild(this.levelSelectTitle);
 
     this.levelButtons = [];
-    LEVELS.forEach((level, idx) => {
-      const btn = createMenuButton(level.name, () => {
-        this.currentLevelIndex = idx;
-        this.initGame(idx);
-        this.switchState("PLAYING");
+    const levelConfigs = [
+      {
+        name: "TẬP SỰ",
+        sub: "⏱️ 60s • 8 Cặp (4x4)",
+        theme: "green",
+      },
+      {
+        name: "THỬ THÁCH",
+        sub: "⏱️ 90s • 10 Cặp (4x5)",
+        theme: "amber",
+      },
+      {
+        name: "CAO THỦ",
+        sub: "⏱️ 150s • 18 Cặp (6x6)",
+        theme: "red",
+      },
+    ];
+
+    levelConfigs.forEach((cfg, idx) => {
+      const btn = new VibrantCapsuleBtn({
+        text: cfg.name,
+        subText: cfg.sub,
+        theme: cfg.theme,
+        iconName: "play",
+        width: 290,
+        height: 68,
+        onClick: () => {
+          this.currentLevelIndex = idx;
+          this.initGame(idx);
+          this.switchState("PLAYING");
+        },
       });
       this.levelSelectContainer.addChild(btn);
       this.levelButtons.push(btn);
     });
 
-    this.levelBackBtn = createMenuButton("↩️ QUAY LẠI", () => {
-      this.switchState("MAIN_MENU");
-    });
+    this.levelBackBtn = new IconBtn(
+      "back",
+      () => {
+        this.switchState("MAIN_MENU");
+      },
+      26,
+      "",
+      "red",
+    );
     this.levelSelectContainer.addChild(this.levelBackBtn);
 
     // --- 3. ACHIEVEMENTS SCREEN ---
@@ -1004,44 +1132,40 @@ export class GameController extends Container {
     this.gamePlayContainer.addChild(this.timerBarBg);
     this.gamePlayContainer.addChild(this.timerBarFill);
 
-    // Home, Mute and Restart Buttons
-    this.homeButton = createCircularButton("🏠", () => {
-      this.isGameOver = true; // halt gameplay loop
-      this.switchState("MAIN_MENU");
-    });
-    this.gamePlayContainer.addChild(this.homeButton);
+    // In-game Control Buttons: Hint (Ad) and Settings (Pause)
+    this.hintButton = new IconBtn(
+      "lightbulb",
+      async () => {
+        if (this.isHintActive || this.isGameOver) return;
+        const success = await AdManager.showRewardedVideo();
+        if (success) {
+          this.isHintActive = true;
+          const cardsToFlip = this.cards.filter(
+            (c) => !c.isMatched && !c.isFlipped,
+          );
+          await Promise.all(cardsToFlip.map((c) => c.flip(true)));
+          setTimeout(async () => {
+            await Promise.all(cardsToFlip.map((c) => c.flip(false)));
+            this.isHintActive = false;
+          }, 2000);
+        }
+      },
+      26,
+      "",
+      "orange",
+    );
+    this.gamePlayContainer.addChild(this.hintButton);
 
-    this.settingsBtnIngame = createCircularButton(
-      "⚙️",
+    this.settingsBtnIngame = new IconBtn(
+      "gear",
       () => {
         this.showSettingsModal(true);
       },
-      "red",
+      26,
+      "",
+      "blue",
     );
     this.gamePlayContainer.addChild(this.settingsBtnIngame);
-
-    this.restartButton = createCircularButton("🔄", () =>
-      this.initGame(this.currentLevelIndex),
-    );
-    this.gamePlayContainer.addChild(this.restartButton);
-
-    // Hint button (Rewarded Ad)
-    this.hintButton = createCircularButton("💡", async () => {
-      if (this.isHintActive) return;
-      const success = await AdManager.showRewardedVideo();
-      if (success) {
-        this.isHintActive = true;
-        const cardsToFlip = this.cards.filter(
-          (c) => !c.isMatched && !c.isFlipped,
-        );
-        await Promise.all(cardsToFlip.map((c) => c.flip(true)));
-        setTimeout(async () => {
-          await Promise.all(cardsToFlip.map((c) => c.flip(false)));
-          this.isHintActive = false;
-        }, 2000);
-      }
-    });
-    this.gamePlayContainer.addChild(this.hintButton);
   }
 
   switchState(newState) {
@@ -1541,9 +1665,15 @@ export class GameController extends Container {
     });
     cardPool.sort(() => Math.random() - 0.5);
 
-    const cardW = levelIndex === 2 ? 80 : 95;
-    const cardH = levelIndex === 2 ? 105 : 125;
-    const spacing = 12;
+    const cardW = levelIndex === 2 ? 74 : levelIndex === 1 ? 84 : 94;
+    const cardH = Math.round(cardW * 1.3);
+    const spacing = levelIndex === 2 ? 8 : 10;
+
+    this.gridCardW = cardW;
+    this.gridCardH = cardH;
+    this.gridSpacing = spacing;
+    this.unscaledGridW = config.cols * cardW + (config.cols - 1) * spacing;
+    this.unscaledGridH = config.rows * cardH + (config.rows - 1) * spacing;
 
     cardPool.forEach((item, index) => {
       const col = index % config.cols;
@@ -1588,19 +1718,34 @@ export class GameController extends Container {
         this.score += matchPoints;
         this.scoreVal.text = String(this.score).padStart(4, "0");
 
+        // Spawn dynamic floating Combo Badge
+        const midX =
+          ((c1.x + c2.x) / 2) * this.gridContainer.scale.x +
+          this.gridContainer.x;
+        const midY =
+          Math.min(c1.y, c2.y) * this.gridContainer.scale.y +
+          this.gridContainer.y -
+          20;
+
+        let comboText = `+${matchPoints} ✨`;
+        if (this.combo === 2) comboText = `COMBO X2! 🔥 +${matchPoints}`;
+        else if (this.combo === 3) comboText = `TUYỆT VỜI! ⚡ +${matchPoints}`;
+        else if (this.combo >= 4) comboText = `SIÊU ĐỈNH! 🌟 +${matchPoints}`;
+        this.showComboToast(comboText, midX, midY);
+
         setTimeout(() => {
           this.particles.spawnBurst(
-            c1.x + this.gridContainer.x,
-            c1.y + this.gridContainer.y,
-            25,
+            c1.x * this.gridContainer.scale.x + this.gridContainer.x,
+            c1.y * this.gridContainer.scale.y + this.gridContainer.y,
+            26,
           );
           this.particles.spawnBurst(
-            c2.x + this.gridContainer.x,
-            c2.y + this.gridContainer.y,
-            25,
+            c2.x * this.gridContainer.scale.x + this.gridContainer.x,
+            c2.y * this.gridContainer.scale.y + this.gridContainer.y,
+            26,
           );
-          audio.playMatch();
-        }, 300);
+          audio.playMatch(this.combo);
+        }, 220);
 
         this.selectedCards = [];
 
@@ -1614,9 +1759,59 @@ export class GameController extends Container {
           audio.playFail();
           await Promise.all([c1.flip(false), c2.flip(false)]);
           this.selectedCards = [];
-        }, 900);
+        }, 850);
       }
     }
+  }
+
+  showComboToast(text, x, y) {
+    const toast = new Text({
+      text: text,
+      style: new TextStyle({
+        fontFamily: "'Baloo 2', 'Be Vietnam Pro', sans-serif",
+        fontSize: 24,
+        fill: new FillGradient({
+          start: { x: 0, y: 0 },
+          end: { x: 0, y: 24 },
+          colorStops: [
+            { offset: 0, color: 0xffea00 },
+            { offset: 0.5, color: 0xff9100 },
+            { offset: 1, color: 0xff3d00 },
+          ],
+        }),
+        fontWeight: "900",
+        stroke: { color: "#3e0a0a", width: 4.5, join: "round" },
+        dropShadow: { color: "#000000", alpha: 0.7, distance: 3, blur: 4 },
+      }),
+    });
+    toast.anchor.set(0.5);
+    toast.position.set(x, y);
+    toast.scale.set(0.3);
+    toast.alpha = 1;
+    this.gamePlayContainer.addChild(toast);
+
+    gsap
+      .timeline({
+        onComplete: () => {
+          if (toast && !toast.destroyed) {
+            toast.destroy({ children: true });
+          }
+        },
+      })
+      .to(toast.scale, {
+        x: 1.15,
+        y: 1.15,
+        duration: 0.18,
+        ease: "back.out(2)",
+      })
+      .to(toast.scale, { x: 1.0, y: 1.0, duration: 0.12 })
+      .to(toast, {
+        y: y - 55,
+        alpha: 0,
+        duration: 0.55,
+        delay: 0.25,
+        ease: "power2.in",
+      });
   }
 
   triggerVictory() {
@@ -1726,7 +1921,7 @@ export class GameController extends Container {
     const overlay = document.createElement("div");
     overlay.id = "game-victory-overlay-id";
     overlay.style.cssText =
-      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:Be Vietnam Pro, sans-serif;overflow:hidden;";
+      "position:fixed;top:0;left:0;width:100dvw;height:100dvh;background:rgba(12,5,4,0.75);backdrop-filter:blur(10px) saturate(120%) brightness(0.85);-webkit-backdrop-filter:blur(10px) saturate(120%) brightness(0.85);display:flex;align-items:center;justify-content:center;z-index:100000;font-family:Be Vietnam Pro, sans-serif;overflow:hidden;opacity:0;transition:opacity 0.3s ease;";
 
     // Dynamic scaling based on screen size (mimicking Canvas overlayScale)
     const cw = window.innerWidth;
@@ -2046,6 +2241,7 @@ export class GameController extends Container {
 
     // Entrance animation
     requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
       card.style.opacity = "1";
       card.style.transform = "translateY(0)";
     });
@@ -2058,27 +2254,22 @@ export class GameController extends Container {
     const overlay = document.createElement("div");
     overlay.id = "game-revive-overlay-id";
     overlay.style.cssText =
-      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
+      "position:fixed;top:0;left:0;width:100dvw;height:100dvh;background:rgba(12,5,4,0.75);backdrop-filter:blur(10px) saturate(120%) brightness(0.85);-webkit-backdrop-filter:blur(10px) saturate(120%) brightness(0.85);display:flex;align-items:center;justify-content:center;z-index:100000;opacity:0;transition:opacity 0.3s ease;";
 
     const card = document.createElement("div");
     card.style.cssText =
-      "background:#FFF3E0;border:6px solid #F57C00;border-radius:24px;width:350px;padding:30px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #FFCC80, 0 15px 30px rgba(0,0,0,0.5);";
-
-    const title = document.createElement("div");
-    title.innerText = "HỒI SINH";
-    title.style.cssText =
-      "font-size:32px;font-weight:900;color:#F57C00;text-shadow: 0 1px 0 rgba(255,255,255,0.8);margin-bottom:20px;font-family:Be Vietnam Pro, sans-serif;text-align:center;text-transform:uppercase;";
+      "background:linear-gradient(180deg, #FFFDF7 0%, #FFF3E0 50%, #FFE0B2 100%);border:5px solid #F57C00;border-radius:28px;width:350px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 3px #FFE082, 0 8px 0 #8a0000, 0 20px 40px rgba(0,0,0,0.55);position:relative;transform:scale(0.85);transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.3s ease;";
 
     const heartIcon = document.createElement("div");
     heartIcon.innerText = "💖";
     heartIcon.style.cssText =
-      "font-size:110px;line-height:1;margin-bottom:20px;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,100,150,0.6);";
+      "font-size:96px;line-height:1;margin:10px 0 16px 0;text-shadow:0 10px 20px rgba(0,0,0,0.2), 0 0 30px rgba(255,100,150,0.6);";
     heartIcon.animate(
       [
         { transform: "scale(1)" },
-        { transform: "scale(1.2)" },
+        { transform: "scale(1.18)" },
         { transform: "scale(1)" },
-        { transform: "scale(1.2)" },
+        { transform: "scale(1.18)" },
         { transform: "scale(1)" },
       ],
       { duration: 1200, iterations: Infinity, easing: "ease-in-out" },
@@ -2086,35 +2277,62 @@ export class GameController extends Container {
 
     const yesBtn = document.createElement("button");
     yesBtn.style.cssText =
-      "background:linear-gradient(to bottom, #FFCC80, #FFB74D);border:none;border-radius:12px;padding:10px 60px;color:white;font-size:26px;font-weight:900;font-family:Be Vietnam Pro, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #F57C00, 0 8px 10px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;text-transform:uppercase;";
+      "background:linear-gradient(180deg, #66BB6A 0%, #388E3C 100%);border:3px solid #ffffff;border-radius:24px;padding:10px 36px;color:white;font-size:24px;font-weight:900;font-family:Be Vietnam Pro, sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 #1b5e20, 0 8px 15px rgba(0,0,0,0.3);transition:transform 0.1s, box-shadow 0.1s;gap:10px;";
 
     const tvIcon = document.createElement("img");
     tvIcon.src = "/assest/iconbtn/images.webp";
-    tvIcon.style.cssText = "height:30px;width:auto;margin-right:15px;";
+    tvIcon.style.cssText = "height:28px;width:auto;";
 
     const yesText = document.createElement("span");
-    yesText.innerText = "CÓ";
-    yesText.style.textShadow = "0 2px 4px rgba(0,0,0,0.3)";
+    yesText.innerText = "+30s";
+    yesText.style.textShadow = "0 2px 4px rgba(0,0,0,0.4)";
 
     yesBtn.appendChild(tvIcon);
     yesBtn.appendChild(yesText);
 
-    const skipText = document.createElement("div");
-    skipText.innerText = "Không, cảm ơn";
-    skipText.style.cssText =
-      "margin-top:15px;font-family:Be Vietnam Pro, sans-serif;font-size:16px;color:#888;text-decoration:underline;cursor:pointer;font-weight:bold;";
+    // Subtle "Không, cảm ơn" skip text underneath
+    const skipBtn = document.createElement("button");
+    skipBtn.innerText = "Không, cảm ơn";
+    skipBtn.style.cssText = `
+      margin-top: 14px;
+      background: none;
+      border: none;
+      font-family: 'Be Vietnam Pro', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #8D6E63;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 6px 14px;
+      opacity: 0.85;
+      transition: opacity 0.15s ease, color 0.15s ease, transform 0.1s ease;
+      outline: none;
+    `;
+    skipBtn.onmouseenter = () => {
+      skipBtn.style.opacity = "1";
+      skipBtn.style.color = "#4E342E";
+    };
+    skipBtn.onmouseleave = () => {
+      skipBtn.style.opacity = "0.85";
+      skipBtn.style.color = "#8D6E63";
+    };
+    skipBtn.onpointerdown = () => {
+      skipBtn.style.transform = "scale(0.95)";
+    };
+    skipBtn.onpointerup = () => {
+      skipBtn.style.transform = "scale(1)";
+    };
 
-    card.appendChild(title);
     card.appendChild(heartIcon);
     card.appendChild(yesBtn);
-    card.appendChild(skipText);
+    card.appendChild(skipBtn);
     overlay.appendChild(card);
     document.body.appendChild(overlay);
 
     const cleanup = () => {
       overlay.style.opacity = "0";
       card.style.transform = "scale(0.85)";
-      setTimeout(() => overlay.remove(), 250);
+      overlay.remove();
     };
 
     let isHandlingClick = false;
@@ -2125,7 +2343,7 @@ export class GameController extends Container {
       onRevive();
     });
 
-    skipText.addEventListener("click", () => {
+    skipBtn.addEventListener("click", () => {
       if (isHandlingClick) return;
       isHandlingClick = true;
       cleanup();
@@ -2205,52 +2423,220 @@ export class GameController extends Container {
 
     const overlay = document.createElement("div");
     overlay.id = "game-defeat-overlay-id";
-    overlay.style.cssText =
-      "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
+    overlay.className = "game-defeat-overlay";
+
+    // Dynamic scaling based on screen size
+    const cw = window.innerWidth;
+    const ch = window.innerHeight;
+    const overlayScale = Math.min(1.2, cw / 400, ch / 650);
 
     const card = document.createElement("div");
-    card.style.cssText =
-      "background:#FFF3E0;border:6px solid #F57C00;border-radius:24px;width:340px;padding:50px 20px 40px 20px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 0 0 2.5px #FFB74D, 0 15px 30px rgba(0,0,0,0.5);position:relative;";
+    card.className = "game-defeat-card";
+    card.style.zoom = overlayScale;
 
-    const ribbon = document.createElement("div");
-    ribbon.innerText = "HẾT GIỜ";
-    ribbon.style.cssText =
-      "position:absolute;top:-25px;left:50%;transform:translateX(-50%);background:linear-gradient(to bottom, #FFF9C4, #FFB74D);color:#F57C00;font-family:Be Vietnam Pro, sans-serif;font-size:26px;font-weight:900;padding:5px 40px;border-radius:25px;border:3px solid #ffffff;box-shadow:0 6px 0 #F57C00, 0 8px 10px rgba(0,0,0,0.3);white-space:nowrap;letter-spacing:2px;text-shadow:0 1px 2px rgba(255,255,255,0.8);";
+    // Corner Bronze Studs
+    const cornerTL = document.createElement("span");
+    cornerTL.className = "defeat-corner corner-tl";
+    cornerTL.innerText = "✦";
+    const cornerTR = document.createElement("span");
+    cornerTR.className = "defeat-corner corner-tr";
+    cornerTR.innerText = "✦";
+    const cornerBL = document.createElement("span");
+    cornerBL.className = "defeat-corner corner-bl";
+    cornerBL.innerText = "✦";
+    const cornerBR = document.createElement("span");
+    cornerBR.className = "defeat-corner corner-br";
+    cornerBR.innerText = "✦";
 
-    const descText = document.createElement("div");
-    descText.innerText = "Hãy thử sức lại nhé!";
-    descText.style.cssText =
-      "font-family:Be Vietnam Pro, sans-serif;font-size:24px;color:#5D4037;text-align:center;line-height:1.6;font-weight:bold;margin-top:10px;margin-bottom:40px;white-space:pre-line;";
+    // 3D Header Ribbon with Wings and 3D Clock Badge (Universal, 0 text)
+    const ribbonWrap = document.createElement("div");
+    ribbonWrap.className = "game-defeat-ribbon-wrap";
+    ribbonWrap.innerHTML = `
+      <div class="game-defeat-ribbon-wing wing-left"></div>
+      <div class="game-defeat-ribbon-wing wing-right"></div>
+      <div class="game-defeat-ribbon-body" style="white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 24px;">
+        <span class="ribbon-clock-ico" style="font-size: 24px; line-height: 1;">⏱️</span>
+        <span class="game-defeat-ribbon-title" style="white-space: nowrap; font-family: 'Baloo 2', 'Be Vietnam Pro', sans-serif; font-size: 20px; font-weight: 900; line-height: 1; color: #FFFDF5; letter-spacing: 1.5px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(78, 18, 0, 0.7); user-select: none;">HẾT GIỜ!</span>
+      </div>
+    `;
 
+    // 3D Beveled 5-Pointed Golden Star Generator
+    const R_star = 33;
+    const r_star = 13.5;
+    let starFacetsLight = "";
+    let starFacetsDark = "";
+    for (let k = 0; k < 5; k++) {
+      const aTip = (k * 2 * Math.PI) / 5 - Math.PI / 2;
+      const aLeft = aTip - Math.PI / 5;
+      const aRight = aTip + Math.PI / 5;
+      const xTip = (Math.cos(aTip) * R_star).toFixed(2);
+      const yTip = (Math.sin(aTip) * R_star).toFixed(2);
+      const xLeft = (Math.cos(aLeft) * r_star).toFixed(2);
+      const yLeft = (Math.sin(aLeft) * r_star).toFixed(2);
+      const xRight = (Math.cos(aRight) * r_star).toFixed(2);
+      const yRight = (Math.sin(aRight) * r_star).toFixed(2);
+
+      starFacetsLight += `<polygon points="0,0 ${xTip},${yTip} ${xLeft},${yLeft}" fill="url(#starLightGrad)" stroke="#FFE082" stroke-width="0.6"/>`;
+      starFacetsDark += `<polygon points="0,0 ${xTip},${yTip} ${xRight},${yRight}" fill="url(#starDarkGrad)" stroke="#FFB74D" stroke-width="0.6"/>`;
+    }
+
+    const lacBirdPath = `
+      <path d="M 35 -4 L 10 -2 Q 12 -7 8 -8 Q -2 -16 -20 -14 Q -22 -13 -20 -12 Q -4 -10 4 -5 Q -4 2 -12 8 Q -25 14 -40 10 Q -55 15 -68 22 Q -54 11 -44 5 Q -58 12 -70 14 Q -48 5 -38 2 L -32 -3 Q -18 -4 -4 -3 L 10 -4.5 Z" fill="rgba(255,183,77,0.25)" stroke="#FFB74D" stroke-width="1.5" />
+      <path d="M -22 0 C -15 -20 -5 -36 10 -45 C -2 -30 -8 -18 -12 -10 Q -16 -18 -20 0 Z" fill="rgba(255,183,77,0.3)" stroke="#FFB74D" stroke-width="1.5" />
+      <path d="M 0 -20 L 4 -32 M -4 -16 L -1 -26 M -8 -12 L -5 -20 M -12 -8 L -9 -14" stroke="#FFB74D" stroke-width="1.2" />
+      <path d="M -24 5 C -30 16 -36 26 -42 30 Q -32 18 -27 10 Q -29 12 -24 5 Z" fill="rgba(255,183,77,0.3)" stroke="#FFB74D" stroke-width="1.2" />
+      <circle cx="7" cy="-5" r="2.2" fill="#FFCC80" stroke="#3e2723" stroke-width="0.8" />
+      <circle cx="7" cy="-5" r="0.8" fill="#000000" />
+      <circle cx="-18" cy="5" r="2.8" fill="none" stroke="#FFB74D" stroke-width="1.0" />
+      <circle cx="-18" cy="5" r="1.2" fill="#FFCC80" />
+    `;
+
+    const svgDrumBadge = `
+      <svg width="250" height="135" viewBox="-125 -67.5 250 135">
+        <defs>
+          <radialGradient id="defeatDrumGrad" cx="0.5" cy="0.5" r="0.5" fx="0.25" fy="0.25">
+            <stop offset="0%" stop-color="#FFE082" />
+            <stop offset="45%" stop-color="#FFB74D" />
+            <stop offset="85%" stop-color="#FB8C00" />
+            <stop offset="100%" stop-color="#D84315" />
+          </radialGradient>
+          <linearGradient id="starLightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FFFDE7" />
+            <stop offset="50%" stop-color="#FFEE58" />
+            <stop offset="100%" stop-color="#FDD835" />
+          </linearGradient>
+          <linearGradient id="starDarkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FBC02D" />
+            <stop offset="60%" stop-color="#F57F17" />
+            <stop offset="100%" stop-color="#E65100" />
+          </linearGradient>
+          <filter id="starShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#4E1200" flood-opacity="0.6"/>
+          </filter>
+        </defs>
+        <!-- Left Lac Bird -->
+        <g transform="translate(-76, 2) scale(-1.15, 1.15)">${lacBirdPath}</g>
+        <!-- Right Lac Bird -->
+        <g transform="translate(76, 2) scale(1.15, 1.15)">${lacBirdPath}</g>
+        <!-- Rotating Drum Medallion -->
+        <g>
+          <circle cx="0" cy="0" r="54" fill="url(#defeatDrumGrad)" stroke="#FFE082" stroke-width="2.6"/>
+          <circle cx="0" cy="0" r="46" fill="none" stroke="rgba(255,248,225,0.75)" stroke-width="1.2" stroke-dasharray="3,3"/>
+          <circle cx="0" cy="0" r="38" fill="none" stroke="rgba(255,183,77,0.85)" stroke-width="1.2"/>
+          <circle cx="0" cy="0" r="28" fill="none" stroke="rgba(255,248,225,0.6)" stroke-width="1.0"/>
+          <circle cx="0" cy="0" r="18" fill="none" stroke="rgba(255,183,77,0.8)" stroke-width="0.8"/>
+          <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="20s" repeatCount="indefinite"/>
+        </g>
+        <!-- 3D 5-Pointed Star Centered in Medallion -->
+        <g filter="url(#starShadow)">
+          ${starFacetsLight}
+          ${starFacetsDark}
+          <circle cx="0" cy="0" r="3.2" fill="#FFFDE7" />
+        </g>
+      </svg>
+    `;
+
+    // Hero Stage: Rotating Drum with 3D 5-Pointed Star
+    const heroStage = document.createElement("div");
+    heroStage.className = "game-defeat-stage";
+    heroStage.innerHTML = svgDrumBadge;
+
+    // 100% Icon-driven Carved Inset Stats Plaque (Pairs, Moves, Score - Zero text labels!)
+    const config = LEVELS[this.currentLevelIndex];
+    const statsPlaque = document.createElement("div");
+    statsPlaque.className = "game-defeat-stats-plaque";
+    statsPlaque.innerHTML = `
+      <div class="stat-col">
+        <span class="stat-ico">🎴</span>
+        <span class="stat-val stat-pairs">${this.matches}/${config.pairs}</span>
+      </div>
+      <div class="stat-vdiv"></div>
+      <div class="stat-col">
+        <span class="stat-ico">👣</span>
+        <span class="stat-val stat-moves">${this.moves}</span>
+      </div>
+      <div class="stat-vdiv"></div>
+      <div class="stat-col">
+        <span class="stat-ico">⭐</span>
+        <span class="stat-val stat-score">${this.score}</span>
+      </div>
+    `;
+
+    // Action buttons (Pure 3D Tactile SVG Buttons: Blue Home & Radiant Golden Replay - Strictly Equal 68px)
     const btnContainer = document.createElement("div");
+    btnContainer.className = "game-defeat-actions";
     btnContainer.style.cssText =
-      "display:flex;gap:50px;justify-content:center;align-items:center;";
+      "display: flex; gap: 28px; justify-content: center; align-items: center; width: 100%;";
 
-    const createBtn = (iconUrl, onClick) => {
-      const btn = document.createElement("button");
-      btn.style.cssText = `width:72px;height:72px;border:none;background:url('${iconUrl}') no-repeat center center;background-size:contain;background-color:transparent;cursor:pointer;transition:transform 0.1s;outline:none;display:flex;align-items:center;justify-content:center;`;
-      btn.onpointerdown = () => {
-        btn.style.transform = "scale(0.92)";
-      };
-      btn.onpointerup = () => {
-        btn.style.transform = "scale(1)";
-      };
-      btn.onpointerleave = btn.onpointerup;
-      btn.addEventListener("click", () => {
-        audio.playFlip();
-        onClick();
-      });
-      return btn;
+    const btnHome = document.createElement("button");
+    btnHome.className = "defeat-btn defeat-btn-home";
+    btnHome.setAttribute("aria-label", "Home");
+    btnHome.style.cssText = `
+      width: 68px; height: 68px; min-width: 68px; min-height: 68px; max-width: 68px; max-height: 68px;
+      border-radius: 50%; border: 3.5px solid #FFFFFF; box-sizing: border-box;
+      background: linear-gradient(180deg, #42A5F5 0%, #1E88E5 50%, #1565C0 100%);
+      box-shadow: 0 6px 0 #0D47A1, 0 10px 18px rgba(0, 0, 0, 0.35);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      outline: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
+      user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+    `;
+    btnHome.innerHTML = `
+      <svg viewBox="0 0 24 24" width="34" height="34" style="pointer-events: none;">
+        <path fill="#ffffff" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+      </svg>
+    `;
+    btnHome.onpointerdown = () => {
+      btnHome.style.transform = "scale(0.92) translateY(4px)";
+      btnHome.style.boxShadow =
+        "0 2px 0 #0D47A1, 0 4px 8px rgba(0, 0, 0, 0.25)";
     };
-
-    const btnHome = createBtn(getIconBtnDataUrl("home", "blue"), () => {
-      overlay.remove();
-      this.switchState("MAIN_MENU");
+    btnHome.onpointerup = () => {
+      btnHome.style.transform = "scale(1)";
+      btnHome.style.boxShadow =
+        "0 6px 0 #0D47A1, 0 10px 18px rgba(0, 0, 0, 0.35)";
+    };
+    btnHome.addEventListener("click", () => {
+      audio.playFlip();
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => {
+        overlay.remove();
+        this.switchState("MAIN_MENU");
+      }, 250);
     });
 
-    const btnRetry = createBtn(
-      getIconBtnDataUrl("replay", "yellow"),
-      async () => {
+    const btnRetry = document.createElement("button");
+    btnRetry.className = "defeat-btn defeat-btn-replay";
+    btnRetry.setAttribute("aria-label", "Replay");
+    btnRetry.style.cssText = `
+      width: 68px; height: 68px; min-width: 68px; min-height: 68px; max-width: 68px; max-height: 68px;
+      border-radius: 50%; border: 3.5px solid #FFFFFF; box-sizing: border-box;
+      background: linear-gradient(180deg, #FFA726 0%, #FB8C00 50%, #E65100 100%);
+      box-shadow: 0 6px 0 #BF360C, 0 10px 18px rgba(245, 124, 0, 0.35);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      outline: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
+      user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+    `;
+    btnRetry.innerHTML = `
+      <svg viewBox="0 0 24 24" width="34" height="34" style="pointer-events: none;">
+        <path fill="#ffffff" d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8zm-6 8c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.78 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91z"/>
+      </svg>
+    `;
+    btnRetry.onpointerdown = () => {
+      btnRetry.style.transform = "scale(0.92) translateY(4px)";
+      btnRetry.style.boxShadow =
+        "0 2px 0 #BF360C, 0 4px 8px rgba(245, 124, 0, 0.25)";
+    };
+    btnRetry.onpointerup = () => {
+      btnRetry.style.transform = "scale(1)";
+      btnRetry.style.boxShadow =
+        "0 6px 0 #BF360C, 0 10px 18px rgba(245, 124, 0, 0.35)";
+    };
+    btnRetry.addEventListener("click", async () => {
+      audio.playFlip();
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(async () => {
         overlay.remove();
         this.defeatCount = (this.defeatCount || 0) + 1;
         if (this.defeatCount >= 3) {
@@ -2258,25 +2644,157 @@ export class GameController extends Container {
           await AdManager.showInterstitial();
         }
         this.initGame(this.currentLevelIndex);
-      },
-      "#ffca28",
-      "#ff8f00",
-      "#ffffff",
-    );
+      }, 250);
+    });
 
     btnContainer.appendChild(btnHome);
     btnContainer.appendChild(btnRetry);
 
-    card.appendChild(ribbon);
-    card.appendChild(descText);
+    // Assemble Card
+    card.appendChild(cornerTL);
+    card.appendChild(cornerTR);
+    card.appendChild(cornerBL);
+    card.appendChild(cornerBR);
+    card.appendChild(ribbonWrap);
+    card.appendChild(heroStage);
+    card.appendChild(statsPlaque);
     card.appendChild(btnContainer);
     overlay.appendChild(card);
-    document.body.appendChild(overlay);
+
+    const appContainer = document.getElementById("app") || document.body;
+    appContainer.appendChild(overlay);
+
+    const handleResize = () => {
+      const curW = window.innerWidth;
+      const curH = window.innerHeight;
+      const scale = Math.min(1.2, curW / 400, curH / 650);
+      card.style.zoom = scale;
+    };
+    window.addEventListener("resize", handleResize);
+
+    const originalRemove = overlay.remove.bind(overlay);
+    overlay.remove = () => {
+      window.removeEventListener("resize", handleResize);
+      originalRemove();
+    };
+
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.transform = "scale(1)";
+      card.style.opacity = "1";
+    });
+  }
+
+  showTutorialModal() {
+    audio.playClick();
+    const existing = document.getElementById("game-tutorial-overlay-id");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "game-tutorial-overlay-id";
+    overlay.className = "game-tutorial-overlay";
+
+    const card = document.createElement("div");
+    card.className = "game-tutorial-card";
+
+    const ribbon = document.createElement("div");
+    ribbon.className = "game-tutorial-ribbon";
+    ribbon.innerText = "HƯỚNG DẪN CHƠI";
+    card.appendChild(ribbon);
+
+    // Top-Right Close Button (X)
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "game-popup-close-btn";
+    closeBtn.innerText = "✕";
+    closeBtn.style.cssText = `
+      position: absolute;
+      top: -14px; right: -14px;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ff5252 0%, #c62828 100%);
+      border: 3.5px solid #ffffff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.15s ease;
+      outline: none;
+      user-select: none;
+      -webkit-user-select: none;
+      z-index: 20;
+    `;
+    closeBtn.onpointerdown = () => (closeBtn.style.transform = "scale(0.9)");
+    closeBtn.onpointerup = () => (closeBtn.style.transform = "scale(1)");
+    closeBtn.onclick = () => {
+      audio.playClick();
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => overlay.remove(), 250);
+    };
+    card.appendChild(closeBtn);
+
+    const stepsContainer = document.createElement("div");
+    stepsContainer.className = "game-tutorial-steps-container";
+
+    const steps = [
+      {
+        icon: "🃏",
+        title: "1. LẬT MỞ THẺ BÀI",
+        desc: "Chạm 2 thẻ bài bất kỳ để khám phá hình ảnh các bạn Bộ Lạc Đậu Phộng.",
+      },
+      {
+        icon: "✨",
+        title: "2. GHÉP CẶP & COMBO",
+        desc: "Hai thẻ giống nhau sẽ mở vĩnh viễn và nhận điểm thưởng Combo liên tiếp!",
+      },
+      {
+        icon: "🧠",
+        title: "3. TẬP TRUNG GHI NHỚ",
+        desc: "Nếu thẻ khác nhau, bài sẽ tự úp lại sau 1 giây. Hãy ghi nhớ vị trí nhé!",
+      },
+      {
+        icon: "💡",
+        title: "4. TRỢ GIÚP THÔNG MINH",
+        desc: "Bấm nút bóng đèn 💡 để hé mở toàn bộ bài trong 2 giây khi bế tắc.",
+      },
+    ];
+
+    steps.forEach((s) => {
+      const stepDiv = document.createElement("div");
+      stepDiv.className = "game-tutorial-step";
+      stepDiv.innerHTML = `
+        <div class="game-tutorial-step-icon">${s.icon}</div>
+        <div class="game-tutorial-step-content">
+          <div class="game-tutorial-step-title">${s.title}</div>
+          <div class="game-tutorial-step-desc">${s.desc}</div>
+        </div>
+      `;
+      stepsContainer.appendChild(stepDiv);
+    });
+    card.appendChild(stepsContainer);
+
+    const okBtn = document.createElement("button");
+    okBtn.className = "game-tutorial-understood-btn";
+    okBtn.setAttribute("aria-label", "Understood");
+    okBtn.innerHTML = `<span style="font-size: 22px; line-height: 1;">✓</span> <span>ĐÃ HIỂU</span>`;
+    okBtn.onclick = () => {
+      audio.playClick();
+      overlay.style.opacity = "0";
+      card.style.transform = "scale(0.85)";
+      setTimeout(() => overlay.remove(), 250);
+    };
+    card.appendChild(okBtn);
+
+    overlay.appendChild(card);
+    const container = document.getElementById("app") || document.body;
+    container.appendChild(overlay);
 
     const handleResize = () => {
       const cw = window.innerWidth;
       const ch = window.innerHeight;
-      const scale = Math.min(1.0, cw / 400, ch / 400);
+      const scale = Math.min(1.0, cw / 460, ch / 680);
       card.style.zoom = scale;
     };
     window.addEventListener("resize", handleResize);
@@ -2288,14 +2806,10 @@ export class GameController extends Container {
       originalRemove();
     };
 
-    card.animate(
-      [
-        { transform: "scale(0.5)", opacity: 0 },
-        { transform: "scale(1.05)", opacity: 1 },
-        { transform: "scale(1)", opacity: 1 },
-      ],
-      { duration: 400, easing: "ease-out", fill: "forwards" },
-    );
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+      card.style.transform = "scale(1)";
+    });
   }
 
   updateStatsUI() {
@@ -2309,24 +2823,73 @@ export class GameController extends Container {
     const config = LEVELS[this.currentLevelIndex];
     const fillRatio = Math.max(0, this.timeRemaining / config.maxTime);
     this.drawTimerBar(fillRatio);
+
+    // Dynamic urgency styling
+    if (this.timeRemaining <= 15) {
+      const pulse = 1 + Math.sin(Date.now() * 0.008) * 0.08;
+      this.timeVal.scale.set(pulse);
+      this.timeVal.style.fill = 0xff1744;
+      this.timeLabel.style.fill = 0xff5252;
+    } else {
+      this.timeVal.scale.set(1);
+      if (this.timeRemaining <= 30) {
+        this.timeVal.style.fill = 0xff9800;
+        this.timeLabel.style.fill = 0xffb74d;
+      } else {
+        this.timeVal.style.fill = 0xffea00;
+        this.timeLabel.style.fill = 0xffecb3;
+      }
+    }
   }
 
   drawTimerBar(fillRatio) {
-    const w = Math.min(this.app.screen.width * 0.8, 400);
-    const h = 6;
+    const sw = this.app.screen.width;
+    const w = this.timerBarWidth || Math.min(sw * 0.88, 380);
+    const h = 8;
 
-    this.timerBarBg.clear().roundRect(0, 0, w, h, 3).fill({ color: 0x360207 });
+    this.timerBarBg
+      .clear()
+      .roundRect(0, 0, w, h, 4)
+      .fill({ color: 0x1b0103, alpha: 0.75 })
+      .stroke({ width: 1.5, color: 0xd4af37, alpha: 0.4 });
 
     this.timerBarFill.clear();
     if (fillRatio > 0) {
-      const color = fillRatio < 0.25 ? 0xd32f2f : 0xffea00;
-      this.timerBarFill.roundRect(0, 0, w * fillRatio, h, 3).fill(color);
+      const fillW = Math.max(8, w * fillRatio);
+      const isUrgent = fillRatio < 0.25;
+      const color1 = isUrgent ? 0xff1744 : 0xffea00;
+      const color2 = isUrgent ? 0xb71c1c : 0xf57c00;
+
+      const barGrad = new FillGradient({
+        start: { x: 0, y: 0 },
+        end: { x: fillW, y: 0 },
+        colorStops: [
+          { offset: 0, color: color1 },
+          { offset: 1, color: color2 },
+        ],
+      });
+
+      this.timerBarFill.roundRect(0, 0, fillW, h, 4).fill(barGrad);
+
+      // Glowing tip
+      this.timerBarFill
+        .circle(fillW - 2, h / 2, 4)
+        .fill({ color: 0xffffff, alpha: 0.9 });
     }
   }
 
   update(ticker) {
     this.particles.update(ticker);
     this.cards.forEach((c) => c.update(ticker));
+
+    // Update Avatar Parade scrolling in Main Menu
+    if (this.avatarParadeTrack && this.gameState === "MAIN_MENU") {
+      this.avatarParadeTrack.x -= 0.65 * ticker.deltaTime;
+      const wrapThreshold = -(this.avatarParadeLoopWidth || 864);
+      if (this.avatarParadeTrack.x <= wrapThreshold) {
+        this.avatarParadeTrack.x += -wrapThreshold;
+      }
+    }
 
     // Update Lạc Bird Flock background animations
     if (this.flock) {
@@ -2464,75 +3027,82 @@ export class GameController extends Container {
       });
     }
 
-    // Redraw and position swaying lanterns
+    // Redraw and position swaying lanterns (Visible in menus only, hidden during gameplay)
     if (this.lanterns && this.lanterns.length === 4) {
-      const redrawSwayingLantern = (graphics, targetY, width, height) => {
-        graphics.clear();
-        const rx = width / 2;
-        const ry = height / 2;
+      const isIngame = this.gameState === "PLAYING";
+      this.lanterns.forEach((l) => (l.visible = !isIngame));
+      if (!isIngame) {
+        const redrawSwayingLantern = (graphics, targetY, width, height) => {
+          graphics.clear();
+          const rx = width / 2;
+          const ry = height / 2;
 
-        // Hanging string from (0, 0)
-        graphics
-          .moveTo(0, 0)
-          .lineTo(0, targetY - ry)
-          .stroke({ width: 1, color: 0xd4af37, alpha: 0.5 });
+          // Hanging string from (0, 0)
+          graphics
+            .moveTo(0, 0)
+            .lineTo(0, targetY - ry)
+            .stroke({ width: 1, color: 0xd4af37, alpha: 0.5 });
 
-        // Top cap
-        graphics
-          .roundRect(-rx * 0.4, targetY - ry - 2, rx * 0.8, 4, 1)
-          .fill(0xd4af37);
+          // Top cap
+          graphics
+            .roundRect(-rx * 0.4, targetY - ry - 2, rx * 0.8, 4, 1)
+            .fill(0xd4af37);
 
-        // Lantern body
-        const bodyGrad = new FillGradient({
-          start: { x: -rx, y: targetY },
-          end: { x: rx, y: targetY },
-          colorStops: [
-            { offset: 0, color: 0xd32f2f },
-            { offset: 0.5, color: 0xff1744 },
-            { offset: 1, color: 0xb71c1c },
-          ],
-        });
-        graphics
-          .ellipse(0, targetY, rx, ry)
-          .fill(bodyGrad)
-          .stroke({ width: 1.5, color: 0xd4af37 });
+          // Lantern body
+          const bodyGrad = new FillGradient({
+            start: { x: -rx, y: targetY },
+            end: { x: rx, y: targetY },
+            colorStops: [
+              { offset: 0, color: 0xd32f2f },
+              { offset: 0.5, color: 0xff1744 },
+              { offset: 1, color: 0xb71c1c },
+            ],
+          });
+          graphics
+            .ellipse(0, targetY, rx, ry)
+            .fill(bodyGrad)
+            .stroke({ width: 1.5, color: 0xd4af37 });
 
-        // Inner ribs
-        graphics
-          .ellipse(0, targetY, rx * 0.5, ry)
-          .stroke({ width: 1, color: 0xd4af37, alpha: 0.4 });
-        graphics
-          .moveTo(0, targetY - ry)
-          .lineTo(0, targetY + ry)
-          .stroke({ width: 1, color: 0xd4af37, alpha: 0.4 });
+          // Inner ribs
+          graphics
+            .ellipse(0, targetY, rx * 0.5, ry)
+            .stroke({ width: 1, color: 0xd4af37, alpha: 0.4 });
+          graphics
+            .moveTo(0, targetY - ry)
+            .lineTo(0, targetY + ry)
+            .stroke({ width: 1, color: 0xd4af37, alpha: 0.4 });
 
-        // Bottom cap
-        graphics
-          .roundRect(-rx * 0.4, targetY + ry - 2, rx * 0.8, 4, 1)
-          .fill(0xd4af37);
+          // Bottom cap
+          graphics
+            .roundRect(-rx * 0.4, targetY + ry - 2, rx * 0.8, 4, 1)
+            .fill(0xd4af37);
 
-        // Tassel string & gold bead
-        graphics.circle(0, targetY + ry + 4, 2.5).fill(0xffea00);
-        graphics
-          .moveTo(0, targetY + ry + 6)
-          .lineTo(0, targetY + ry + 20)
-          .stroke({ width: 1.5, color: 0xd32f2f });
-      };
+          // Tassel string & gold bead
+          graphics.circle(0, targetY + ry + 4, 2.5).fill(0xffea00);
+          graphics
+            .moveTo(0, targetY + ry + 6)
+            .lineTo(0, targetY + ry + 20)
+            .stroke({ width: 1.5, color: 0xd32f2f });
+        };
 
-      // Left main
-      this.lanterns[0].position.set(45, 0);
-      redrawSwayingLantern(this.lanterns[0], 55, 26, 38);
+        // Symmetrical lantern positioning
+        const marginMain = Math.max(35, Math.min(65, sw * 0.05));
+        const marginSub = Math.max(75, Math.min(120, sw * 0.09));
 
-      // Right main
-      this.lanterns[1].position.set(sw - 45, 0);
-      redrawSwayingLantern(this.lanterns[1], 55, 26, 38);
+        // Left main & small
+        this.lanterns[0].position.set(marginMain, 0);
+        redrawSwayingLantern(this.lanterns[0], 55, 26, 38);
 
-      // Left small
-      this.lanterns[2].position.set(85, 0);
-      redrawSwayingLantern(this.lanterns[2], 35, 18, 26);
+        this.lanterns[2].position.set(marginSub, 0);
+        redrawSwayingLantern(this.lanterns[2], 35, 18, 26);
 
-      // Right small
-      this.lanterns[3].position.set(sw - 85, 0);
+        // Right main & small
+        this.lanterns[1].position.set(sw - marginMain, 0);
+        redrawSwayingLantern(this.lanterns[1], 55, 26, 38);
+
+        this.lanterns[3].position.set(sw - marginSub, 0);
+        redrawSwayingLantern(this.lanterns[3], 35, 18, 26);
+      }
     }
 
     // Draw traditional waves at the bottom of the screen
@@ -2579,14 +3149,12 @@ export class GameController extends Container {
 
     // --- 1. Position MAIN MENU CONTAINER ---
     if (this.gameState === "MAIN_MENU") {
-      const scale = Math.min(1.0, sw / 450, sh / 650);
-      const logoY = sh * 0.2;
-      let logoHeight = 120;
+      const scale = Math.min(1.1, sw / 420, sh / 680);
 
+      let logoHeight = 115;
       if (this.menuLogoSprite) {
-        this.logoContainer.position.set(sw / 2, logoY);
-        const maxH = sh < 500 ? 90 : 160;
-        const maxW = Math.min(sw * 0.85, 380);
+        const maxH = Math.max(85, Math.min(160, sh * 0.2));
+        const maxW = Math.min(sw * 0.85, 340);
         const logoScale = Math.min(
           maxH / this.menuLogoSprite.texture.height,
           maxW / this.menuLogoSprite.texture.width,
@@ -2596,82 +3164,95 @@ export class GameController extends Container {
       }
 
       this.menuTitleText.style.fontSize = Math.max(
-        20,
-        Math.min(38, 38 * scale),
+        22,
+        Math.min(36, 36 * scale),
       );
       this.menuSubtitleText.style.fontSize = Math.max(
-        10,
-        Math.min(14, 14 * scale),
+        11,
+        Math.min(13, 13 * scale),
       );
 
-      // Position title and subtitle below emblem
-      this.menuTitleText.position.set(
-        sw / 2,
-        logoY + logoHeight / 2 + 45 * scale,
-      );
-      this.menuSubtitleText.position.set(
-        sw / 2,
-        logoY + logoHeight / 2 + 85 * scale,
-      );
+      // Calculate total vertical budget to balance empty space
+      const topOffset = Math.max(65, Math.min(115, sh * 0.12));
+      const bottomDockOffset = Math.max(48, Math.min(75, sh * 0.09));
+      const dockY = sh - bottomDockOffset;
 
-      // Center large Play button, moving it down to leave breathing room for title
-      const titleBottomY = logoY + logoHeight / 2 + 85 * scale;
-      const playY = Math.max(titleBottomY + 70 * scale, sh * 0.55);
+      const baseSpread = logoHeight + 40 + 54 + 76 + 72; // content height
+      const freeSpace = Math.max(0, dockY - topOffset - baseSpread);
+      const gapFactor = Math.min(26, freeSpace / 4);
 
-      const playW = Math.max(90, Math.min(100, 100 * scale));
-      const playH = Math.max(90, Math.min(100, 100 * scale));
+      const logoY = topOffset + logoHeight / 2;
+      this.logoContainer.position.set(sw / 2, logoY);
+
+      const titleY = logoY + logoHeight / 2 + 24 * scale + gapFactor * 0.8;
+      this.menuTitleText.position.set(sw / 2, titleY);
+
+      const subtitleY = titleY + 26 * scale;
+      this.menuSubtitleText.position.set(sw / 2, subtitleY);
+
+      const paradeY = subtitleY + 44 * scale + gapFactor;
+      if (this.avatarParadeContainer) {
+        const paradeW = Math.min(sw * 0.92, 440);
+        this.avatarParadeContainer.position.set(sw / 2, paradeY);
+        this.avatarParadeBg
+          .clear()
+          .roundRect(-paradeW / 2, -29, paradeW, 58, 29)
+          .fill({ color: 0x180103, alpha: 0.65 })
+          .stroke({ width: 1.8, color: 0xd4af37, alpha: 0.7 });
+        this.avatarParadeMask
+          .clear()
+          .roundRect(-paradeW / 2 + 2, -27, paradeW - 4, 54, 27)
+          .fill(0xffffff);
+      }
+
+      const playY = paradeY + 76 * scale + gapFactor * 1.2;
       if (this.playBtn) {
         this.playBtn.position.set(sw / 2, playY);
-        // If it's a square button created by createPlayButton
-        if (this.playBtn.updateStyle) {
-          this.playBtn.updateStyle(playW, playH);
+        this.playBtn.scale.set(Math.min(1.06, Math.max(0.9, scale * 1.05)));
+      }
+
+      // Dock buttons (Achievements, Tutorial, Settings)
+      const finalDockY = Math.max(playY + 70 * scale, dockY);
+      const dockSpacing = Math.min(sw * 0.24, 94);
+
+      const dockBtns = [
+        this.achievementsBtn,
+        this.tutorialBtn,
+        this.settingsBtn,
+      ];
+
+      dockBtns.forEach((btn, idx) => {
+        if (btn) {
+          const bx = sw / 2 + (idx - 1) * dockSpacing;
+          btn.position.set(bx, finalDockY);
+          btn.updateStyle(Math.max(24, Math.min(30, 28 * scale)));
         }
-      }
-
-      // Horizontal row of circular buttons below it (Achievements left, Settings right)
-      // Push them to the bottom to fill empty space, but keep safe distance from Play button
-      const circY = Math.max(playY + 160 * scale, sh * 0.82);
-      const circR = Math.max(22, Math.min(28, 28 * scale));
-      const circGap = 50 * scale;
-
-      if (this.achievementsBtn) {
-        this.achievementsBtn.position.set(
-          sw / 2 - (circR + circGap / 2),
-          circY,
-        );
-        this.achievementsBtn.updateStyle(circR);
-      }
-
-      if (this.settingsBtn) {
-        this.settingsBtn.position.set(sw / 2 + (circR + circGap / 2), circY);
-        this.settingsBtn.updateStyle(circR);
-      }
+      });
     }
 
     // --- 2. Position LEVEL SELECT CONTAINER ---
     if (this.gameState === "LEVEL_SELECT") {
-      const scale = Math.min(1.0, sw / 450, sh / 650);
-      this.levelSelectTitle.style.fontSize = Math.max(
-        18,
-        Math.min(28, 28 * scale),
-      );
-      this.levelSelectTitle.position.set(sw / 2, sh * 0.22);
+      const scale = Math.min(1.0, sw / 450, sh / 680);
+      const centerY = sh > 640 ? sh * 0.48 : sh * 0.46;
 
-      const btnW = Math.max(180, Math.min(240, 240 * scale));
-      const btnH = Math.max(42, Math.min(56, 56 * scale));
-      const startY = sh * 0.35;
-      const spacing = 12 * scale;
+      this.levelSelectTitle.style.fontSize = Math.max(
+        22,
+        Math.min(32, 32 * scale),
+      );
+      this.levelSelectTitle.position.set(sw / 2, centerY - 170 * scale);
+
+      const cardH = 72 * scale;
+      const spacing = 18 * scale;
+      const startY = centerY - 72 * scale;
 
       this.levelButtons.forEach((btn, idx) => {
-        btn.position.set(sw / 2, startY + idx * (btnH + spacing));
-        btn.updateStyle(btnW, btnH);
+        btn.position.set(sw / 2, startY + idx * (cardH + spacing));
+        btn.scale.set(scale);
       });
 
-      this.levelBackBtn.position.set(
-        sw / 2,
-        startY + LEVELS.length * (btnH + spacing) + 8 * scale,
-      );
-      this.levelBackBtn.updateStyle(btnW, btnH, false);
+      const backY = startY + LEVELS.length * (cardH + spacing) + 38 * scale;
+      this.levelBackBtn.position.set(sw / 2, backY);
+      this.levelBackBtn.updateStyle(Math.max(22, Math.min(26, 26 * scale)));
     }
 
     // --- 3. Position ACHIEVEMENTS CONTAINER ---
@@ -2959,83 +3540,228 @@ export class GameController extends Container {
 
     // --- 4. Position GAMEPLAY CONTAINER ---
     if (this.gameState === "PLAYING") {
-      this.gameTitleText.position.set(sw / 2, 20);
+      const scale = Math.min(1.0, sw / 420, sh / 680);
+      this.gameTitleText.visible = false; // Hide title during gameplay to prevent clutter & overlap
 
-      const statsY = 80;
-      const statW = 100;
-      const statsPadding = 30;
-      const totalStatsWidth = statW * 3 + statsPadding * 2;
-      const startStatsX = sw / 2 - totalStatsWidth / 2;
+      // 1. Top HUD 3 Pills: Score, Moves, Time (Enlarged, beautiful 3D cartoon lacquer pills)
+      const hudY = Math.max(16, Math.min(26, 22 * scale));
+      const pillH = Math.max(62, Math.min(74, 68 * scale)); // Enlarged & spacious
+      const pillMargin = Math.max(10, Math.round(sw * 0.03));
+      const pillGap = Math.max(8, Math.min(12, 10 * scale));
+      const pillW = Math.floor((sw - pillMargin * 2 - pillGap * 2) / 3);
+      const totalHudW = pillW * 3 + pillGap * 2;
+      const startX = Math.round(sw / 2 - totalHudW / 2);
 
+      this.statsPanel.clear();
+
+      // Pill 0: Score (Gold lacquer)
+      // Base shadow
       this.statsPanel
-        .clear()
-        .roundRect(startStatsX - 15, statsY - 12, totalStatsWidth + 30, 60, 10)
-        .fill({ color: 0x1b0103, alpha: 0.55 })
-        .stroke({ width: 1.2, color: 0xd4af37, alpha: 0.35 });
+        .roundRect(startX, hudY + 5, pillW, pillH, 16)
+        .fill({ color: 0x000000, alpha: 0.55 });
+      // Main Body
+      this.statsPanel
+        .roundRect(startX, hudY, pillW, pillH, 16)
+        .fill({ color: 0x220508, alpha: 0.96 })
+        .stroke({ width: 2.5, color: 0xd4af37, alpha: 0.9 });
+      // Inner subtle lacquer rim
+      this.statsPanel
+        .roundRect(startX + 2.5, hudY + 2.5, pillW - 5, pillH - 5, 13)
+        .stroke({ width: 1, color: 0xffd54f, alpha: 0.22 });
+      // Top Glass Highlight
+      this.statsPanel
+        .roundRect(startX + 4, hudY + 3, pillW - 8, pillH * 0.36, 11)
+        .fill({ color: 0xffffff, alpha: 0.1 });
 
-      this.scoreLabel.position.set(startStatsX + statW / 2, statsY);
-      this.scoreVal.position.set(startStatsX + statW / 2, statsY + 24);
+      // Pill 1: Moves (Sky Cyan lacquer)
+      const p1X = startX + pillW + pillGap;
+      this.statsPanel
+        .roundRect(p1X, hudY + 5, pillW, pillH, 16)
+        .fill({ color: 0x000000, alpha: 0.55 });
+      this.statsPanel
+        .roundRect(p1X, hudY, pillW, pillH, 16)
+        .fill({ color: 0x071b26, alpha: 0.96 })
+        .stroke({ width: 2.5, color: 0x29b6f6, alpha: 0.9 });
+      this.statsPanel
+        .roundRect(p1X + 2.5, hudY + 2.5, pillW - 5, pillH - 5, 13)
+        .stroke({ width: 1, color: 0x81d4fa, alpha: 0.22 });
+      this.statsPanel
+        .roundRect(p1X + 4, hudY + 3, pillW - 8, pillH * 0.36, 11)
+        .fill({ color: 0xffffff, alpha: 0.1 });
 
-      this.movesLabel.position.set(
-        startStatsX + statW + statsPadding + statW / 2,
-        statsY,
-      );
-      this.movesVal.position.set(
-        startStatsX + statW + statsPadding + statW / 2,
-        statsY + 24,
-      );
+      // Pill 2: Timer (Dynamic lacquer)
+      const p2X = startX + (pillW + pillGap) * 2;
+      const timerStrokeColor =
+        this.timeRemaining <= 15
+          ? 0xff1744
+          : this.timeRemaining <= 30
+            ? 0xff9800
+            : 0xffea00;
+      const timerBgColor = this.timeRemaining <= 15 ? 0x320608 : 0x220508;
+      this.statsPanel
+        .roundRect(p2X, hudY + 5, pillW, pillH, 16)
+        .fill({ color: 0x000000, alpha: 0.55 });
+      this.statsPanel
+        .roundRect(p2X, hudY, pillW, pillH, 16)
+        .fill({ color: timerBgColor, alpha: 0.96 })
+        .stroke({ width: 2.5, color: timerStrokeColor, alpha: 0.9 });
+      this.statsPanel
+        .roundRect(p2X + 2.5, hudY + 2.5, pillW - 5, pillH - 5, 13)
+        .stroke({ width: 1, color: timerStrokeColor, alpha: 0.22 });
+      this.statsPanel
+        .roundRect(p2X + 4, hudY + 3, pillW - 8, pillH * 0.36, 11)
+        .fill({ color: 0xffffff, alpha: 0.1 });
 
-      this.timeLabel.position.set(
-        startStatsX + (statW + statsPadding) * 2 + statW / 2,
-        statsY,
-      );
-      this.timeVal.position.set(
-        startStatsX + (statW + statsPadding) * 2 + statW / 2,
-        statsY + 24,
-      );
+      // Typography inside pills (Crisp Baloo 2, high contrast, drop shadow)
+      const labelFontSize = Math.max(11, Math.min(13, 13 * scale));
+      const valFontSize = Math.max(21, Math.min(27, 25 * scale));
 
-      const barW = Math.min(sw * 0.8, 400);
-      const barX = sw / 2 - barW / 2;
-      const barY = statsY + 52;
+      this.scoreLabel.text = "🎯 ĐIỂM";
+      this.scoreLabel.style.fontSize = labelFontSize;
+      this.scoreLabel.style.fontFamily =
+        "'Baloo 2', 'Be Vietnam Pro', sans-serif";
+      this.scoreLabel.style.fontWeight = "800";
+      this.scoreLabel.style.letterSpacing = 0.8;
+      this.scoreLabel.style.fill = 0xffe082;
+      this.scoreLabel.style.dropShadow = {
+        alpha: 0.6,
+        blur: 2,
+        distance: 1.5,
+        color: 0x000000,
+      };
+      this.scoreLabel.position.set(startX + pillW / 2, hudY + pillH * 0.28);
+
+      this.scoreVal.style.fontSize = valFontSize;
+      this.scoreVal.style.fontFamily =
+        "'Baloo 2', 'Be Vietnam Pro', sans-serif";
+      this.scoreVal.style.fontWeight = "900";
+      this.scoreVal.style.letterSpacing = 1.0;
+      this.scoreVal.style.fill = 0xffea00;
+      this.scoreVal.style.dropShadow = {
+        alpha: 0.7,
+        blur: 2.5,
+        distance: 2,
+        color: 0x000000,
+      };
+      this.scoreVal.position.set(startX + pillW / 2, hudY + pillH * 0.72);
+
+      this.movesLabel.text = "🏃 LƯỢT";
+      this.movesLabel.style.fontSize = labelFontSize;
+      this.movesLabel.style.fontFamily =
+        "'Baloo 2', 'Be Vietnam Pro', sans-serif";
+      this.movesLabel.style.fontWeight = "800";
+      this.movesLabel.style.letterSpacing = 0.8;
+      this.movesLabel.style.fill = 0x81d4fa;
+      this.movesLabel.style.dropShadow = {
+        alpha: 0.6,
+        blur: 2,
+        distance: 1.5,
+        color: 0x000000,
+      };
+      this.movesLabel.position.set(p1X + pillW / 2, hudY + pillH * 0.28);
+
+      this.movesVal.style.fontSize = valFontSize;
+      this.movesVal.style.fontFamily =
+        "'Baloo 2', 'Be Vietnam Pro', sans-serif";
+      this.movesVal.style.fontWeight = "900";
+      this.movesVal.style.letterSpacing = 1.0;
+      this.movesVal.style.fill = 0x00e5ff;
+      this.movesVal.style.dropShadow = {
+        alpha: 0.7,
+        blur: 2.5,
+        distance: 2,
+        color: 0x000000,
+      };
+      this.movesVal.position.set(p1X + pillW / 2, hudY + pillH * 0.72);
+
+      this.timeLabel.text = "⏱️ THỜI GIAN";
+      this.timeLabel.style.fontSize = labelFontSize;
+      this.timeLabel.style.fontFamily =
+        "'Baloo 2', 'Be Vietnam Pro', sans-serif";
+      this.timeLabel.style.fontWeight = "800";
+      this.timeLabel.style.letterSpacing = 0.8;
+      this.timeLabel.style.fill =
+        this.timeRemaining <= 15 ? 0xff8a80 : 0xffe082;
+      this.timeLabel.style.dropShadow = {
+        alpha: 0.6,
+        blur: 2,
+        distance: 1.5,
+        color: 0x000000,
+      };
+      this.timeLabel.position.set(p2X + pillW / 2, hudY + pillH * 0.28);
+
+      this.timeVal.style.fontSize = valFontSize;
+      this.timeVal.style.fontFamily = "'Baloo 2', 'Be Vietnam Pro', sans-serif";
+      this.timeVal.style.fontWeight = "900";
+      this.timeVal.style.letterSpacing = 1.0;
+      this.timeVal.style.fill = this.timeRemaining <= 15 ? 0xff5252 : 0xffea00;
+      this.timeVal.style.dropShadow = {
+        alpha: 0.7,
+        blur: 2.5,
+        distance: 2,
+        color: 0x000000,
+      };
+      this.timeVal.position.set(p2X + pillW / 2, hudY + pillH * 0.72);
+
+      // Progress bar (Matches pill total width)
+      this.timerBarWidth = totalHudW;
+      const barX = startX;
+      const barY = hudY + pillH + 10;
       this.timerBarBg.position.set(barX, barY);
       this.timerBarFill.position.set(barX, barY);
       this.drawTimerBar(
         this.timeRemaining / LEVELS[this.currentLevelIndex].maxTime,
       );
 
-      const config = LEVELS[this.currentLevelIndex];
-      const cardW = this.currentLevelIndex === 2 ? 80 : 95;
-      const cardH = this.currentLevelIndex === 2 ? 105 : 125;
-      const gridSpacing = 12;
+      // Bottom in-game dock controls: 2 clean centered buttons (Hint & Pause/Settings)
+      const ctrlY = sh - Math.max(42, Math.min(56, 52 * scale));
+      const btnRadius = Math.max(26, Math.min(32, 29 * scale));
+      const dockSpacing = Math.min(sw * 0.24, 96);
 
-      const gridW = config.cols * cardW + (config.cols - 1) * gridSpacing;
-      const gridH = config.rows * cardH + (config.rows - 1) * gridSpacing;
+      this.hintButton.visible = true;
+      this.hintButton.position.set(sw / 2 - dockSpacing / 2, ctrlY);
+      this.hintButton.updateStyle(btnRadius);
 
-      const startGridY = barY + 25;
-      const remainingHeight = sh - startGridY - 60;
-
-      const maxGridW = sw * 0.92;
-      const maxGridH = remainingHeight - 40;
-      let gridScale = 1.0;
-      if (gridW > maxGridW || gridH > maxGridH) {
-        gridScale = Math.min(maxGridW / gridW, maxGridH / gridH);
-      }
-      this.gridContainer.scale.set(gridScale);
-      this.gridContainer.x = sw / 2 - (gridW * gridScale) / 2;
-      this.gridContainer.y =
-        startGridY + Math.max(0, (remainingHeight - gridH * gridScale) / 2);
-
-      const ctrlY = sh - 42;
-      const btnRadius = 26;
-
-      this.homeButton.visible = false;
-      this.restartButton.visible = false;
-
-      this.settingsBtnIngame.position.set(sw / 2 - 45, ctrlY);
+      this.settingsBtnIngame.visible = true;
+      this.settingsBtnIngame.position.set(sw / 2 + dockSpacing / 2, ctrlY);
       this.settingsBtnIngame.updateStyle(btnRadius);
 
-      this.hintButton.position.set(sw / 2 + 45, ctrlY);
-      this.hintButton.updateStyle(btnRadius);
+      // Card grid sizing and positioning (Strict boundary check to prevent ANY clipping)
+      const config = LEVELS[this.currentLevelIndex];
+      const startGridY = barY + 18;
+      const bottomReserve = sh - ctrlY + btnRadius + 14;
+      const availableHeight = sh - startGridY - bottomReserve;
+      const availableWidth = Math.min(sw * 0.9, sw - 28);
+
+      const baseCardW =
+        this.gridCardW || (config.cols >= 6 ? 74 : config.cols >= 5 ? 84 : 94);
+      const baseCardH = this.gridCardH || Math.round(baseCardW * 1.3);
+      const gridSpacing =
+        this.gridSpacing !== undefined
+          ? this.gridSpacing
+          : config.cols >= 6
+            ? 8
+            : 10;
+
+      const unscaledGridW =
+        this.unscaledGridW ||
+        config.cols * baseCardW + (config.cols - 1) * gridSpacing;
+      const unscaledGridH =
+        this.unscaledGridH ||
+        config.rows * baseCardH + (config.rows - 1) * gridSpacing;
+
+      const gridScale = Math.min(
+        availableWidth / unscaledGridW,
+        availableHeight / unscaledGridH,
+      );
+      const actualGridW = unscaledGridW * gridScale;
+      const actualGridH = unscaledGridH * gridScale;
+
+      this.gridContainer.scale.set(gridScale);
+      this.gridContainer.x = Math.round(sw / 2 - actualGridW / 2);
+      this.gridContainer.y = Math.round(
+        startGridY + (availableHeight - actualGridH) / 2,
+      );
     }
 
     if (this.overlayContainer.children.length > 0) {
@@ -3171,9 +3897,9 @@ export class GameController extends Container {
           position: fixed;
           top: 0; left: 0;
           width: 100dvw; height: 100dvh;
-          background: rgba(0, 0, 0, 0.65);
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
+          background: rgba(12, 5, 4, 0.75);
+          backdrop-filter: blur(10px) saturate(120%) brightness(0.85);
+          -webkit-backdrop-filter: blur(10px) saturate(120%) brightness(0.85);
           display: flex; justify-content: center; align-items: center;
           z-index: 100000;
           opacity: 0;
@@ -3219,15 +3945,16 @@ export class GameController extends Container {
         }
         .game-popup-close-btn {
           position: absolute;
-          top: -16px;
-          right: -16px;
-          width: 40px;
-          height: 40px;
+          top: -14px;
+          right: -14px;
+          width: 44px;
+          height: 44px;
           border: none;
           background: url(/assest/iconbtn/close_btn.webp) no-repeat center center;
           background-size: contain;
           cursor: pointer;
-          transition: transform 0.15s ease;
+          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+          transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           z-index: 100100;
         }
         .game-popup-close-btn:hover {
@@ -3401,6 +4128,27 @@ export class GameController extends Container {
           padding: 8px 4px;
           text-align: center;
         }
+        .game-achievements-table th:nth-child(1),
+        .game-achievements-table td:nth-child(1) {
+          width: 18%;
+          text-align: center;
+        }
+        .game-achievements-table th:nth-child(2),
+        .game-achievements-table td:nth-child(2) {
+          width: 34%;
+          text-align: left;
+          padding-left: 8px;
+        }
+        .game-achievements-table th:nth-child(3),
+        .game-achievements-table td:nth-child(3) {
+          width: 20%;
+          text-align: center;
+        }
+        .game-achievements-table th:nth-child(4),
+        .game-achievements-table td:nth-child(4) {
+          width: 28%;
+          text-align: center;
+        }
         .game-achievements-table tr.highlighted td {
           color: #F57C00;
           font-weight: 900;
@@ -3512,11 +4260,11 @@ export class GameController extends Container {
     const effUser = getEffectiveUser();
     const userText = document.createElement("div");
     userText.className = `game-achievements-user-text${effUser ? " logged-in" : ""}`;
-    if (effUser) {
-      userText.innerText = `Tài khoản: ${effUser.name} (Đã đăng nhập)`;
-    } else {
-      userText.innerText = `Tài khoản: Khách (Điểm lưu thiết bị)`;
-    }
+    userText.innerText = effUser
+      ? `Tài khoản: ${effUser.name} (Đã đăng nhập)`
+      : winkGame?.isAuthenticated
+        ? "Tài khoản: Thành viên (Đã đăng nhập)"
+        : "Tài khoản: Khách (Điểm lưu thiết bị)";
     card.appendChild(userText);
 
     // Level Selector
@@ -3552,7 +4300,70 @@ export class GameController extends Container {
 
     card.appendChild(levelSelector);
 
-    // Gather records
+    // Table container
+    const tableContainer = document.createElement("div");
+    tableContainer.className = "game-achievements-table-container";
+
+    const table = document.createElement("table");
+    table.className = "game-achievements-table";
+
+    const thead = document.createElement("thead");
+    thead.innerHTML = `
+      <tr>
+        <th>HẠNG</th>
+        <th>TÊN</th>
+        <th>ĐIỂM</th>
+        <th>LƯỢT VÀ T.GIAN</th>
+      </tr>
+    `;
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    card.appendChild(tableContainer);
+
+    const renderTableRows = (rows) => {
+      tbody.innerHTML = "";
+      if (!rows || rows.length === 0) {
+        const emptyRow = document.createElement("tr");
+        emptyRow.innerHTML = `<td colspan="4" style="padding: 20px; font-style: italic;">Chưa có thành tích kỷ lục.</td>`;
+        tbody.appendChild(emptyRow);
+        return;
+      }
+      rows.forEach((run, i) => {
+        let rankDisplay = `${run.rank || i + 1}`;
+        if ((run.rank || i + 1) === 1) rankDisplay = "🥇";
+        else if ((run.rank || i + 1) === 2) rankDisplay = "🥈";
+        else if ((run.rank || i + 1) === 3) rankDisplay = "🥉";
+
+        if (run.isCurrentPlayer) {
+          rankDisplay = `${rankDisplay} 👤`;
+        }
+
+        const tr = document.createElement("tr");
+        if (run.isCurrentPlayer) tr.className = "highlighted";
+        if ((run.rank || i + 1) <= 3)
+          tr.classList.add(`rank-${run.rank ? run.rank - 1 : i}`);
+
+        const detailStr =
+          run.moves && run.time
+            ? `${run.moves} lượt (${run.time}s)`
+            : run.playTime
+              ? `${run.playTime}s`
+              : "Hoàn thành";
+
+        tr.innerHTML = `
+          <td>${rankDisplay}</td>
+          <td>${run.playerName || run.displayName || "Thành viên"}</td>
+          <td>${run.score}</td>
+          <td>${detailStr}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    };
+
+    // Gather local fallback records
     const activeKey = currentUser
       ? `${LOCAL_STORAGE_KEY}_${currentUser.id}`
       : LOCAL_STORAGE_KEY;
@@ -3579,6 +4390,7 @@ export class GameController extends Container {
                 ...bestRun,
                 playerName: pName,
                 profileKey: key,
+                isCurrentPlayer: key === activeKey,
               });
             }
           }
@@ -3599,103 +4411,89 @@ export class GameController extends Container {
     const currentHistory = (currentRecord && currentRecord.history) || [];
     const levelBestRun = currentHistory.length > 0 ? currentHistory[0] : null;
 
-    // Table container
-    const tableContainer = document.createElement("div");
-    tableContainer.className = "game-achievements-table-container";
-
-    const table = document.createElement("table");
-    table.className = "game-achievements-table";
-
-    const thead = document.createElement("thead");
-    thead.innerHTML = `
-      <tr>
-        <th>HẠNG</th>
-        <th>TÊN</th>
-        <th>ĐIỂM</th>
-        <th>LƯỢT VÀ T.GIAN</th>
-      </tr>
-    `;
-    table.appendChild(thead);
-
-    const tbody = document.createElement("tbody");
-    if (globalHistory.length === 0) {
-      const emptyRow = document.createElement("tr");
-      emptyRow.innerHTML = `<td colspan="4" style="padding: 20px; font-style: italic;">Chưa có thành tích kỷ lục.</td>`;
-      tbody.appendChild(emptyRow);
-    } else {
-      const limit = Math.min(10, globalHistory.length);
-      for (let i = 0; i < limit; i++) {
-        const run = globalHistory[i];
-        const isCurrentPlayer = run.profileKey === activeKey;
-
-        let rankDisplay = `${i + 1}`;
-        if (i === 0) rankDisplay = "🥇";
-        else if (i === 1) rankDisplay = "🥈";
-        else if (i === 2) rankDisplay = "🥉";
-
-        if (isCurrentPlayer) {
-          rankDisplay = `${rankDisplay} 👤`;
-        }
-
-        const row = document.createElement("tr");
-        if (isCurrentPlayer) row.className = "highlighted";
-        if (i < 3) row.classList.add(`rank-${i}`);
-
-        row.innerHTML = `
-          <td>${rankDisplay}</td>
-          <td>${run.playerName}</td>
-          <td>${run.score}</td>
-          <td>${run.moves} lượt (${run.time}s)</td>
-        `;
-        tbody.appendChild(row);
-      }
-    }
-    table.appendChild(tbody);
-    tableContainer.appendChild(table);
-    card.appendChild(tableContainer);
-
     // Personal Best Footer
-    if (levelBestRun) {
-      const userRankIndex = globalHistory.findIndex(
-        (run) => run.profileKey === activeKey,
-      );
-      let rankDisplay = 0;
-      if (userRankIndex !== -1) {
-        rankDisplay = userRankIndex + 1;
-      } else {
-        const betterCount = globalHistory.filter((r) => {
-          if (r.score !== levelBestRun.score)
-            return r.score > levelBestRun.score;
-          if (r.time !== levelBestRun.time) return r.time < levelBestRun.time;
-          return r.moves < levelBestRun.moves;
-        }).length;
-        rankDisplay = betterCount + 1;
-      }
+    const footer = document.createElement("div");
+    footer.className = "game-achievements-footer";
 
-      let rankText = `${rankDisplay}`;
-      if (rankDisplay === 1) rankText = "🥇";
-      else if (rankDisplay === 2) rankText = "🥈";
-      else if (rankDisplay === 3) rankText = "🥉";
+    const rankItem = document.createElement("div");
+    rankItem.className = "game-achievements-footer-item";
+    footer.appendChild(rankItem);
 
-      const footer = document.createElement("div");
-      footer.className = "game-achievements-footer";
+    const scoreItem = document.createElement("div");
+    scoreItem.className = "game-achievements-footer-item";
+    footer.appendChild(scoreItem);
 
-      const rankItem = document.createElement("div");
-      rankItem.className = "game-achievements-footer-item";
+    const timeItem = document.createElement("div");
+    timeItem.className = "game-achievements-footer-item";
+    footer.appendChild(timeItem);
+    card.appendChild(footer);
+
+    const updateFooter = (pb) => {
+      const activeUser = getEffectiveUser();
+      userText.innerText = activeUser
+        ? `Tài khoản: ${activeUser.name} (Đã đăng nhập)`
+        : winkGame?.isAuthenticated
+          ? "Tài khoản: Thành viên (Đã đăng nhập)"
+          : "Tài khoản: Khách (Điểm lưu thiết bị)";
+
+      const pScore =
+        pb?.score !== undefined && pb?.score !== null
+          ? pb.score
+          : levelBestRun?.score || 0;
+      const rankNum = pb?.rank || (levelBestRun ? 1 : 0);
+      let rankText = rankNum ? `${rankNum}` : "—";
+      if (rankNum === 1) rankText = "🥇";
+      else if (rankNum === 2) rankText = "🥈";
+      else if (rankNum === 3) rankText = "🥉";
+
       rankItem.innerText = `PB: Hạng ${rankText}`;
-      footer.appendChild(rankItem);
+      scoreItem.innerText = `Điểm: ${pScore}`;
+      timeItem.innerText = pb?.playTime
+        ? `Thời gian: ${pb.playTime}s`
+        : levelBestRun
+          ? `Thời gian: ${levelBestRun.time}s`
+          : "Thời gian: —";
+    };
 
-      const scoreItem = document.createElement("div");
-      scoreItem.className = "game-achievements-footer-item";
-      scoreItem.innerText = `Điểm: ${levelBestRun.score}`;
-      footer.appendChild(scoreItem);
+    // Initial render
+    renderTableRows(globalHistory.slice(0, 10));
+    updateFooter(winkGame?.personalBest);
 
-      const timeItem = document.createElement("div");
-      timeItem.className = "game-achievements-footer-item";
-      timeItem.innerText = `${levelBestRun.time}s (${levelBestRun.moves} l)`;
-      footer.appendChild(timeItem);
-
-      card.appendChild(footer);
+    // Fetch from Wink API
+    if (winkGame) {
+      Promise.all([
+        winkGame.refreshLeaderboard({ limit: 10 }),
+        winkGame.getPersonalBest(),
+      ])
+        .then(([lbRes, pbRes]) => {
+          if (
+            lbRes &&
+            Array.isArray(lbRes.entries) &&
+            lbRes.entries.length > 0
+          ) {
+            const apiRows = lbRes.entries.map((item, idx) => ({
+              rank: item.rank || idx + 1,
+              playerName:
+                item.displayName ||
+                item.name ||
+                `Thành viên #${item.rank || idx + 1}`,
+              score: item.score || 0,
+              playTime: item.playTime || null,
+              moves: item.metadata?.moves || null,
+              time: item.playTime || null,
+              isCurrentPlayer:
+                item.userId &&
+                pbRes?.me?.userId &&
+                item.userId === pbRes.me.userId,
+            }));
+            renderTableRows(apiRows);
+          }
+          const activePb = pbRes?.me || lbRes?.me || winkGame.personalBest;
+          updateFooter(activePb);
+        })
+        .catch(() => {
+          // Local fallback already rendered
+        });
     }
 
     if (overlay.style.opacity !== "1") {

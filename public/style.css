@@ -132,12 +132,12 @@ html, body {
 
 /* --- GOOGLE SIGN IN MODAL --- */
 .google-modal-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.75);
+  width: 100dvw;
+  height: 100dvh;
+  background: rgba(12, 5, 4, 0.75);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -145,7 +145,8 @@ html, body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(10px) saturate(120%) brightness(0.85);
+  -webkit-backdrop-filter: blur(10px) saturate(120%) brightness(0.85);
 }
 
 .google-modal-overlay.active {
@@ -327,4 +328,459 @@ html, body {
     transform: rotate(360deg);
   }
 }
+
+/* --- TUTORIAL MODAL OVERLAY --- */
+.game-tutorial-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100dvw; height: 100dvh;
+  background: rgba(12, 5, 4, 0.75);
+  backdrop-filter: blur(10px) saturate(120%) brightness(0.85);
+  -webkit-backdrop-filter: blur(10px) saturate(120%) brightness(0.85);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 100000;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  box-sizing: border-box;
+}
+
+.game-tutorial-card {
+  background: #FFF9E6;
+  border: 5px solid #F57C00;
+  box-shadow: inset 0 0 0 3px #FFE082, 0 8px 0 #8a0000, 0 20px 40px rgba(0, 0, 0, 0.55);
+  border-radius: 28px;
+  padding: 42px 24px 26px 24px;
+  width: 90%;
+  max-width: 440px;
+  text-align: center;
+  position: relative;
+  transform: scale(0.85);
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.game-tutorial-ribbon {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #BA68C8 0%, #7B1FA2 100%);
+  border: 3.5px solid #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 5px 0 #4a148c, 0 8px 16px rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  padding: 6px 36px;
+  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+.game-tutorial-steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  margin-bottom: 22px;
+  text-align: left;
+}
+
+.game-tutorial-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #ffffff;
+  border: 2px solid #FFE082;
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+}
+
+.game-tutorial-step-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFF3E0;
+  border-radius: 50%;
+  border: 1.5px solid #FFB74D;
+}
+
+.game-tutorial-step-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.game-tutorial-step-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #D84315;
+  margin-bottom: 2px;
+}
+
+.game-tutorial-step-desc {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4E342E;
+  line-height: 1.35;
+}
+
+.game-tutorial-understood-btn {
+  background: linear-gradient(180deg, #FF7043 0%, #E64A19 50%, #D84315 100%);
+  border: 3.5px solid #ffffff;
+  border-radius: 26px;
+  box-shadow: 0 6px 0 #8a0000, 0 10px 18px rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  padding: 12px 56px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.game-tutorial-understood-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 7px 0 #8a0000, 0 14px 24px rgba(230, 74, 25, 0.4);
+}
+
+.game-tutorial-understood-btn:active {
+  transform: scale(0.95) translateY(4px);
+  box-shadow: 0 2px 0 #8a0000, 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Timer Urgency Pulse */
+@keyframes urgencyHeartbeat {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255, 0, 0, 0.4)); }
+  50% { transform: scale(1.12); filter: drop-shadow(0 0 10px rgba(255, 23, 68, 0.9)); }
+}
+
+.timer-urgent {
+  animation: urgencyHeartbeat 0.75s infinite ease-in-out;
+}
+
+/* --- DEFEAT / GAME OVER MODAL STYLES --- */
+.game-defeat-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100dvw; height: 100dvh;
+  background: rgba(12, 5, 4, 0.78);
+  backdrop-filter: blur(12px) saturate(130%) brightness(0.8);
+  -webkit-backdrop-filter: blur(12px) saturate(130%) brightness(0.8);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 100000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.game-defeat-card {
+  background: radial-gradient(ellipse at 50% 25%, #FFFDF5 0%, #FFF4DF 55%, #FEE3BC 100%);
+  border: 5px solid #8D2B0B;
+  border-radius: 30px;
+  box-shadow: inset 0 0 0 3.5px #FFB74D, inset 0 8px 24px rgba(245, 124, 0, 0.22), 0 14px 0 #4E1200, 0 25px 45px rgba(0, 0, 0, 0.75);
+  width: 90%;
+  max-width: 360px;
+  padding: 44px 20px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  transform: scale(0.85);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  box-sizing: border-box;
+}
+
+/* 4 Corner Bronze Studs */
+.defeat-corner {
+  position: absolute;
+  font-size: 14px;
+  line-height: 1;
+  color: #D4A373;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+.defeat-corner.corner-tl { top: 12px; left: 14px; }
+.defeat-corner.corner-tr { top: 12px; right: 14px; }
+.defeat-corner.corner-bl { bottom: 12px; left: 14px; }
+.defeat-corner.corner-br { bottom: 12px; right: 14px; }
+
+/* 3D Header Ribbon with Wings */
+.game-defeat-ribbon-wrap {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.game-defeat-ribbon-body {
+  background: linear-gradient(180deg, #FF7043 0%, #E64A19 50%, #BF360C 100%);
+  border: 3.5px solid #FFF8E1;
+  border-radius: 22px;
+  box-shadow: 0 5px 0 #5E1400, 0 8px 16px rgba(0, 0, 0, 0.4);
+  padding: 8px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.game-defeat-ribbon-body .ribbon-clock-ico {
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  animation: urgencyHeartbeat 1.5s infinite ease-in-out;
+}
+
+.game-defeat-ribbon-title {
+  color: #FFFDF5;
+  font-family: 'Baloo 2', 'Be Vietnam Pro', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-shadow: 0 2px 4px rgba(78, 18, 0, 0.7);
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.game-defeat-ribbon-wing {
+  position: absolute;
+  top: 8px;
+  width: 28px;
+  height: 30px;
+  background: #7B1300;
+  border: 2.5px solid #FFE082;
+  z-index: 1;
+}
+
+.game-defeat-ribbon-wing.wing-left {
+  left: -12px;
+  border-radius: 8px 0 0 8px;
+  transform: skewY(12deg);
+  box-shadow: -3px 4px 6px rgba(0, 0, 0, 0.35);
+}
+
+.game-defeat-ribbon-wing.wing-right {
+  right: -12px;
+  border-radius: 0 8px 8px 0;
+  transform: skewY(-12deg);
+  box-shadow: 3px 4px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* Center Stage with Dong Son Drum */
+.game-defeat-stage {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.game-defeat-drum-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0.95;
+  z-index: 1;
+}
+
+.game-defeat-mascot-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-defeat-mascot-img {
+  height: 118px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+  animation: mascotBob 2.5s ease-in-out infinite alternate;
+}
+
+.game-defeat-sweatdrop {
+  position: absolute;
+  top: 10px;
+  right: -10px;
+  font-size: 26px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  animation: sweatDrop 1.8s infinite ease-in-out;
+  z-index: 3;
+}
+
+.game-defeat-ground-shadow {
+  width: 80px;
+  height: 14px;
+  background: radial-gradient(ellipse, rgba(78, 18, 0, 0.45) 0%, transparent 70%);
+  border-radius: 50%;
+  margin-top: -8px;
+  pointer-events: none;
+}
+
+/* Carved Inset Stats Plaque */
+.game-defeat-stats-plaque {
+  width: 100%;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #F8EEDB 0%, #EEDBBE 100%);
+  border: 2px solid #D4A373;
+  border-radius: 18px;
+  box-shadow: inset 0 3px 6px rgba(110, 60, 20, 0.22), 0 2px 4px rgba(255, 255, 255, 0.8);
+  padding: 10px 8px;
+  margin: 12px 0 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.game-defeat-stats-plaque .stat-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.game-defeat-stats-plaque .stat-col .stat-ico {
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+}
+
+.game-defeat-stats-plaque .stat-col .stat-val {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+.game-defeat-stats-plaque .stat-col .stat-pairs {
+  color: #B71C1C;
+}
+
+.game-defeat-stats-plaque .stat-col .stat-moves {
+  color: #0277BD;
+}
+
+.game-defeat-stats-plaque .stat-col .stat-score {
+  color: #E65100;
+}
+
+.game-defeat-stats-plaque .stat-vdiv {
+  width: 2px;
+  height: 32px;
+  background: linear-gradient(180deg, transparent, rgba(160, 90, 20, 0.35), transparent);
+}
+
+/* 3D Action Buttons - Strictly Equal Size & Elevation */
+.game-defeat-actions {
+  display: flex;
+  gap: 28px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.defeat-btn {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 3.5px solid #FFFFFF;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.defeat-btn:hover {
+  transform: scale(1.06);
+}
+
+.defeat-btn:active {
+  transform: scale(0.92) translateY(4px);
+}
+
+.defeat-btn-home {
+  background: linear-gradient(180deg, #42A5F5 0%, #1E88E5 50%, #1565C0 100%);
+  box-shadow: 0 6px 0 #0D47A1, 0 10px 18px rgba(0, 0, 0, 0.35);
+}
+
+.defeat-btn-home:hover {
+  box-shadow: 0 7px 0 #0D47A1, 0 12px 20px rgba(21, 101, 192, 0.4);
+}
+
+.defeat-btn-home:active {
+  box-shadow: 0 2px 0 #0D47A1, 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+.defeat-btn-replay {
+  background: linear-gradient(180deg, #FFA726 0%, #FB8C00 50%, #E65100 100%);
+  box-shadow: 0 6px 0 #BF360C, 0 10px 18px rgba(245, 124, 0, 0.35);
+}
+
+.defeat-btn-replay:hover {
+  box-shadow: 0 7px 0 #BF360C, 0 12px 20px rgba(230, 81, 0, 0.4);
+}
+
+.defeat-btn-replay:active {
+  box-shadow: 0 2px 0 #BF360C, 0 4px 8px rgba(245, 124, 0, 0.25);
+}
+
+@keyframes mascotBob {
+  0% { transform: translateY(0) rotate(-1.5deg); }
+  100% { transform: translateY(-6px) rotate(1.5deg); }
+}
+
+@keyframes sweatDrop {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.9; }
+  50% { transform: translateY(5px) scale(1.18); opacity: 1; }
+}
+
+@keyframes pulseReplay {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
 

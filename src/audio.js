@@ -120,60 +120,93 @@ class AudioManager {
     return this.sfxMuted;
   }
 
-  playFlip() {
+  playClick() {
     if (!this.initialized) this.init();
-    if (this.sfxMuted || !this.ctx) return;
-    if (this.ctx.state === "suspended") this.ctx.resume();
-
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.1);
-
-    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
-
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
-
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.1);
+    if (this.sfxMuted) return;
+    this.playAudioFile("/assest/music/Button1.mp3", 0.5, () => {
+      this.playFlip();
+    });
   }
 
-  playMatch() {
-    if (!this.initialized) this.init();
-    if (this.sfxMuted || !this.ctx) return;
-    if (this.ctx.state === "suspended") this.ctx.resume();
+  playAudioFile(src, volume = 0.5, fallbackFn = null) {
+    try {
+      const snd = new Audio(src);
+      snd.volume = volume;
+      snd.play().catch(() => {
+        if (fallbackFn) fallbackFn();
+      });
+    } catch {
+      if (fallbackFn) fallbackFn();
+    }
+  }
 
-    const playTone = (freq, delay, duration) => {
+  playFlip() {
+    if (!this.initialized) this.init();
+    if (this.sfxMuted) return;
+
+    this.playAudioFile("/assest/music/Card1.mp3", 0.45, () => {
+      if (!this.ctx) return;
+      if (this.ctx.state === "suspended") this.ctx.resume();
+
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(
+        600,
+        this.ctx.currentTime + 0.1,
+      );
 
-      gain.gain.setValueAtTime(0, this.ctx.currentTime + delay);
-      gain.gain.linearRampToValueAtTime(
-        0.25,
-        this.ctx.currentTime + delay + 0.02,
-      );
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        this.ctx.currentTime + delay + duration,
-      );
+      gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
 
       osc.connect(gain);
       gain.connect(this.sfxGain);
 
-      osc.start(this.ctx.currentTime + delay);
-      osc.stop(this.ctx.currentTime + delay + duration);
-    };
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.1);
+    });
+  }
 
-    // Satisfying two-tone ascending match chord
-    playTone(523.25, 0, 0.2); // C5
-    playTone(659.25, 0.08, 0.25); // E5
+  playMatch(combo = 1) {
+    if (!this.initialized) this.init();
+    if (this.sfxMuted) return;
+
+    const file =
+      combo > 1 ? "/assest/music/FullCollect.mp3" : "/assest/music/ExpEarn.mp3";
+    this.playAudioFile(file, Math.min(0.8, 0.45 + combo * 0.1), () => {
+      if (!this.ctx) return;
+      if (this.ctx.state === "suspended") this.ctx.resume();
+
+      const playTone = (freq, delay, duration) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
+
+        gain.gain.setValueAtTime(0, this.ctx.currentTime + delay);
+        gain.gain.linearRampToValueAtTime(
+          0.25,
+          this.ctx.currentTime + delay + 0.02,
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.001,
+          this.ctx.currentTime + delay + duration,
+        );
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+
+        osc.start(this.ctx.currentTime + delay);
+        osc.stop(this.ctx.currentTime + delay + duration);
+      };
+
+      const baseFreq = 523.25 * Math.pow(1.08, Math.min(6, combo - 1));
+      playTone(baseFreq, 0, 0.2);
+      playTone(baseFreq * 1.26, 0.08, 0.25);
+    });
   }
 
   playFail() {
@@ -230,52 +263,62 @@ class AudioManager {
 
   playVictory() {
     if (!this.initialized) this.init();
-    if (this.sfxMuted || !this.ctx) return;
-    if (this.ctx.state === "suspended") this.ctx.resume();
+    if (this.sfxMuted) return;
 
-    const playTone = (freq, delay, duration, type = "sine", volume = 0.12) => {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
+    this.playAudioFile("/assest/music/LevelUp.mp3", 0.6, () => {
+      if (!this.ctx) return;
+      if (this.ctx.state === "suspended") this.ctx.resume();
 
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
+      const playTone = (
+        freq,
+        delay,
+        duration,
+        type = "sine",
+        volume = 0.12,
+      ) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
 
-      // Pitch vibrato for richer chorus effect
-      const vibrato = this.ctx.createOscillator();
-      const vibratoGain = this.ctx.createGain();
-      vibrato.frequency.value = 6; // 6Hz frequency modulation
-      vibratoGain.gain.value = freq * 0.015; // Depth of pitch bend
-      vibrato.connect(vibratoGain);
-      vibratoGain.connect(osc.frequency);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
 
-      gain.gain.setValueAtTime(0, this.ctx.currentTime + delay);
-      gain.gain.linearRampToValueAtTime(
-        volume,
-        this.ctx.currentTime + delay + 0.05,
-      );
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        this.ctx.currentTime + delay + duration,
-      );
+        // Pitch vibrato for richer chorus effect
+        const vibrato = this.ctx.createOscillator();
+        const vibratoGain = this.ctx.createGain();
+        vibrato.frequency.value = 6; // 6Hz frequency modulation
+        vibratoGain.gain.value = freq * 0.015; // Depth of pitch bend
+        vibrato.connect(vibratoGain);
+        vibratoGain.connect(osc.frequency);
 
-      osc.connect(gain);
-      gain.connect(this.sfxGain);
+        gain.gain.setValueAtTime(0, this.ctx.currentTime + delay);
+        gain.gain.linearRampToValueAtTime(
+          volume,
+          this.ctx.currentTime + delay + 0.05,
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.001,
+          this.ctx.currentTime + delay + duration,
+        );
 
-      vibrato.start(this.ctx.currentTime + delay);
-      osc.start(this.ctx.currentTime + delay);
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
 
-      vibrato.stop(this.ctx.currentTime + delay + duration);
-      osc.stop(this.ctx.currentTime + delay + duration);
-    };
+        vibrato.start(this.ctx.currentTime + delay);
+        osc.start(this.ctx.currentTime + delay);
 
-    // Triumphant Fanfare Arpeggio with harmony (C Major Progression)
-    playTone(261.63, 0.0, 0.8, "triangle", 0.1); // Bass C4
-    playTone(392.0, 0.1, 0.8, "sine", 0.08); // G4
-    playTone(523.25, 0.2, 0.8, "sine", 0.08); // C5
-    playTone(659.25, 0.3, 0.8, "sine", 0.08); // E5
-    playTone(783.99, 0.4, 0.8, "sine", 0.08); // G5
-    playTone(1046.5, 0.5, 1.2, "sine", 0.1); // High C6
-    playTone(1318.51, 0.6, 1.0, "sine", 0.06); // E6
+        vibrato.stop(this.ctx.currentTime + delay + duration);
+        osc.stop(this.ctx.currentTime + delay + duration);
+      };
+
+      // Triumphant Fanfare Arpeggio with harmony (C Major Progression)
+      playTone(261.63, 0.0, 0.8, "triangle", 0.1); // Bass C4
+      playTone(392.0, 0.1, 0.8, "sine", 0.08); // G4
+      playTone(523.25, 0.2, 0.8, "sine", 0.08); // C5
+      playTone(659.25, 0.3, 0.8, "sine", 0.08); // E5
+      playTone(783.99, 0.4, 0.8, "sine", 0.08); // G5
+      playTone(1046.5, 0.5, 1.2, "sine", 0.1); // High C6
+      playTone(1318.51, 0.6, 1.0, "sine", 0.06); // E6
+    });
   }
 
   async pauseForFocus() {

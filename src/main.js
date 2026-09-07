@@ -1,4 +1,5 @@
 import { Application, Assets } from "pixi.js";
+import "../public/style.css";
 import { GameController } from "./game";
 import { audio } from "./audio";
 import { winkGame } from "./integrations/wink/wink-adapter.js";
@@ -130,4 +131,54 @@ installInteractionGuard();
 
   // Run initial resize to align everything correctly
   handleResize();
+
+  // Test / Hash navigation support for automated UI inspection
+  const checkHash = () => {
+    if (window.location.hash === "#defeat") {
+      setTimeout(() => game.showDefeatScreen(), 350);
+    } else if (window.location.hash === "#level1") {
+      setTimeout(() => {
+        game.initGame(0);
+        game.switchState("PLAYING");
+      }, 350);
+    } else if (window.location.hash === "#level2") {
+      setTimeout(() => {
+        game.initGame(1);
+        game.switchState("PLAYING");
+      }, 350);
+    } else if (
+      window.location.hash === "#level3" ||
+      window.location.hash === "#gameplay"
+    ) {
+      setTimeout(() => {
+        game.initGame(2);
+        game.switchState("PLAYING");
+      }, 350);
+    } else if (
+      window.location.hash === "#levels" ||
+      window.location.hash === "#level_select"
+    ) {
+      setTimeout(() => {
+        game.switchState("LEVEL_SELECT");
+      }, 350);
+    } else if (window.location.hash === "#menu") {
+      setTimeout(() => {
+        game.switchState("MAIN_MENU");
+      }, 350);
+    } else if (window.location.hash === "#revive") {
+      setTimeout(() => {
+        game.showReviveOffer(
+          () => console.log("Revived!"),
+          () => console.log("Skipped!"),
+        );
+      }, 350);
+    }
+  };
+  window.addEventListener("hashchange", checkHash);
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "d" || e.key === "D") {
+      game.showDefeatScreen();
+    }
+  });
+  checkHash();
 })();
