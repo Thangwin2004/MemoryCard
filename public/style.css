@@ -884,3 +884,30 @@ html, body {
 
 
 
+
+/* Main menu language control, below modal overlays. */
+#main-language-select {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 20;
+  max-width: calc(100% - 24px);
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 2px solid #fff;
+  border-radius: 14px;
+  background: #fff8e7;
+  color: #47363b;
+  font:
+    600 14px "Be Vietnam Pro",
+    sans-serif;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #9b6a32;
+}
+#main-language-select:focus-visible {
+  outline: 3px solid #4fc3f7;
+  outline-offset: 3px;
+}
+#main-language-select[hidden] {
+  display: none;
+}

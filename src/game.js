@@ -99,7 +99,7 @@ function gameAlert(message) {
     const button = document.createElement("img");
     button.className = "game-alert-img-btn";
     button.src = "/assest/iconbtn/yes_btn.webp";
-    button.alt = "ĐỒNG Ý";
+    button.alt = i18n.t("actions.yes");
 
     card.appendChild(text);
     card.appendChild(button);
@@ -204,12 +204,12 @@ function gameConfirm(message) {
     const btnYes = document.createElement("img");
     btnYes.className = "game-confirm-img-btn";
     btnYes.src = "/assest/iconbtn/yes_btn.webp";
-    btnYes.alt = "ĐỒNG Ý";
+    btnYes.alt = i18n.t("actions.yes");
 
     const btnNo = document.createElement("img");
     btnNo.className = "game-confirm-img-btn";
     btnNo.src = "/assest/iconbtn/close_btn.webp";
-    btnNo.alt = "KHÔNG";
+    btnNo.alt = i18n.t("actions.no");
 
     actions.appendChild(btnYes);
     actions.appendChild(btnNo);
@@ -292,7 +292,7 @@ function getEffectiveUser() {
   if (winkGame && winkGame.isAuthenticated) {
     return {
       id: "wink_user",
-      name: "Thành viên",
+      name: i18n.t("account.member"),
       avatar: "/assest/image/imagenobackgrd/001_avatar_laclac.webp",
     };
   }
@@ -331,7 +331,7 @@ function saveStats(stats) {
       stats.userName = user.name;
       stats.userId = user.id;
     } else {
-      stats.userName = "Khách";
+      stats.userName = i18n.t("account.guest");
       stats.userId = "guest";
     }
     window.localStorage.setItem(key, JSON.stringify(stats));
@@ -445,7 +445,7 @@ function createMenuButton(text, onClick) {
   if (text.startsWith("GOOGLE_ICON:")) {
     cleanText = text.substring(12);
   } else if (text.startsWith("GOOGLE_ICON")) {
-    cleanText = "ĐĂNG NHẬP";
+    cleanText = i18n.t("account.signIn");
   }
 
   const btn = new Button(cleanText, onClick, 24);
@@ -645,6 +645,26 @@ export class GameController extends Container {
   }
 
   syncLanguage() {
+    if (this.mainLanguageSelect) {
+      this.mainLanguageSelect.value = i18n.language;
+      this.mainLanguageSelect.setAttribute(
+        "aria-label",
+        i18n.t("settings.language"),
+      );
+    }
+    const status = document.getElementById("user-status");
+    if (status) status.textContent = i18n.t("account.signedIn");
+    for (const [field, key] of Object.entries({
+      achievementsTitle: "leaderboard.title",
+      achievementsHeaderRank: "leaderboard.rankHeader",
+      achievementsHeaderScore: "hud.score",
+      achievementsHeaderMoves: "hud.moves",
+      achievementsHeaderTime: "hud.time",
+      achievementsHeaderDate: "leaderboard.date",
+    })) {
+      if (this[field]) this[field].text = i18n.t(key);
+    }
+
     if (this.menuTitleText) {
       this.menuTitleText.text = i18n.t("game.title");
     }
@@ -689,6 +709,7 @@ export class GameController extends Container {
     ) {
       this.achievementsBackBtn.setLabelText("↩️ " + i18n.t("actions.back"));
     }
+    this.resize();
   }
 
   async loadLogo() {
@@ -942,7 +963,7 @@ export class GameController extends Container {
 
     // --- 3. ACHIEVEMENTS SCREEN ---
     this.achievementsTitle = new Text({
-      text: "BẢNG VÀNG THÀNH TÍCH",
+      text: i18n.t("leaderboard.title"),
       style: new TextStyle({
         fontFamily: '"Be Vietnam Pro", sans-serif',
         fontSize: 28,
@@ -1016,23 +1037,23 @@ export class GameController extends Container {
       align: "center",
     });
     this.achievementsHeaderRank = new Text({
-      text: "HẠNG",
+      text: i18n.t("leaderboard.rankHeader"),
       style: headerStyle,
     });
     this.achievementsHeaderScore = new Text({
-      text: "ĐIỂM",
+      text: i18n.t("hud.score"),
       style: headerStyle,
     });
     this.achievementsHeaderMoves = new Text({
-      text: "LƯỢT",
+      text: i18n.t("hud.moves"),
       style: headerStyle,
     });
     this.achievementsHeaderTime = new Text({
-      text: "T.GIAN",
+      text: i18n.t("hud.time"),
       style: headerStyle,
     });
     this.achievementsHeaderDate = new Text({
-      text: "NGÀY",
+      text: i18n.t("leaderboard.date"),
       style: headerStyle,
     });
 
@@ -1234,6 +1255,8 @@ export class GameController extends Container {
 
   switchState(newState) {
     this.gameState = newState;
+    if (this.mainLanguageSelect)
+      this.mainLanguageSelect.hidden = newState !== "MAIN_MENU";
 
     this.mainMenuContainer.visible = newState === "MAIN_MENU";
     this.levelSelectContainer.visible = newState === "LEVEL_SELECT";
@@ -1296,16 +1319,18 @@ export class GameController extends Container {
     const effUser = getEffectiveUser();
     if (this.achievementsUserText) {
       if (effUser) {
-        this.achievementsUserText.text = `Tài khoản: ${effUser.name} (Đã đăng nhập)`;
+        this.achievementsUserText.text = i18n.t("leaderboard.accountSignedIn", {
+          name: effUser.name,
+        });
         this.achievementsUserText.style.fill = 0xd32f2f;
       } else {
-        this.achievementsUserText.text = `Tài khoản: Khách (Điểm lưu thiết bị)`;
+        this.achievementsUserText.text = i18n.t("leaderboard.guest");
         this.achievementsUserText.style.fill = 0x5c0612;
       }
     }
 
     const config = LEVELS[this.achievementsLevelIndex];
-    this.achievementsLevelLabel.text = `BẢNG VÀNG - ${config.name}`;
+    this.achievementsLevelLabel.text = `${i18n.t("leaderboard.title")} - ${config.name}`;
 
     // Clear dynamic rows
     this.achievementsRowsContainer.removeChildren().forEach((c) => {
@@ -1325,11 +1350,11 @@ export class GameController extends Container {
           const dataStr = window.localStorage.getItem(key);
           if (dataStr) {
             const statsObj = JSON.parse(dataStr);
-            let pName = "Khách";
+            let pName = i18n.t("account.guest");
             if (statsObj.userName) {
               pName = statsObj.userName;
             } else if (key.startsWith(`${LOCAL_STORAGE_KEY}_`)) {
-              pName = "Người chơi";
+              pName = i18n.t("account.player");
             }
 
             const record =
@@ -1403,7 +1428,7 @@ export class GameController extends Container {
     if (globalHistory.length === 0) {
       const emptyRow = new Container();
       emptyRow.emptyText = new Text({
-        text: "Chưa có thành tích kỷ lục.",
+        text: i18n.t("leaderboard.empty"),
         style: new TextStyle({
           fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 14,
@@ -1555,7 +1580,7 @@ export class GameController extends Container {
     if (!isIngame) {
       const closeBtn = document.createElement("button");
       closeBtn.className = "game-popup-close-btn";
-      closeBtn.setAttribute("aria-label", "Close");
+      closeBtn.setAttribute("aria-label", i18n.t("settings.close"));
       closeBtn.addEventListener("click", () => {
         audio.playFlip();
         overlay.style.opacity = "0";
@@ -1862,8 +1887,10 @@ export class GameController extends Container {
 
         let comboText = `+${matchPoints} ✨`;
         if (this.combo === 2) comboText = `COMBO X2! 🔥 +${matchPoints}`;
-        else if (this.combo === 3) comboText = `TUYỆT VỜI! ⚡ +${matchPoints}`;
-        else if (this.combo >= 4) comboText = `SIÊU ĐỈNH! 🌟 +${matchPoints}`;
+        else if (this.combo === 3)
+          comboText = `${i18n.t("combo.great")} ⚡ +${matchPoints}`;
+        else if (this.combo >= 4)
+          comboText = `${i18n.t("combo.amazing")} 🌟 +${matchPoints}`;
         this.showComboToast(comboText, midX, midY);
 
         setTimeout(() => {
@@ -3717,7 +3744,7 @@ export class GameController extends Container {
       const labelFontSize = Math.max(11, Math.min(13, 13 * scale));
       const valFontSize = Math.max(21, Math.min(27, 25 * scale));
 
-      this.scoreLabel.text = "🎯 ĐIỂM";
+      this.scoreLabel.text = "🎯 " + i18n.t("hud.score");
       this.scoreLabel.style.fontSize = labelFontSize;
       this.scoreLabel.style.fontFamily =
         "'Baloo 2', 'Be Vietnam Pro', sans-serif";
@@ -3746,7 +3773,7 @@ export class GameController extends Container {
       };
       this.scoreVal.position.set(startX + pillW / 2, hudY + pillH * 0.72);
 
-      this.movesLabel.text = "🏃 LƯỢT";
+      this.movesLabel.text = "🏃 " + i18n.t("hud.moves");
       this.movesLabel.style.fontSize = labelFontSize;
       this.movesLabel.style.fontFamily =
         "'Baloo 2', 'Be Vietnam Pro', sans-serif";
@@ -3775,7 +3802,7 @@ export class GameController extends Container {
       };
       this.movesVal.position.set(p1X + pillW / 2, hudY + pillH * 0.72);
 
-      this.timeLabel.text = "⏱️ THỜI GIAN";
+      this.timeLabel.text = "⏱️ " + i18n.t("hud.time");
       this.timeLabel.style.fontSize = labelFontSize;
       this.timeLabel.style.fontFamily =
         "'Baloo 2', 'Be Vietnam Pro', sans-serif";
@@ -3873,6 +3900,17 @@ export class GameController extends Container {
   }
 
   initDOMOverlays() {
+    const languageSelect = document.createElement("select");
+    languageSelect.id = "main-language-select";
+    languageSelect.innerHTML =
+      '<option value="en">English</option><option value="vi">Tiếng Việt</option>';
+    languageSelect.addEventListener("change", () => {
+      audio.playFlip();
+      i18n.setLanguage(languageSelect.value);
+    });
+    document.getElementById("app").appendChild(languageSelect);
+    this.mainLanguageSelect = languageSelect;
+
     // 2. Google Modal Account Items (Fallback mock list)
     const modal = document.getElementById("google-login-modal");
     const accountItems = document.querySelectorAll(".google-account-item");
@@ -4548,11 +4586,11 @@ export class GameController extends Container {
           const dataStr = window.localStorage.getItem(key);
           if (dataStr) {
             const statsObj = JSON.parse(dataStr);
-            let pName = "Khách";
+            let pName = i18n.t("account.guest");
             if (statsObj.userName) {
               pName = statsObj.userName;
             } else if (key.startsWith(`${LOCAL_STORAGE_KEY}_`)) {
-              pName = "Người chơi";
+              pName = i18n.t("account.player");
             }
             const record =
               statsObj.records && statsObj.records[this.achievementsLevelIndex];
@@ -4653,7 +4691,7 @@ export class GameController extends Container {
               playerName:
                 item.displayName ||
                 item.name ||
-                `Thành viên #${item.rank || idx + 1}`,
+                `${i18n.t("account.member")} #${item.rank || idx + 1}`,
               score: item.score || 0,
               playTime: item.playTime || null,
               moves: item.metadata?.moves || null,

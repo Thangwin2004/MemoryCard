@@ -3,6 +3,19 @@ const SUPPORTED_LANGUAGES = Object.freeze(["en", "vi"]);
 
 const messages = {
   en: {
+    "game.documentTitle": "Peanut Memory Match",
+    "loading.progress": "Loading {progress}%",
+    "settings.close": "Close",
+    "actions.yes": "Yes",
+    "actions.no": "No",
+    "account.guest": "Guest",
+    "account.member": "Member",
+    "account.player": "Player",
+    "account.signedIn": "Signed in",
+    "account.signIn": "SIGN IN",
+    "leaderboard.date": "DATE",
+    "combo.great": "GREAT!",
+    "combo.amazing": "AMAZING!",
     "game.title": "PEANUT MEMORY",
     "game.subtitle": "EXCITING MEMORY GAME",
 
@@ -86,6 +99,19 @@ const messages = {
     "actions.double": "Double (x2)",
   },
   vi: {
+    "game.documentTitle": "Bộ Lạc Ký Ức",
+    "loading.progress": "Đang tải {progress}%",
+    "settings.close": "Đóng",
+    "actions.yes": "Đồng ý",
+    "actions.no": "Không",
+    "account.guest": "Khách",
+    "account.member": "Thành viên",
+    "account.player": "Người chơi",
+    "account.signedIn": "Đã đăng nhập",
+    "account.signIn": "ĐĂNG NHẬP",
+    "leaderboard.date": "NGÀY",
+    "combo.great": "TUYỆT VỜI!",
+    "combo.amazing": "SIÊU ĐỈNH!",
     "game.title": "BỘ LẠC KÝ ỨC",
     "game.subtitle": "TRÒ CHƠI TRÍ NHỚ KỲ THÚ",
 
@@ -185,32 +211,10 @@ function readStoredLanguage() {
   }
 }
 
-function readUrlLanguage() {
-  try {
-    const params = new window.URLSearchParams(window.location.search);
-    return normalizeLanguage(
-      params.get("locale") || params.get("lang") || params.get("language"),
-    );
-  } catch {
-    return null;
-  }
-}
-
-function readWinkLanguage(state) {
-  return normalizeLanguage(
-    state?.locale ||
-      state?.language ||
-      state?.user?.locale ||
-      state?.context?.locale ||
-      state?.preferences?.language ||
-      state?.preferences?.locale,
-  );
-}
-
 export class I18nManager {
   constructor() {
     this.hasLocalOverride = Boolean(readStoredLanguage());
-    this.language = readStoredLanguage() || readUrlLanguage() || "en";
+    this.language = readStoredLanguage() || "en";
     this.listeners = new Set();
     this.applyDocumentLanguage();
   }
@@ -232,6 +236,7 @@ export class I18nManager {
   setLanguage(language, { persist = true } = {}) {
     const normalized = normalizeLanguage(language) || "en";
     if (persist) {
+      this.hasLocalOverride = true;
       try {
         if (typeof window !== "undefined" && window.localStorage) {
           window.localStorage.setItem(STORAGE_KEY, normalized);
@@ -254,11 +259,9 @@ export class I18nManager {
     return true;
   }
 
-  syncFromWink(state) {
-    if (this.hasLocalOverride) return false;
-    const platformLanguage = readWinkLanguage(state) || readUrlLanguage();
-    if (!platformLanguage) return false;
-    return this.setLanguage(platformLanguage, { persist: false });
+  syncFromWink() {
+    // Language is controlled by the player; host locale never overrides English.
+    return false;
   }
 
   t(key, variables = {}) {
