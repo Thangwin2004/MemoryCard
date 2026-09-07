@@ -645,13 +645,6 @@ export class GameController extends Container {
   }
 
   syncLanguage() {
-    if (this.mainLanguageSelect) {
-      this.mainLanguageSelect.value = i18n.language;
-      this.mainLanguageSelect.setAttribute(
-        "aria-label",
-        i18n.t("settings.language"),
-      );
-    }
     const status = document.getElementById("user-status");
     if (status) status.textContent = i18n.t("account.signedIn");
     for (const [field, key] of Object.entries({
@@ -1255,8 +1248,6 @@ export class GameController extends Container {
 
   switchState(newState) {
     this.gameState = newState;
-    if (this.mainLanguageSelect)
-      this.mainLanguageSelect.hidden = newState !== "MAIN_MENU";
 
     this.mainMenuContainer.visible = newState === "MAIN_MENU";
     this.levelSelectContainer.visible = newState === "LEVEL_SELECT";
@@ -3900,17 +3891,6 @@ export class GameController extends Container {
   }
 
   initDOMOverlays() {
-    const languageSelect = document.createElement("select");
-    languageSelect.id = "main-language-select";
-    languageSelect.innerHTML =
-      '<option value="en">English</option><option value="vi">Tiếng Việt</option>';
-    languageSelect.addEventListener("change", () => {
-      audio.playFlip();
-      i18n.setLanguage(languageSelect.value);
-    });
-    document.getElementById("app").appendChild(languageSelect);
-    this.mainLanguageSelect = languageSelect;
-
     // 2. Google Modal Account Items (Fallback mock list)
     const modal = document.getElementById("google-login-modal");
     const accountItems = document.querySelectorAll(".google-account-item");
