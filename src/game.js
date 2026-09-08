@@ -992,13 +992,11 @@ export class GameController extends Container {
 
     // Left and Right arrows to switch levels
     this.achievementsLeftArrow = createCircularButton("◀", () => {
-      audio.playFlip();
       this.achievementsLevelIndex =
         (this.achievementsLevelIndex - 1 + LEVELS.length) % LEVELS.length;
       this.updateAchievementsDisplay();
     });
     this.achievementsRightArrow = createCircularButton("▶", () => {
-      audio.playFlip();
       this.achievementsLevelIndex =
         (this.achievementsLevelIndex + 1) % LEVELS.length;
       this.updateAchievementsDisplay();
@@ -1541,7 +1539,6 @@ export class GameController extends Container {
   }
 
   showSettingsModal(isIngame = false) {
-    audio.playFlip();
     this.injectHTMLPopupStyles();
 
     // Prevent duplicate modals
@@ -2306,7 +2303,6 @@ export class GameController extends Container {
 
     // Home
     const btnHome = createIconBtn(getIconBtnDataUrl("home", "blue"), () => {
-      audio.playFlip();
       if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
       overlay.remove();
       this.switchState("MAIN_MENU");
@@ -2319,7 +2315,6 @@ export class GameController extends Container {
       getIconBtnDataUrl("x2", "green"),
       async () => {
         if (hasDoubled) return;
-        audio.playFlip();
         const success = await AdManager.showRewardedVideo();
         if (success) {
           hasDoubled = true;
@@ -2338,7 +2333,6 @@ export class GameController extends Container {
         ? getIconBtnDataUrl("next", "blue")
         : getIconBtnDataUrl("replay", "yellow");
     const btnNext = createIconBtn(nextIcon, () => {
-      audio.playFlip();
       if (this.victoryIntervalId) clearInterval(this.victoryIntervalId);
       overlay.remove();
       const nextIdx = (this.currentLevelIndex + 1) % LEVELS.length;
@@ -2594,9 +2588,9 @@ export class GameController extends Container {
     ribbonWrap.innerHTML = `
       <div class="game-defeat-ribbon-wing wing-left"></div>
       <div class="game-defeat-ribbon-wing wing-right"></div>
-      <div class="game-defeat-ribbon-body" style="white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 24px;">
+      <div class="game-defeat-ribbon-body" style="white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 32px;">
         <span class="ribbon-clock-ico" style="font-size: 24px; line-height: 1;">⏱️</span>
-        <span class="game-defeat-ribbon-title" style="white-space: nowrap; font-family: 'Baloo 2', 'Be Vietnam Pro', sans-serif; font-size: 20px; font-weight: 900; line-height: 1; color: #FFFDF5; letter-spacing: 1.5px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(78, 18, 0, 0.7); user-select: none;">${i18n.t("defeat.title")}</span>
+        <span class="game-defeat-ribbon-title" style="white-space: nowrap; font-family: 'Be Vietnam Pro', sans-serif; font-size: 20px; font-weight: 800; line-height: 1; color: #ffffff; letter-spacing: 1.5px; text-transform: uppercase; text-shadow: 0 2px 2px rgba(0, 0, 0, 0.3); user-select: none;">${i18n.t("defeat.title")}</span>
       </div>
     `;
 
@@ -2826,7 +2820,10 @@ export class GameController extends Container {
   }
 
   showTutorialModal() {
-    audio.playClick();
+    // Reuse the shared popup primitives so the tutorial close button and
+    // surrounding modal chrome match Settings, Pause, and Leaderboard.
+    this.injectHTMLPopupStyles();
+
     const existing = document.getElementById("game-tutorial-overlay-id");
     if (existing) existing.remove();
 
@@ -2893,18 +2890,6 @@ export class GameController extends Container {
       stepsContainer.appendChild(stepDiv);
     });
     card.appendChild(stepsContainer);
-
-    const okBtn = document.createElement("button");
-    okBtn.className = "game-tutorial-understood-btn";
-    okBtn.setAttribute("aria-label", i18n.t("tutorial.understood"));
-    okBtn.innerHTML = `<span style="font-size: 22px; line-height: 1;">✓</span> <span>${i18n.t("tutorial.understood")}</span>`;
-    okBtn.onclick = () => {
-      audio.playClick();
-      overlay.style.opacity = "0";
-      card.style.transform = "scale(0.85)";
-      setTimeout(() => overlay.remove(), 250);
-    };
-    card.appendChild(okBtn);
 
     overlay.appendChild(card);
     const container = document.getElementById("app") || document.body;

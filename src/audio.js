@@ -123,9 +123,10 @@ class AudioManager {
   playClick() {
     if (!this.initialized) this.init();
     if (this.sfxMuted) return;
-    this.playAudioFile("/assest/music/Button1.mp3", 0.5, () => {
-      this.playFlip();
-    });
+    // Button1 is the complete UI click sound. Do not chain playFlip() as a
+    // fallback here: callers can already use playFlip() for card interactions,
+    // and chaining both makes a single button press sound doubled.
+    this.playAudioFile("/assest/music/Button1.mp3", 0.5);
   }
 
   playAudioFile(src, volume = 0.5, fallbackFn = null) {
