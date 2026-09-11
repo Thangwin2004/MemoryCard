@@ -10,15 +10,70 @@ import { i18n, t } from "./system/I18nManager.js";
 
 installInteractionGuard();
 
-function localizeSplash() {
-  const splashText = document.getElementById("splash-text");
+const splashStartedAt = window.performance.now();
+const splashScreen = document.getElementById("splash-screen");
+const splashProgressElement = document.getElementById("splash-progress");
+const splashText = document.getElementById("splash-text");
+let splashProgress = 0;
+
+function setSplashProgress(progress) {
+  splashProgress = Math.max(0, Math.min(100, Math.round(progress)));
+
+  if (splashProgressElement) {
+    splashProgressElement.style.width = `${splashProgress}%`;
+  }
   if (splashText) {
-    splashText.innerText = t("loading.progress", { progress: 0 });
+    const nextText = t("loading.progress", { progress: splashProgress });
+    if (splashText.innerText !== nextText) splashText.innerText = nextText;
+  }
+}
+
+function localizeSplash() {
+  if (splashText) {
+    splashText.innerText = t("loading.progress", {
+      progress: splashProgress,
+    });
   }
 }
 
 localizeSplash();
 i18n.subscribe(localizeSplash);
+
+const splashProgressTimer = window.setInterval(() => {
+  if (splashProgress >= 90) return;
+  const step = Math.max(1, Math.ceil((90 - splashProgress) * 0.12));
+  setSplashProgress(Math.min(90, splashProgress + step));
+}, 80);
+
+async function hideSplashWhenReady() {
+  window.clearInterval(splashProgressTimer);
+  if (!splashScreen) return;
+
+  const studioLogo = splashScreen.querySelector(".studio-splash-logo");
+  if (studioLogo instanceof window.HTMLImageElement && !studioLogo.complete) {
+    await Promise.race([
+      studioLogo.decode().catch(() => undefined),
+      new Promise((resolve) => window.setTimeout(resolve, 500)),
+    ]);
+  }
+
+  const minimumSplashDuration = 1400;
+  const remainingDuration = Math.max(
+    0,
+    minimumSplashDuration - (window.performance.now() - splashStartedAt),
+  );
+  if (remainingDuration > 0) {
+    await new Promise((resolve) =>
+      window.setTimeout(resolve, remainingDuration),
+    );
+  }
+
+  setSplashProgress(100);
+  await new Promise((resolve) => window.setTimeout(resolve, 160));
+  splashScreen.classList.add("is-hidden");
+  await new Promise((resolve) => window.setTimeout(resolve, 450));
+  splashScreen.style.display = "none";
+}
 
 (async () => {
   await waitForGameFonts([
@@ -62,37 +117,6 @@ i18n.subscribe(localizeSplash);
     document.body.appendChild(app.canvas);
   }
 
-  // 3.5 Hide splash screen smoothly with fake progress
-  const splashScreen = document.getElementById("splash-screen");
-  const splashProgress = document.getElementById("splash-progress");
-  const splashText = document.getElementById("splash-text");
-  if (splashScreen && splashProgress && splashText) {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.floor(Math.random() * 15) + 5;
-      if (progress > 90) progress = 90;
-      splashProgress.style.width = progress + "%";
-      splashText.innerText = t("loading.progress", { progress });
-    }, 50);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      splashProgress.style.width = "100%";
-      splashText.innerText = t("loading.progress", { progress: 100 });
-      setTimeout(() => {
-        splashScreen.style.opacity = "0";
-        setTimeout(() => {
-          splashScreen.style.display = "none";
-        }, 500);
-      }, 200);
-    }, 600);
-  } else if (splashScreen) {
-    splashScreen.style.opacity = "0";
-    setTimeout(() => {
-      splashScreen.style.display = "none";
-    }, 500);
-  }
-
   // 4. Create the game manager container
   const game = new GameController(app);
   window.__game = game;
@@ -128,7 +152,7 @@ i18n.subscribe(localizeSplash);
     resizeObserver.observe(container);
   }
 
-  // ── Wink Bridge lifecycle binding ──
+  // ── Wink SDK lifecycle binding ──
   winkGame.bindLifecycle({
     onPause: focusPause.pauseFromHost,
     onResume: focusPause.resumeFromHost,
@@ -137,13 +161,13 @@ i18n.subscribe(localizeSplash);
   });
 
   winkGame.observe((state) => {
-    console.log("[WinkBridge] phase:", state.phase);
     i18n.syncFromWink(state);
   });
   i18n.syncFromWink(winkGame.state);
 
   // Run initial resize to align everything correctly
   handleResize();
+  void hideSplashWhenReady();
 
   // Test / Hash navigation support for automated UI inspection
   const checkHash = () => {

@@ -269,6 +269,16 @@ let currentUser = null; // Profile of the currently signed-in Google user
 
 function getEffectiveUser() {
   if (currentUser) return currentUser;
+  const sdkPlayer = winkGame?.state?.player;
+  if (sdkPlayer) {
+    return {
+      id: sdkPlayer.id || "wink_user",
+      name: sdkPlayer.displayName || i18n.t("account.member"),
+      avatar:
+        sdkPlayer.avatarUrl ||
+        "/assest/image/imagenobackgrd/001_avatar_laclac.webp",
+    };
+  }
   if (winkGame && winkGame.personalBest?.displayName) {
     return {
       id: winkGame.personalBest.userId || "wink_user",
@@ -276,19 +286,6 @@ function getEffectiveUser() {
       avatar: "/assest/image/imagenobackgrd/001_avatar_laclac.webp",
     };
   }
-  try {
-    const savedUser = window.localStorage.getItem("google_user");
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      if (parsed && parsed.name) {
-        currentUser = parsed;
-        return currentUser;
-      }
-    }
-  } catch (err) {
-    console.warn(err);
-  }
-
   if (winkGame && winkGame.isAuthenticated) {
     return {
       id: "wink_user",
@@ -1570,7 +1567,7 @@ export class GameController extends Container {
       closeBtn.className = "game-popup-close-btn";
       closeBtn.setAttribute("aria-label", i18n.t("settings.close"));
       closeBtn.addEventListener("click", () => {
-        audio.playFlip();
+        audio.playClose();
         overlay.style.opacity = "0";
         card.style.transform = "scale(0.85)";
         setTimeout(() => {
@@ -1630,8 +1627,10 @@ export class GameController extends Container {
       "🎵 " + i18n.t("settings.music"),
       !audio.musicMuted,
       () => {
-        audio.playFlip();
+        const enabling = audio.musicMuted;
+        if (!enabling) audio.playToggle();
         audio.toggleMusicMute();
+        if (enabling) audio.playToggle();
         return !audio.musicMuted;
       },
     );
@@ -1642,8 +1641,10 @@ export class GameController extends Container {
       "🔊 " + i18n.t("settings.sfx"),
       !audio.sfxMuted,
       () => {
-        audio.playFlip();
+        const enabling = audio.sfxMuted;
+        if (!enabling) audio.playToggle();
         audio.toggleSfxMute();
+        if (enabling) audio.playToggle();
         return !audio.sfxMuted;
       },
     );
@@ -1673,7 +1674,7 @@ export class GameController extends Container {
       select.value = i18n.language;
 
       select.addEventListener("change", () => {
-        audio.playFlip();
+        audio.playSelect();
         i18n.setLanguage(select.value);
         this.syncLanguage();
         title.innerText = isIngame
@@ -1716,7 +1717,7 @@ export class GameController extends Container {
       homeBtn.setAttribute("aria-label", i18n.t("pause.home"));
       homeBtn.style.backgroundImage = `url(${getIconBtnDataUrl("home", "blue")})`;
       homeBtn.addEventListener("click", () => {
-        audio.playFlip();
+        audio.playHome();
         overlay.remove();
         this.isGameOver = true;
         this.isPaused = false;
@@ -1730,7 +1731,7 @@ export class GameController extends Container {
       replayBtn.setAttribute("aria-label", i18n.t("pause.replay"));
       replayBtn.style.backgroundImage = `url(${getIconBtnDataUrl("replay", "yellow")})`;
       replayBtn.addEventListener("click", () => {
-        audio.playFlip();
+        audio.playReplay();
         overlay.remove();
         this.isPaused = false;
         this.initGame(this.currentLevelIndex);
@@ -1744,7 +1745,7 @@ export class GameController extends Container {
       resumeBtn.setAttribute("aria-label", i18n.t("pause.resume"));
       resumeBtn.style.backgroundImage = `url(${getIconBtnDataUrl("play", "green")})`;
       resumeBtn.addEventListener("click", () => {
-        audio.playFlip();
+        audio.playPlay();
         overlay.remove();
         this.isPaused = false;
       });
@@ -3876,93 +3877,19 @@ export class GameController extends Container {
   }
 
   initDOMOverlays() {
-    // 2. Google Modal Account Items (Fallback mock list)
-    const modal = document.getElementById("google-login-modal");
-    const accountItems = document.querySelectorAll(".google-account-item");
-    accountItems.forEach((item) => {
-      item.onclick = () => {
-        const accountId = item.getAttribute("data-account");
-        let name = "Guest";
-        let email = "";
-        let avatar = "";
-
-        if (accountId === "laclac") {
-          name = "Lạc Lạc (Bơ Lạc)";
-          email = "laclac.bolac@gmail.com";
-          avatar = "/assest/image/imagebldp/001_avatar_laclac.webp";
-        } else if (accountId === "dauphong") {
-          name = "Đậu Phộng";
-          email = "dauphong.bolac@gmail.com";
-          avatar = "/assest/image/imagebldp/015_avatar_dauLan.webp";
-        }
-
-        // Set current user
-        currentUser = { id: accountId, name, email, avatar };
-        window.localStorage.setItem("google_user", JSON.stringify(currentUser));
-
-        // Hide modal
-        if (modal) modal.classList.remove("active");
-
-        // Update UI
-        this.updateUserUI();
-      };
+    winkGame.observe((state) => {
+      const player = state?.player;
+      currentUser = player
+        ? {
+            id: player.id || "wink_user",
+            name: player.displayName || i18n.t("account.member"),
+            avatar:
+              player.avatarUrl ||
+              "/assest/image/imagenobackgrd/001_avatar_laclac.webp",
+          }
+        : null;
+      this.updateUserUI();
     });
-
-    // 3. Close Modal Button
-    const closeBtn = document.getElementById("google-modal-close-btn");
-    if (closeBtn && modal) {
-      closeBtn.onclick = () => {
-        modal.classList.remove("active");
-      };
-    }
-
-    // 4. Sign out Button
-    const signOutBtn = document.getElementById("user-signout");
-    if (signOutBtn) {
-      signOutBtn.onclick = () => {
-        currentUser = null;
-        window.localStorage.removeItem("google_user");
-        if (window.parent !== window) {
-          window.parent.postMessage({ type: "trigger_google_logout" }, "*");
-        }
-        this.updateUserUI();
-      };
-    }
-
-    // 5. Parent Iframe postMessage Bridge
-    window.addEventListener("message", (event) => {
-      const data = event.data;
-      if (data && data.type === "user_profile") {
-        const user = data.user; // { id: '...', name: '...', avatar: '...', email: '...' }
-        if (user) {
-          currentUser = user;
-          window.localStorage.setItem(
-            "google_user",
-            JSON.stringify(currentUser),
-          );
-        } else {
-          currentUser = null;
-          window.localStorage.removeItem("google_user");
-        }
-        this.updateUserUI();
-      }
-    });
-
-    // If running inside parent iframe, request the logged-in profile immediately
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: "get_user_profile" }, "*");
-    }
-
-    // Load saved user from local storage
-    try {
-      const savedUser = window.localStorage.getItem("google_user");
-      if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-      }
-    } catch (e) {
-      console.error("Error loading user profile:", e);
-    }
-
     this.updateUserUI();
   }
 
@@ -3987,9 +3914,7 @@ export class GameController extends Container {
   }
 
   showGoogleLoginModal() {
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: "trigger_google_login" }, "*");
-    }
+    void gameAlert("Đăng nhập và đăng xuất được quản lý bởi Wink.");
   }
 
   injectHTMLPopupStyles() {
@@ -4426,7 +4351,7 @@ export class GameController extends Container {
     closeBtn.className = "game-popup-close-btn";
     closeBtn.setAttribute("aria-label", i18n.t("settings.close") || "Close");
     closeBtn.addEventListener("click", () => {
-      audio.playFlip();
+      audio.playClose();
       this.hideHTMLAchievements();
       this.switchState("MAIN_MENU");
     });

@@ -123,16 +123,59 @@ class AudioManager {
   playClick() {
     if (!this.initialized) this.init();
     if (this.sfxMuted) return;
-    // Button1 is the complete UI click sound. Do not chain playFlip() as a
-    // fallback here: callers can already use playFlip() for card interactions,
-    // and chaining both makes a single button press sound doubled.
+    // Button1 is the shared default UI click. Do not chain playFlip() here:
+    // card interactions use their own sound and would otherwise double-play.
     this.playAudioFile("/assest/music/Button1.mp3", 0.5);
+  }
+
+  playClose() {
+    this.playUiSound("Button2.mp3", 0.48);
+  }
+
+  playToggle() {
+    this.playUiSound("Switch.mp3", 0.42);
+  }
+
+  playSelect() {
+    this.playUiSound("Button3.mp3", 0.45);
+  }
+
+  playHome() {
+    this.playUiSound("Button4.mp3", 0.48);
+  }
+
+  playReplay() {
+    this.playUiSound("Button5.mp3", 0.48);
+  }
+
+  playPlay() {
+    this.playUiSound("Button1.mp3", 0.5);
+  }
+
+  playUiSound(file, volume = 0.5) {
+    if (!this.initialized) this.init();
+    if (this.sfxMuted) return;
+    this.playAudioFile(`/assest/music/${file}`, volume);
   }
 
   playAudioFile(src, volume = 0.5, fallbackFn = null) {
     try {
       const snd = new Audio(src);
-      snd.volume = volume;
+      if (this.ctx && this.sfxGain) {
+        const source = this.ctx.createMediaElementSource(snd);
+        const localGain = this.ctx.createGain();
+        localGain.gain.value = volume;
+        source.connect(localGain);
+        localGain.connect(this.sfxGain);
+        snd.addEventListener(
+          "ended",
+          () => {
+            source.disconnect();
+            localGain.disconnect();
+          },
+          { once: true },
+        );
+      }
       snd.play().catch(() => {
         if (fallbackFn) fallbackFn();
       });
