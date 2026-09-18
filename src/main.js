@@ -1,5 +1,4 @@
 import { Application, Assets } from "pixi.js";
-import "../public/style.css";
 import { GameController } from "./game";
 import { audio } from "./audio";
 import { winkGame } from "./integrations/wink/wink-adapter.js";

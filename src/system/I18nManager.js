@@ -259,10 +259,10 @@ export class I18nManager {
     return true;
   }
 
-  syncFromWink(state) {
-    const locale = String(state?.locale || "").toLowerCase();
-    const language = locale.startsWith("vi") ? "vi" : "en";
-    return this.setLanguage(language, { persist: false });
+  syncFromWink() {
+    if (this.hasLocalOverride) return false;
+    // Default is EN; player's choice is saved if changed in-game.
+    return false;
   }
 
   t(key, variables = {}) {
